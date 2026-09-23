@@ -1,0 +1,312 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { WorkerData } from './WorkerCard';
+import { LocationData } from '@/context/LocationContext';
+
+interface JobRequestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  worker: WorkerData | null;
+  selectedLocation: LocationData;
+  onSuccess: (jobId: string) => void;
+  onRequireAuth: () => void;
+}
+
+export default function JobRequestModal({
+  isOpen,
+  onClose,
+  worker,
+  selectedLocation,
+  onSuccess,
+  onRequireAuth,
+}: JobRequestModalProps) {
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [description, setDescription] = useState('');
+  const [address, setAddress] = useState(
+    selectedLocation?.formattedAddress || selectedLocation?.displayName || ''
+  );
+  const [preferredDate, setPreferredDate] = useState(new Date().toISOString().split('T')[0]);
+  const [preferredTime, setPreferredTime] = useState('10:00 AM');
+  const [urgency, setUrgency] = useState<'IMMEDIATE' | 'TODAY' | 'SCHEDULED'>('TODAY');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedLocation) {
+      setAddress(selectedLocation.formattedAddress || selectedLocation.displayName || '');
+    }
+  }, [selectedLocation]);
+
+  useEffect(() => {
+    if (worker && worker.primaryCategory) {
+      // Fetch services for worker's category
+      fetch('/api/categories')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.categories) {
+            const match = data.categories.find(
+              (c: any) => c.slug === worker.primaryCategory?.slug
+            );
+            if (match && match.services) {
+              setServices(match.services);
+              if (match.services.length > 0) {
+                setSelectedServiceId(match.services[0].id);
+              }
+            }
+          }
+        })
+        .catch(console.error);
+    }
+  }, [worker]);
+
+  if (!isOpen || !worker) return null;
+
+  const selectedService = services.find((s) => s.id === selectedServiceId);
+  const estimatedAmount = selectedService?.basePrice || worker.hourlyRate || 350;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/jobs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workerId: worker.id,
+          categoryId: worker.primaryCategory ? (worker.primaryCategory as any).id || (services[0]?.categoryId) : undefined,
+          serviceId: selectedServiceId,
+          description,
+          formattedAddress: address,
+          city: selectedLocation.city || '',
+          postalCode: selectedLocation.postalCode,
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          preferredDate,
+          preferredTime,
+          urgency,
+          budget: estimatedAmount,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        onRequireAuth();
+        return;
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to request worker');
+      }
+
+      onSuccess(data.jobId);
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Modal Header */}
+        <div className="bg-navy-800 p-5 text-white flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-brand-400 tracking-wider uppercase">
+              On-Demand Booking
+            </span>
+            <h2 className="text-lg font-black text-white">Request {worker.fullName}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-navy-700 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Worker Snapshot */}
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-800">{worker.primaryCategory?.name}</span>
+            <span>•</span>
+            <span className="text-slate-600 font-medium">{worker.formattedDistance || 'Nearby'}</span>
+          </div>
+          <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+            Verified Professional
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Service Selection */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Select Specific Work / Service
+            </label>
+            <select
+              value={selectedServiceId}
+              onChange={(e) => setSelectedServiceId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white"
+            >
+              {services.map((svc) => (
+                <option key={svc.id} value={svc.id}>
+                  {svc.name} — ₹{svc.basePrice} ({svc.priceUnit})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Service Address & Landmark
+            </label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                required
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="House / Flat no., Society / Building, Landmark"
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Schedule Date & Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Preferred Date
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="date"
+                  required
+                  value={preferredDate}
+                  onChange={(e) => setPreferredDate(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Time Slot
+              </label>
+              <div className="relative">
+                <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <select
+                  value={preferredTime}
+                  onChange={(e) => setPreferredTime(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white"
+                >
+                  <option value="09:00 AM">09:00 AM - 11:00 AM</option>
+                  <option value="11:00 AM">11:00 AM - 01:00 PM</option>
+                  <option value="02:00 PM">02:00 PM - 04:00 PM</option>
+                  <option value="04:00 PM">04:00 PM - 06:00 PM</option>
+                  <option value="06:00 PM">06:00 PM - 08:00 PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Urgency */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Urgency
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setUrgency('TODAY')}
+                className={`py-2 text-xs font-bold rounded-xl border text-center transition-colors ${
+                  urgency === 'TODAY'
+                    ? 'border-brand-600 bg-brand-50 text-brand-800'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setUrgency('IMMEDIATE')}
+                className={`py-2 text-xs font-bold rounded-xl border text-center transition-colors ${
+                  urgency === 'IMMEDIATE'
+                    ? 'border-brand-600 bg-brand-50 text-brand-800'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Immediate / Urgent
+              </button>
+              <button
+                type="button"
+                onClick={() => setUrgency('SCHEDULED')}
+                className={`py-2 text-xs font-bold rounded-xl border text-center transition-colors ${
+                  urgency === 'SCHEDULED'
+                    ? 'border-brand-600 bg-brand-50 text-brand-800'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Schedule Later
+              </button>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Work Requirement Details
+            </label>
+            <textarea
+              rows={2}
+              required
+              placeholder="Describe the issue or requirements (e.g. leaking kitchen tap pipe, need washer replaced)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+            />
+          </div>
+
+          {/* Pricing Summary */}
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-700 block">Estimated Service Fee</span>
+              <span className="text-[11px] text-slate-500">Pay securely only after work is done</span>
+            </div>
+            <span className="text-lg font-black text-navy-900">
+              ₹{estimatedAmount}
+            </span>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading || !description.trim()}
+            className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+          >
+            {loading ? 'Sending Request to Worker...' : 'Confirm & Request Worker'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,551 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String             @id @default(uuid())
+  phone            String             @unique
+  email            String?            @unique
+  passwordHash     String?
+  role             String             @default("CUSTOMER")
+  status           String             @default("ACTIVE")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  adminUser        AdminUser?
+  businessProfile  BusinessProfile?
+  customerProfile  CustomerProfile?
+  disputesRaised   Dispute[]
+  jobStatusHistory JobStatusHistory[]
+  messagesSent     Message[]
+  notifications    Notification[]
+  reportsReceived  Report[]           @relation("ReportedUser")
+  reportsFiled     Report[]
+  sessions         Session[]
+  workerProfile    WorkerProfile?
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CustomerProfile {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  fullName    String
+  email       String?
+  avatarUrl   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  addresses   Address[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs        Job[]
+  jobRequests JobRequest[]
+  reviews     Review[]
+}
+
+model WorkerProfile {
+  id                String                       @id @default(uuid())
+  userId            String                       @unique
+  fullName          String
+  dateOfBirth       DateTime?
+  gender            String?
+  avatarUrl         String?
+  bio               String?
+  experienceYears   Int                          @default(1)
+  primaryCategoryId String?
+  status            String                       @default("ONBOARDING")
+  isAvailable       Boolean                      @default(true)
+  autoAccept        Boolean                      @default(false)
+  latitude          Float?
+  longitude         Float?
+  city              String?
+  state             String?
+  postalCode        String?
+  serviceRadiusKm   Float                        @default(15.0)
+  hourlyRate        Float?
+  identityVerified  Boolean                      @default(false)
+  bankVerified      Boolean                      @default(false)
+  skillVerified     Boolean                      @default(false)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+  aadhaarVerif      AadhaarVerification?
+  bankVerif         BankVerification?
+  bulkApplications  BulkRequirementApplication[]
+  jobs              Job[]
+  payouts           Payout[]
+  reviews           Review[]
+  verifications     Verification[]
+  availability      WorkerAvailability[]
+  documents         WorkerDocument[]
+  primaryCategory   Category?                    @relation("PrimaryCategory", fields: [primaryCategoryId], references: [id])
+  user              User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceAreas      WorkerServiceArea[]
+  skills            WorkerSkill[]
+}
+
+model BusinessProfile {
+  id               String            @id @default(uuid())
+  userId           String            @unique
+  companyName      String
+  gstin            String?
+  pan              String?
+  contactPerson    String
+  contactPhone     String
+  contactEmail     String?
+  address          String?
+  isVerified       Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  bulkRequirements BulkRequirement[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminUser {
+  id          String     @id @default(uuid())
+  userId      String     @unique
+  permissions String     @default("ALL")
+  department  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs   AuditLog[]
+}
+
+model Category {
+  id               String            @id @default(uuid())
+  slug             String            @unique
+  name             String
+  nameHi           String?
+  description      String?
+  iconUrl          String?
+  isActive         Boolean           @default(true)
+  sortOrder        Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  bulkRequirements BulkRequirement[]
+  jobRequests      JobRequest[]
+  services         Service[]
+  subcategories    Subcategory[]
+  workerProfiles   WorkerProfile[]   @relation("PrimaryCategory")
+  workerSkills     WorkerSkill[]
+}
+
+model Subcategory {
+  id          String    @id @default(uuid())
+  categoryId  String
+  name        String
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  services    Service[]
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Service {
+  id            String        @id @default(uuid())
+  categoryId    String
+  subcategoryId String?
+  name          String
+  slug          String        @unique
+  description   String?
+  basePrice     Float         @default(300.0)
+  priceUnit     String        @default("per job")
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  jobs          Job[]
+  jobRequests   JobRequest[]
+  subcategory   Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  workerSkills  WorkerSkill[]
+}
+
+model WorkerSkill {
+  id              String        @id @default(uuid())
+  workerId        String
+  categoryId      String
+  serviceId       String?
+  yearsExperience Int           @default(1)
+  isVerified      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  service         Service?      @relation(fields: [serviceId], references: [id])
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  worker          WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model WorkerAvailability {
+  id        String        @id @default(uuid())
+  workerId  String
+  dayOfWeek Int
+  startTime String        @default("08:00")
+  endTime   String        @default("20:00")
+  isWorking Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  worker    WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model WorkerServiceArea {
+  id         String        @id @default(uuid())
+  workerId   String
+  city       String
+  areaName   String
+  postalCode String?
+  createdAt  DateTime      @default(now())
+  worker     WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id               String          @id @default(uuid())
+  customerId       String
+  label            String          @default("Home")
+  contactName      String?
+  contactPhone     String?
+  formattedAddress String
+  landmark         String?
+  city             String
+  state            String
+  postalCode       String
+  latitude         Float
+  longitude        Float
+  isDefault        Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  customer         CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobRequests      JobRequest[]
+}
+
+model Verification {
+  id                String        @id @default(uuid())
+  workerId          String
+  type              String
+  provider          String        @default("CASHFREE")
+  providerReference String?
+  status            String        @default("PENDING")
+  failureReason     String?
+  metadata          String?
+  verifiedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  worker            WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model AadhaarVerification {
+  id            String        @id @default(uuid())
+  workerId      String        @unique
+  refId         String?
+  maskedAadhaar String?
+  nameOnAadhaar String?
+  dob           String?
+  gender        String?
+  status        String        @default("PENDING")
+  failureReason String?
+  verifiedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  worker        WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model BankVerification {
+  id                String        @id @default(uuid())
+  workerId          String        @unique
+  refId             String?
+  maskedAccountNo   String
+  ifsc              String
+  accountHolderName String
+  nameMatchScore    Float?
+  bankName          String?
+  status            String        @default("PENDING")
+  failureReason     String?
+  verifiedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  worker            WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model WorkerDocument {
+  id              String        @id @default(uuid())
+  workerId        String
+  documentType    String
+  fileUrl         String
+  fileName        String
+  mimeType        String
+  fileSize        Int
+  status          String        @default("PENDING")
+  rejectionReason String?
+  verifiedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  worker          WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model JobRequest {
+  id               String          @id @default(uuid())
+  customerId       String
+  categoryId       String
+  serviceId        String?
+  addressId        String?
+  description      String
+  formattedAddress String
+  city             String?
+  postalCode       String?
+  latitude         Float
+  longitude        Float
+  preferredDate    String
+  preferredTime    String
+  urgency          String          @default("STANDARD")
+  budget           Float?
+  status           String          @default("OPEN")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  job              Job?
+  address          Address?        @relation(fields: [addressId], references: [id])
+  service          Service?        @relation(fields: [serviceId], references: [id])
+  category         Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  customer         CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id                 String             @id @default(uuid())
+  jobRequestId       String             @unique
+  customerId         String
+  workerId           String
+  serviceId          String
+  status             String             @default("REQUESTED")
+  scheduledStartTime DateTime?
+  scheduledEndTime   DateTime?
+  actualStartTime    DateTime?
+  actualEndTime      DateTime?
+  baseAmount         Float              @default(350.0)
+  finalAmount        Float              @default(350.0)
+  cancellationReason String?
+  cancelInitiatedBy  String?
+  rejectionReason    String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  conversation       Conversation?
+  disputes           Dispute[]
+  service            Service            @relation(fields: [serviceId], references: [id])
+  worker             WorkerProfile      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  customer           CustomerProfile    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobRequest         JobRequest         @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  history            JobStatusHistory[]
+  payment            Payment?
+  review             Review?
+  transaction        Transaction?
+}
+
+model JobStatusHistory {
+  id              String   @id @default(uuid())
+  jobId           String
+  fromStatus      String
+  toStatus        String
+  changedByUserId String?
+  note            String?
+  createdAt       DateTime @default(now())
+  changedByUser   User?    @relation(fields: [changedByUserId], references: [id])
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  jobId         String    @unique
+  customerId    String
+  workerId      String
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  messages      Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  senderRole     String
+  content        String
+  mediaUrl       String?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id               String          @id @default(uuid())
+  jobId            String          @unique
+  customerId       String
+  workerId         String
+  rating           Int
+  comment          String?
+  categoryFeedback String?
+  isModerated      Boolean         @default(false)
+  isHidden         Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  worker           WorkerProfile   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  customer         CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  job              Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                 String       @id @default(uuid())
+  jobId              String       @unique
+  razorpayOrderId    String?      @unique
+  razorpayPaymentId  String?      @unique
+  razorpaySignature  String?
+  amount             Float
+  currency           String       @default("INR")
+  status             String       @default("CREATED")
+  method             String?
+  failureCode        String?
+  failureDescription String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  job                Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  transaction        Transaction?
+}
+
+model Transaction {
+  id               String   @id @default(uuid())
+  jobId            String   @unique
+  paymentId        String?  @unique
+  grossAmount      Float
+  platformFee      Float    @default(0.0)
+  taxAmount        Float    @default(0.0)
+  workerAmount     Float
+  paymentStatus    String   @default("CAPTURED")
+  settlementStatus String   @default("PENDING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  payment          Payment? @relation(fields: [paymentId], references: [id])
+  job              Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Payout {
+  id            String        @id @default(uuid())
+  workerId      String
+  amount        Float
+  currency      String        @default("INR")
+  status        String        @default("PENDING")
+  referenceId   String?
+  failureReason String?
+  processedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  worker        WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  linkUrl   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id              String   @id @default(uuid())
+  reporterUserId  String
+  reportedUserId  String
+  jobId           String?
+  reason          String
+  description     String
+  status          String   @default("PENDING")
+  resolutionNotes String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  reported        User     @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reporter        User     @relation(fields: [reporterUserId], references: [id], onDelete: Cascade)
+}
+
+model Dispute {
+  id                String    @id @default(uuid())
+  jobId             String
+  initiatorUserId   String
+  reason            String
+  evidence          String?
+  status            String    @default("OPEN")
+  resolution        String?
+  resolvedByAdminId String?
+  resolvedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  initiator         User      @relation(fields: [initiatorUserId], references: [id], onDelete: Cascade)
+  job               Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id            String     @id @default(uuid())
+  adminId       String?
+  action        String
+  targetType    String
+  targetId      String?
+  previousState String?
+  newState      String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+  admin         AdminUser? @relation(fields: [adminId], references: [id])
+}
+
+model BulkRequirement {
+  id                      String                       @id @default(uuid())
+  businessId              String
+  categoryId              String
+  title                   String
+  workersNeeded           Int                          @default(1)
+  experienceRequiredYears Int                          @default(1)
+  location                String
+  city                    String
+  state                   String
+  postalCode              String?
+  startDate               DateTime
+  endDate                 DateTime
+  dailyHours              Float                        @default(8.0)
+  budgetPerWorker         Float
+  status                  String                       @default("OPEN")
+  description             String
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  category                Category                     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  business                BusinessProfile              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  applications            BulkRequirementApplication[]
+}
+
+model BulkRequirementApplication {
+  id            String          @id @default(uuid())
+  requirementId String
+  workerId      String
+  status        String          @default("APPLIED")
+  appliedAt     DateTime        @default(now())
+  worker        WorkerProfile   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  requirement   BulkRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, workerId])
+}
+
+model PlatformConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
