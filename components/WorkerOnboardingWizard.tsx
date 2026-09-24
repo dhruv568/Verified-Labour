@@ -227,6 +227,11 @@ export default function WorkerOnboardingWizard({
       return;
     }
 
+    if (aadhaarVerified) {
+      setSuccessMsg('Aadhaar is already verified.');
+      return;
+    }
+
     setError(null);
     setLoading(true);
     try {
@@ -242,6 +247,13 @@ export default function WorkerOnboardingWizard({
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Could not initiate Aadhaar OTP');
 
+      if (data.alreadyVerified) {
+        setAadhaarVerified(true);
+        setMaskedAadhaar(data.maskedAadhaar || 'XXXXXXXX8291');
+        setSuccessMsg(data.message || 'Aadhaar identity is already verified.');
+        return;
+      }
+
       setAadhaarRefId(data.refId);
       setSuccessMsg('Cashfree Secure ID OTP sent! (Use sandbox test code: 123456)');
     } catch (err: any) {
@@ -254,6 +266,8 @@ export default function WorkerOnboardingWizard({
   // Cashfree Aadhaar Verify
   const handleVerifyAadhaar = async () => {
     const workerId = sessionUser?.workerProfile?.id;
+    if (aadhaarVerified) return;
+
     setError(null);
     setLoading(true);
     try {
@@ -283,6 +297,10 @@ export default function WorkerOnboardingWizard({
   const handleVerifyBank = async () => {
     const workerId = sessionUser?.workerProfile?.id;
     if (!workerId) return;
+    if (bankVerified) {
+      setSuccessMsg('Bank account is already verified.');
+      return;
+    }
 
     setError(null);
     setLoading(true);
@@ -754,6 +772,29 @@ export default function WorkerOnboardingWizard({
                 >
                   Verify Aadhaar OTP with Cashfree
                 </Button>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAadhaarRefId('');
+                      setAadhaarOtp('');
+                      setError(null);
+                    }}
+                    className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Change Aadhaar Number</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleStartAadhaar}
+                    className="text-brand-700 font-bold hover:underline disabled:opacity-50"
+                  >
+                    Resend OTP
+                  </button>
+                </div>
               </div>
             )}
 

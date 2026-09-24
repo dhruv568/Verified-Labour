@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     description: 'Book skilled and verified workers near you with a simple, trusted on-demand experience.',
     type: 'website',
   },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 
@@ -40,6 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
         <LocationProvider>

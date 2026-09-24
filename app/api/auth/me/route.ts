@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
         email: user.email,
         role: user.role,
         status: user.status,
+        isPhoneVerified: user.isPhoneVerified,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,

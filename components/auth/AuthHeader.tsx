@@ -1,14 +1,15 @@
 'use client';
 
 import React from 'react';
-import { X, CheckCircle2 } from 'lucide-react';
+import { X } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 interface AuthHeaderProps {
   title: string;
   subtitle?: string;
   onClose: () => void;
-  tab?: 'otp' | 'password';
-  onTabChange?: (tab: 'otp' | 'password') => void;
+  tab?: 'login' | 'register' | 'otp';
+  onTabChange?: (tab: 'login' | 'register') => void;
   showTabs?: boolean;
 }
 
@@ -16,7 +17,7 @@ export default function AuthHeader({
   title,
   subtitle,
   onClose,
-  tab = 'otp',
+  tab = 'login',
   onTabChange,
   showTabs = true,
 }: AuthHeaderProps) {
@@ -31,11 +32,8 @@ export default function AuthHeader({
         <X className="w-5 h-5" />
       </button>
 
-      <div className="flex items-center gap-2 mb-1.5 pr-10">
-        <span className="text-xl font-black tracking-tight">
-          Verified<span className="text-brand-400">Labour</span>
-        </span>
-        <CheckCircle2 className="w-5 h-5 text-brand-400 stroke-[2.5]" />
+      <div className="mb-2.5 pr-10">
+        <Logo variant="auth" />
       </div>
 
       <h2 className="text-base font-bold text-white pr-8">{title}</h2>
@@ -45,25 +43,25 @@ export default function AuthHeader({
         <div className="flex gap-2 mt-4 bg-navy-950/70 p-1 rounded-xl text-xs font-semibold">
           <button
             type="button"
-            onClick={() => onTabChange('otp')}
+            onClick={() => onTabChange('login')}
             className={`flex-1 min-h-[40px] py-2 rounded-lg transition-all flex items-center justify-center ${
-              tab === 'otp'
+              tab === 'login'
                 ? 'bg-white text-navy-900 shadow-sm font-bold'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Mobile OTP
+            Login
           </button>
           <button
             type="button"
-            onClick={() => onTabChange('password')}
+            onClick={() => onTabChange('register')}
             className={`flex-1 min-h-[40px] py-2 rounded-lg transition-all flex items-center justify-center ${
-              tab === 'password'
+              tab === 'register'
                 ? 'bg-white text-navy-900 shadow-sm font-bold'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Password Login
+            Register
           </button>
         </div>
       )}

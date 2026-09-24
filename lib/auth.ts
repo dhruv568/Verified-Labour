@@ -13,7 +13,20 @@ const TOKEN_COOKIE_NAME = 'vl_auth_token';
 export interface AuthPayload {
   userId: string;
   phone: string;
+  email?: string;
   role: 'CUSTOMER' | 'WORKER' | 'BUSINESS' | 'ADMIN';
+}
+
+export function normalizePhone(rawPhone: string): string {
+  let digits = rawPhone.replace(/[\s\-\(\)]/g, '');
+  if (digits.startsWith('+91')) {
+    digits = digits.substring(3);
+  } else if (digits.startsWith('91') && digits.length === 12) {
+    digits = digits.substring(2);
+  } else if (digits.startsWith('0') && digits.length === 11) {
+    digits = digits.substring(1);
+  }
+  return `+91${digits}`;
 }
 
 export async function hashPassword(password: string): Promise<string> {

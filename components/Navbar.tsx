@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  CheckCircle2,
-  HardHat,
   Menu,
   X,
   Shield,
@@ -15,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Locale, getTranslation } from '@/lib/translations';
 import LocationSelector from './LocationSelector';
+import Logo from '@/components/Logo';
 
 interface NavbarProps {
   currentLocale?: Locale;
@@ -78,23 +77,9 @@ export default function Navbar({
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Brand Logo with Helmet & Verified Badge */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
-            <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-400 text-navy-950 shadow-xs">
-              <HardHat className="w-5 h-5 sm:w-6 sm:h-6 text-navy-950" />
-              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs">
-                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0B9B5A] fill-[#0B9B5A] text-white" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center text-xl sm:text-2xl font-black tracking-tight leading-none">
-                <span className="text-[#0F2A5F]">Verified</span>
-                <span className="text-[#0B9B5A] ml-1">Labour</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 tracking-tight mt-0.5 max-w-[170px] sm:max-w-none truncate">
-                Real People. Real Skills. Real Support.
-              </span>
-            </div>
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
+            <Logo variant="header" priority />
           </Link>
 
           {/* Desktop Nav Links */}

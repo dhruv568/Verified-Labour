@@ -290,13 +290,14 @@ async function main() {
   const adminPasswordHash = await bcrypt.hash('Admin@123456', 10);
   const adminUser = await prisma.user.upsert({
     where: { phone: '+919999999999' },
-    update: { role: 'ADMIN', status: 'ACTIVE' },
+    update: { role: 'ADMIN', status: 'ACTIVE', isPhoneVerified: true },
     create: {
       phone: '+919999999999',
       email: 'admin@verifiedlabour.com',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       status: 'ACTIVE',
+      isPhoneVerified: true,
       adminUser: {
         create: {
           permissions: 'ALL',
@@ -311,13 +312,14 @@ async function main() {
   const customerPasswordHash = await bcrypt.hash('Customer@123', 10);
   const customerUser = await prisma.user.upsert({
     where: { phone: '+919876543210' },
-    update: { role: 'CUSTOMER', status: 'ACTIVE' },
+    update: { role: 'CUSTOMER', status: 'ACTIVE', isPhoneVerified: true },
     create: {
       phone: '+919876543210',
       email: 'rajesh.sharma@example.com',
       passwordHash: customerPasswordHash,
       role: 'CUSTOMER',
       status: 'ACTIVE',
+      isPhoneVerified: true,
       customerProfile: {
         create: {
           fullName: 'Rajesh Sharma',
@@ -368,13 +370,14 @@ async function main() {
   const businessPasswordHash = await bcrypt.hash('Business@123', 10);
   const businessUser = await prisma.user.upsert({
     where: { phone: '+919888877777' },
-    update: { role: 'BUSINESS', status: 'ACTIVE' },
+    update: { role: 'BUSINESS', status: 'ACTIVE', isPhoneVerified: true },
     create: {
       phone: '+919888877777',
       email: 'operations@suratinfra.com',
       passwordHash: businessPasswordHash,
       role: 'BUSINESS',
       status: 'ACTIVE',
+      isPhoneVerified: true,
       businessProfile: {
         create: {
           companyName: 'Surat Infrastructure & Builders Pvt Ltd',
@@ -420,6 +423,7 @@ async function main() {
   const testWorkers = [
     {
       phone: '+919111122221',
+      email: 'ramesh.patel@example.com',
       fullName: 'Ramesh Patel',
       categorySlug: 'plumbing',
       bio: 'Master Plumber with 8 years of residential and commercial plumbing experience. Certified in modern CPVC and brass fittings.',
@@ -440,6 +444,7 @@ async function main() {
     },
     {
       phone: '+919111122222',
+      email: 'suresh.kumar@example.com',
       fullName: 'Suresh Kumar Prajapati',
       categorySlug: 'electrical',
       bio: 'Licensed electrician specializing in home wiring, fuse/MCB panels, inverter setup, and emergency power issues. Quick response guaranteed.',
@@ -460,6 +465,7 @@ async function main() {
     },
     {
       phone: '+919111122223',
+      email: 'dilip.suthar@example.com',
       fullName: 'Dilip Suthar',
       categorySlug: 'carpenter',
       bio: 'Skilled carpenter with 10+ years experience in customized wooden doors, modular kitchen cabinets, hinge replacements, and lock repair.',
@@ -480,6 +486,7 @@ async function main() {
     },
     {
       phone: '+919111122224',
+      email: 'kamlesh.solanki@example.com',
       fullName: 'Kamlesh Solanki',
       categorySlug: 'painting',
       bio: 'Professional wall painter. Expertise in Asian Paints Royal shine, texture work, waterproof putty, and ceiling damping repair.',
@@ -500,6 +507,7 @@ async function main() {
     },
     {
       phone: '+919111122225',
+      email: 'sunita.rathod@example.com',
       fullName: 'Sunita Ben Rathod',
       categorySlug: 'cleaning',
       bio: 'Meticulous deep cleaner for kitchens, bathrooms, and full residences. Trained in professional sanitization and eco-friendly products.',
@@ -524,12 +532,14 @@ async function main() {
     const category = categoryMap[w.categorySlug];
     const user = await prisma.user.upsert({
       where: { phone: w.phone },
-      update: { role: 'WORKER', status: 'ACTIVE' },
+      update: { role: 'WORKER', status: 'ACTIVE', email: w.email, isPhoneVerified: true },
       create: {
         phone: w.phone,
+        email: w.email,
         passwordHash: defaultWorkerPass,
         role: 'WORKER',
         status: 'ACTIVE',
+        isPhoneVerified: true,
         workerProfile: {
           create: {
             fullName: w.fullName,

@@ -2,11 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowRight,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Users,
+  HardHat,
+  CheckCircle2,
+  Lock,
+  Mail,
+  Phone as PhoneIcon,
+  User as UserIcon,
+  Smartphone,
+} from 'lucide-react';
 import AuthHeader from './AuthHeader';
-import PhoneStep from './PhoneStep';
 import OtpStep from './OtpStep';
-import AccountTypeStep from './AccountTypeStep';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
@@ -18,7 +30,7 @@ export interface AuthModalProps {
   onSuccess?: (user: any) => void;
 }
 
-type AuthStep = 'PHONE' | 'OTP' | 'ROLE_SELECTION';
+type TabType = 'login' | 'register' | 'otp';
 
 export default function AuthModal({
   isOpen,
@@ -29,35 +41,50 @@ export default function AuthModal({
 }: AuthModalProps) {
   const router = useRouter();
 
-  // Tab & Step states
-  const [tab, setTab] = useState<'otp' | 'password'>('otp');
-  const [step, setStep] = useState<AuthStep>('PHONE');
+  // Tab & Flow states
+  const [tab, setTab] = useState<TabType>(initialMode);
   const [role, setRole] = useState<'CUSTOMER' | 'WORKER' | 'BUSINESS'>(defaultRole);
 
-  // OTP flow states
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [resendTimer, setResendTimer] = useState(0);
+  // Login form states
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  // Password flow states
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  // Registration form states
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
+
+  // Field errors for inline validation
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+  // Mobile OTP fallback flow states
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpStep, setOtpStep] = useState<'PHONE' | 'OTP'>('PHONE');
+  const [resendTimer, setResendTimer] = useState(0);
 
   // Async states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Reset state when modal is opened or closed
+  // Reset state when modal opens or initialMode changes
   useEffect(() => {
     if (isOpen) {
-      setStep('PHONE');
-      setOtp('');
+      setTab(initialMode);
+      setRole(defaultRole === 'WORKER' ? 'WORKER' : 'CUSTOMER');
       setError(null);
       setSuccessMsg(null);
-      setRole(defaultRole);
+      setFieldErrors({});
+      setOtpStep('PHONE');
+      setOtpCode('');
     }
-  }, [isOpen, defaultRole]);
+  }, [isOpen, initialMode, defaultRole]);
 
   // Resend OTP countdown timer
   useEffect(() => {
@@ -70,7 +97,150 @@ export default function AuthModal({
 
   if (!isOpen) return null;
 
-  // Send OTP
+  // Validation functions
+  const validateEmail = (val: string): string | null => {
+    const trimmed = val.trim();
+    if (!trimmed) return 'Email address is required';
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmed)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  };
+
+  const validatePhone = (val: string): string | null => {
+    const digits = val.replace(/\D/g, '');
+    if (!digits) return 'Phone number is required';
+    if (digits.length !== 10) return 'Mobile number must be exactly 10 digits';
+    if (!/^[6-9]/.test(digits)) return 'Mobile number must start with 6, 7, 8, or 9';
+    return null;
+  };
+
+  const validatePassword = (val: string, isRegister = false): string | null => {
+    if (!val) return 'Password is required';
+    if (isRegister) {
+      if (val.length < 8) return 'Password must be at least 8 characters long';
+      if (!/[A-Za-z]/.test(val)) return 'Password must contain at least one letter';
+      if (!/[0-9]/.test(val)) return 'Password must contain at least one number';
+    }
+    return null;
+  };
+
+  const validateName = (val: string): string | null => {
+    const trimmed = val.trim();
+    if (!trimmed) return 'Full name is required';
+    if (trimmed.length < 2) return 'Full name must be at least 2 characters';
+    if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) {
+      return 'Name should only contain letters, spaces, dots, or hyphens';
+    }
+    return null;
+  };
+
+  // Handle Login: Email + Password
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+
+    // Validate inputs
+    const errors: { [key: string]: string } = {};
+    const emailErr = validateEmail(loginEmail);
+    if (emailErr) errors.loginEmail = emailErr;
+
+    const passErr = validatePassword(loginPassword, false);
+    if (passErr) errors.loginPassword = passErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: loginEmail.trim(),
+          password: loginPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Login failed. Please check your credentials.');
+      }
+
+      completeLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Registration: Name, Email, Phone Number + Password
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+
+    // Validate all required fields
+    const errors: { [key: string]: string } = {};
+
+    const nameErr = validateName(regName);
+    if (nameErr) errors.regName = nameErr;
+
+    const emailErr = validateEmail(regEmail);
+    if (emailErr) errors.regEmail = emailErr;
+
+    const phoneErr = validatePhone(regPhone);
+    if (phoneErr) errors.regPhone = phoneErr;
+
+    const passErr = validatePassword(regPassword, true);
+    if (passErr) errors.regPassword = passErr;
+
+    if (regPassword !== regConfirmPassword) {
+      errors.regConfirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName.trim(),
+          email: regEmail.trim(),
+          phone: regPhone.trim(),
+          password: regPassword,
+          role,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Registration failed. Please check your details.');
+      }
+
+      completeLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Send OTP (Fallback)
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
@@ -80,7 +250,7 @@ export default function AuthModal({
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: otpPhone }),
       });
       const data = await res.json();
 
@@ -88,7 +258,7 @@ export default function AuthModal({
         throw new Error(data.error || 'Failed to dispatch OTP code');
       }
 
-      setStep('OTP');
+      setOtpStep('OTP');
       setResendTimer(60);
       setSuccessMsg(data.message || 'OTP code sent successfully!');
     } catch (err: any) {
@@ -98,7 +268,7 @@ export default function AuthModal({
     }
   };
 
-  // Verify OTP
+  // Handle Verify OTP (Fallback)
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -109,8 +279,8 @@ export default function AuthModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone,
-          otp,
+          phone: otpPhone,
+          otp: otpCode,
           role,
         }),
       });
@@ -120,12 +290,6 @@ export default function AuthModal({
         throw new Error(data.error || 'Invalid OTP code');
       }
 
-      // If user is brand new and didn't have an explicit role set:
-      if (data.isNewUser && defaultRole === 'CUSTOMER' && initialMode === 'register') {
-        setStep('ROLE_SELECTION');
-        return;
-      }
-
       completeLogin(data.user);
     } catch (err: any) {
       setError(err.message);
@@ -134,64 +298,7 @@ export default function AuthModal({
     }
   };
 
-  // Role selection for new user
-  const handleRoleSelection = async (selectedRole: 'CUSTOMER' | 'WORKER', fullName: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Re-call verify-otp with the chosen role to ensure workerProfile or customerProfile is set up
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          otp: otp || '123456',
-          role: selectedRole,
-          fullName: fullName || undefined,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to initialize account');
-      }
-
-      completeLogin(data.user);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Password Login
-  const handlePasswordLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Login failed. Please verify credentials.');
-      }
-
-      completeLogin(data.user);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Finish auth and route cleanly
+  // Complete Login and Route Cleanly
   const completeLogin = (user: any) => {
     onSuccess?.(user);
     onClose();
@@ -199,7 +306,6 @@ export default function AuthModal({
     if (user.role === 'ADMIN') {
       router.push('/admin');
     } else if (user.role === 'WORKER') {
-      // If worker onboarding is pending, take them directly to the onboarding wizard
       if (user.workerProfile?.status === 'ONBOARDING' || !user.workerProfile?.primaryCategoryId) {
         router.push('/worker/onboarding');
       } else {
@@ -214,96 +320,109 @@ export default function AuthModal({
     router.refresh();
   };
 
+  // Demo user quick login autofill helper
+  const fillDemoCredentials = (email: string, pass: string) => {
+    setLoginEmail(email);
+    setLoginPassword(pass);
+    setFieldErrors({});
+    setError(null);
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-none flex flex-col">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[92vh] flex flex-col">
         {/* Header */}
         <AuthHeader
           title={
-            step === 'ROLE_SELECTION'
-              ? 'Choose Account Type'
-              : tab === 'password'
-              ? 'Login with Password'
-              : initialMode === 'register'
+            tab === 'register'
               ? 'Create your Verified Labour account'
+              : tab === 'otp'
+              ? 'Sign In with Mobile OTP'
               : 'Login to Verified Labour'
           }
           subtitle="Aadhaar & Bank Verified Skilled Labour Marketplace"
           onClose={onClose}
-          tab={tab}
+          tab={tab === 'register' ? 'register' : 'login'}
           onTabChange={(newTab) => {
             setTab(newTab);
             setError(null);
+            setSuccessMsg(null);
+            setFieldErrors({});
           }}
-          showTabs={step === 'PHONE'}
+          showTabs={tab !== 'otp'}
         />
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto">
-          {tab === 'otp' ? (
-            <>
-              {step === 'PHONE' && (
-                <PhoneStep
-                  phone={phone}
-                  onPhoneChange={setPhone}
-                  onSubmit={handleSendOtp}
-                  loading={loading}
-                  mode={initialMode}
-                  error={error}
-                />
-              )}
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+          {/* Global Error Banner */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
+            </div>
+          )}
 
-              {step === 'OTP' && (
-                <OtpStep
-                  phone={phone}
-                  otp={otp}
-                  onOtpChange={setOtp}
-                  onSubmit={handleVerifyOtp}
-                  onChangePhone={() => {
-                    setStep('PHONE');
-                    setOtp('');
-                    setError(null);
+          {/* Global Success Banner */}
+          {successMsg && (
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start gap-2 animate-in fade-in duration-150">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{successMsg}</span>
+            </div>
+          )}
+
+          {/* TAB 1: LOGIN FLOW (Email + Password) */}
+          {tab === 'login' && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  required
+                  autoFocus
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="name@example.com"
+                  value={loginEmail}
+                  error={fieldErrors.loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    if (fieldErrors.loginEmail) {
+                      setFieldErrors((prev) => ({ ...prev, loginEmail: '' }));
+                    }
                   }}
-                  onResendOtp={handleSendOtp}
-                  resendTimer={resendTimer}
-                  loading={loading}
-                  error={error}
+                  icon={<Mail className="w-4 h-4" />}
                 />
-              )}
+              </div>
 
-              {step === 'ROLE_SELECTION' && (
-                <AccountTypeStep
-                  onSelectRole={handleRoleSelection}
-                  loading={loading}
-                  defaultRole={defaultRole === 'WORKER' ? 'WORKER' : 'CUSTOMER'}
-                />
-              )}
-            </>
-          ) : (
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                  <span>{error}</span>
+              <div>
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showLoginPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={loginPassword}
+                    error={fieldErrors.loginPassword}
+                    onChange={(e) => {
+                      setLoginPassword(e.target.value);
+                      if (fieldErrors.loginPassword) {
+                        setFieldErrors((prev) => ({ ...prev, loginPassword: '' }));
+                      }
+                    }}
+                    icon={<Lock className="w-4 h-4" />}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-[29px] text-slate-400 hover:text-slate-600 transition-colors p-1"
+                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-              )}
-
-              <Input
-                label="Mobile Number or Email"
-                required
-                placeholder="+919999999999 or admin@verifiedlabour.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-
-              <Input
-                label="Password"
-                type="password"
-                required
-                placeholder="Enter your account password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              </div>
 
               <Button
                 type="submit"
@@ -313,16 +432,367 @@ export default function AuthModal({
                 isLoading={loading}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
-                {loading ? 'Authenticating...' : 'Sign In with Password'}
+                {loading ? 'Authenticating...' : 'Sign In with Email'}
               </Button>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
-                <p className="font-bold text-slate-800">Demo Passwords:</p>
-                <p>• Admin: <span className="font-mono text-slate-800">+919999999999</span> / <span className="font-mono text-slate-800">Admin@123456</span></p>
-                <p>• Customer: <span className="font-mono text-slate-800">+919876543210</span> / <span className="font-mono text-slate-800">Customer@123</span></p>
-                <p>• Plumber Worker: <span className="font-mono text-slate-800">+919111122221</span> / <span className="font-mono text-slate-800">Worker@123</span></p>
+              {/* Option to switch to Mobile OTP */}
+              <div className="pt-1 flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('otp');
+                    setOtpStep('PHONE');
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="text-slate-600 hover:text-[#1264D6] font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Log in with Mobile OTP instead</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('register');
+                    setError(null);
+                    setFieldErrors({});
+                  }}
+                  className="text-[#1264D6] font-bold hover:underline"
+                >
+                  Create an account
+                </button>
+              </div>
+
+              {/* Demo Credentials Box */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5 mt-2">
+                <p className="font-bold text-slate-800 flex items-center justify-between">
+                  <span>Demo Accounts (click to pre-fill):</span>
+                </p>
+                <div className="space-y-1 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => fillDemoCredentials('admin@verifiedlabour.com', 'Admin@123456')}
+                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
+                  >
+                    <span className="font-medium text-slate-700">Admin</span>
+                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">admin@verifiedlabour.com</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillDemoCredentials('rajesh.sharma@example.com', 'Customer@123')}
+                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
+                  >
+                    <span className="font-medium text-slate-700">Customer</span>
+                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">rajesh.sharma@example.com</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillDemoCredentials('ramesh.patel@example.com', 'Worker@123')}
+                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
+                  >
+                    <span className="font-medium text-slate-700">Plumber Worker</span>
+                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">ramesh.patel@example.com</span>
+                  </button>
+                </div>
               </div>
             </form>
+          )}
+
+          {/* TAB 2: REGISTRATION FLOW (Name, Email, Phone Number + Password) */}
+          {tab === 'register' && (
+            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+              {/* Account Type Selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  I want to:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRole('CUSTOMER')}
+                    className={`p-2.5 rounded-xl border-2 text-left transition-all flex items-center gap-2.5 ${
+                      role === 'CUSTOMER'
+                        ? 'border-brand-600 bg-brand-50/50 shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900 leading-tight">Hire Workers</h4>
+                      <p className="text-[10px] text-slate-500">Customer</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRole('WORKER')}
+                    className={`p-2.5 rounded-xl border-2 text-left transition-all flex items-center gap-2.5 ${
+                      role === 'WORKER'
+                        ? 'border-[#082B66] bg-blue-50/50 shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-800 flex items-center justify-center shrink-0">
+                      <HardHat className="w-4 h-4 text-[#082B66]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900 leading-tight">Earn Daily</h4>
+                      <p className="text-[10px] text-slate-500">Skilled Worker</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <Input
+                label={role === 'WORKER' ? 'Full Name (as on official ID)' : 'Full Name'}
+                type="text"
+                required
+                autoComplete="name"
+                placeholder="e.g. Ramesh Patel"
+                value={regName}
+                error={fieldErrors.regName}
+                onChange={(e) => {
+                  setRegName(e.target.value);
+                  if (fieldErrors.regName) {
+                    setFieldErrors((prev) => ({ ...prev, regName: '' }));
+                  }
+                }}
+                icon={<UserIcon className="w-4 h-4" />}
+              />
+
+              {/* Email Address (Login ID) */}
+              <Input
+                label="Email Address"
+                type="email"
+                required
+                autoComplete="email"
+                inputMode="email"
+                placeholder="e.g. name@example.com"
+                helperText="Used as your account login ID"
+                value={regEmail}
+                error={fieldErrors.regEmail}
+                onChange={(e) => {
+                  setRegEmail(e.target.value);
+                  if (fieldErrors.regEmail) {
+                    setFieldErrors((prev) => ({ ...prev, regEmail: '' }));
+                  }
+                }}
+                icon={<Mail className="w-4 h-4" />}
+              />
+
+              {/* Phone Number (Required, not used as login ID) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <div
+                  className={`flex items-center rounded-xl border transition-all overflow-hidden ${
+                    fieldErrors.regPhone
+                      ? 'border-red-300 focus-within:ring-2 focus-within:ring-red-400 bg-red-50/20'
+                      : 'border-slate-300 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white'
+                  }`}
+                >
+                  <span className="bg-slate-100 px-3.5 py-2.5 text-xs font-bold text-slate-700 border-r border-slate-300 select-none">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    autoComplete="tel"
+                    inputMode="numeric"
+                    placeholder="9876543210"
+                    value={regPhone}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '');
+                      setRegPhone(clean);
+                      if (fieldErrors.regPhone) {
+                        setFieldErrors((prev) => ({ ...prev, regPhone: '' }));
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 text-sm sm:text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
+                  />
+                </div>
+                {fieldErrors.regPhone ? (
+                  <p className="text-[11px] text-red-600 mt-1 font-medium">{fieldErrors.regPhone}</p>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Required for verification & future OTPs. Not used as login ID.</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="relative">
+                <Input
+                  label="Password"
+                  type={showRegPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Min 8 chars (letters & numbers)"
+                  helperText="Minimum 8 characters with at least one letter and one number"
+                  value={regPassword}
+                  error={fieldErrors.regPassword}
+                  onChange={(e) => {
+                    setRegPassword(e.target.value);
+                    if (fieldErrors.regPassword) {
+                      setFieldErrors((prev) => ({ ...prev, regPassword: '' }));
+                    }
+                  }}
+                  icon={<Lock className="w-4 h-4" />}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegPassword(!showRegPassword)}
+                  tabIndex={-1}
+                  className="absolute right-3.5 top-[29px] text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="relative">
+                <Input
+                  label="Confirm Password"
+                  type={showRegConfirmPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Re-enter password"
+                  value={regConfirmPassword}
+                  error={fieldErrors.regConfirmPassword}
+                  onChange={(e) => {
+                    setRegConfirmPassword(e.target.value);
+                    if (fieldErrors.regConfirmPassword) {
+                      setFieldErrors((prev) => ({ ...prev, regConfirmPassword: '' }));
+                    }
+                  }}
+                  icon={<Lock className="w-4 h-4" />}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                  tabIndex={-1}
+                  className="absolute right-3.5 top-[29px] text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  aria-label={showRegConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                fullWidth
+                isLoading={loading}
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                {loading
+                  ? 'Creating Account...'
+                  : role === 'WORKER'
+                  ? 'Register as Worker'
+                  : 'Create Customer Account'}
+              </Button>
+
+              {/* Switch to login link */}
+              <div className="text-center pt-1 text-xs text-slate-600">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('login');
+                    setError(null);
+                    setFieldErrors({});
+                  }}
+                  className="text-brand-700 font-bold hover:underline"
+                >
+                  Sign In with Email
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB 3: MOBILE OTP FLOW (Preserved for backwards compatibility) */}
+          {tab === 'otp' && (
+            <div className="space-y-4">
+              {otpStep === 'PHONE' ? (
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      Mobile Number <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white">
+                      <span className="bg-slate-100 px-3.5 py-2.5 text-xs font-bold text-slate-700 border-r border-slate-300 flex items-center select-none">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        autoFocus
+                        maxLength={10}
+                        placeholder="9876543210"
+                        value={otpPhone}
+                        onChange={(e) => setOtpPhone(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>We'll send a 6-digit OTP code to verify your mobile number.</span>
+                    </p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="brand"
+                    size="lg"
+                    fullWidth
+                    isLoading={loading}
+                    disabled={loading || otpPhone.replace(/\D/g, '').length !== 10}
+                    icon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    {loading ? 'Sending OTP...' : 'Send OTP Code'}
+                  </Button>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTab('login');
+                        setError(null);
+                      }}
+                      className="text-xs text-slate-600 hover:text-slate-900 font-semibold"
+                    >
+                      ← Back to Email + Password Login
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <OtpStep
+                  phone={otpPhone}
+                  otp={otpCode}
+                  onOtpChange={setOtpCode}
+                  onSubmit={handleVerifyOtp}
+                  onChangePhone={() => {
+                    setOtpStep('PHONE');
+                    setOtpCode('');
+                    setError(null);
+                  }}
+                  onResendOtp={handleSendOtp}
+                  resendTimer={resendTimer}
+                  loading={loading}
+                  error={error}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

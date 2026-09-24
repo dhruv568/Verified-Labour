@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
           phone,
           role,
           status: 'ACTIVE',
+          isPhoneVerified: true,
           ...(role === 'CUSTOMER' && {
             customerProfile: {
               create: {
@@ -130,20 +131,25 @@ export async function POST(req: NextRequest) {
           adminUser: true,
         },
       });
-    } else if (role === 'WORKER' && !user.workerProfile) {
-      // Existing customer choosing to become a worker
-      await prisma.workerProfile.create({
-        data: {
-          userId: user.id,
-          fullName: fullName || user.customerProfile?.fullName || 'New Worker',
-          status: 'ONBOARDING',
-          isAvailable: true,
-          serviceRadiusKm: 15.0,
-        },
-      });
+    } else {
+      // Existing user verified via OTP
+      const updateData: any = { isPhoneVerified: true };
+      if (role === 'WORKER' && !user.workerProfile) {
+        await prisma.workerProfile.create({
+          data: {
+            userId: user.id,
+            fullName: fullName || user.customerProfile?.fullName || 'New Worker',
+            status: 'ONBOARDING',
+            isAvailable: true,
+            serviceRadiusKm: 15.0,
+          },
+        });
+        updateData.role = 'WORKER';
+      }
+
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { role: 'WORKER' },
+        data: updateData,
         include: {
           customerProfile: { include: { addresses: true } },
           workerProfile: { include: { primaryCategory: true, aadhaarVerif: true, bankVerif: true } },
@@ -157,6 +163,7 @@ export async function POST(req: NextRequest) {
     const token = await signAuthToken({
       userId: user.id,
       phone: user.phone,
+      email: user.email || undefined,
       role: user.role as any,
     });
 
@@ -166,7 +173,9 @@ export async function POST(req: NextRequest) {
       user: {
         id: user.id,
         phone: user.phone,
+        email: user.email,
         role: user.role,
+        isPhoneVerified: user.isPhoneVerified,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,

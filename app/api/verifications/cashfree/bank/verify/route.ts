@@ -4,12 +4,13 @@ import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import cashfreeService, { CashfreeVerificationService } from '@/services/cashfree';
 import { syncWorkerVerificationStatus } from '@/lib/worker-verification';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 const verifyBankSchema = z.object({
   workerId: z.string(),
-  accountHolderName: z.string().min(2, 'Please enter the full name as per bank records'),
-  accountNumber: z.string().min(8, 'Account number must be at least 8 digits').max(20),
-  ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/i, 'Please enter a valid 11-character IFSC code (e.g. SBIN0001824)'),
+  accountHolderName: z.string().trim().min(2, 'Please enter the full name as per bank records'),
+  accountNumber: z.string().trim().regex(/^\d{8,20}$/, 'Account number must be between 8 and 20 digits'),
+  ifsc: z.string().trim().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/i, 'Please enter a valid 11-character IFSC code (e.g. SBIN0001824)'),
   phone: z.string().optional(),
 });
 
@@ -21,42 +22,72 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: parsed.error.errors[0].message },
+        { success: false, status: 'FAILED', error: parsed.error.errors[0]?.message || 'Invalid bank account parameters' },
         { status: 400 }
       );
     }
 
     const { workerId, accountHolderName, accountNumber, ifsc, phone } = parsed.data;
 
+    // Authorization check
     if (sessionUser && sessionUser.role !== 'ADMIN' && sessionUser.workerProfile?.id !== workerId) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'Forbidden: You cannot verify another worker\'s profile' }, { status: 403 });
     }
 
     const worker = await prisma.workerProfile.findUnique({
       where: { id: workerId },
-      include: { aadhaarVerif: true },
+      include: { bankVerif: true, aadhaarVerif: true },
     });
 
     if (!worker) {
       return NextResponse.json({ success: false, error: 'Worker profile not found' }, { status: 404 });
     }
 
-    // Call Cashfree Bank Verification
+    // 1. PREVENT DUPLICATE VERIFICATION: If worker bank account is already verified, return verified state
+    if (worker.bankVerified || worker.bankVerif?.status === 'VERIFIED') {
+      return NextResponse.json({
+        success: true,
+        alreadyVerified: true,
+        status: 'VERIFIED',
+        message: 'Bank account is already verified for this worker profile.',
+        maskedAccountNo: worker.bankVerif?.maskedAccountNo || 'XXXXXXXX4512',
+        accountHolderName: worker.bankVerif?.accountHolderName || worker.fullName,
+        bankName: worker.bankVerif?.bankName || 'Verified Bank',
+        ifsc: worker.bankVerif?.ifsc || ifsc.toUpperCase(),
+      });
+    }
+
+    // 2. RATE LIMITING: max 6 verification attempts per 10 minutes per worker/IP
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const rateLimit = checkRateLimit(`bank_verif_${workerId}_${ip}`, 6, 600);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many bank verification attempts. Please wait ${rateLimit.retryAfterSeconds} seconds before trying again.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const cleanIfsc = ifsc.toUpperCase();
+
+    // 3. Call Cashfree Bank Verification API (Server-to-Server, secrets backend only)
     const result = await cashfreeService.verifyBankAccount({
       accountNumber,
-      ifsc: ifsc.toUpperCase(),
+      ifsc: cleanIfsc,
       accountHolderName,
       phone,
     });
 
     if (!result.success) {
-      // Record failed attempt
+      // Record failed attempt in database
       await prisma.bankVerification.upsert({
         where: { workerId },
         update: {
           status: 'FAILED',
           failureReason: result.message,
-          ifsc: ifsc.toUpperCase(),
+          ifsc: cleanIfsc,
           accountHolderName,
           maskedAccountNo: CashfreeVerificationService.maskBankAccount(accountNumber),
         },
@@ -64,7 +95,7 @@ export async function POST(req: NextRequest) {
           workerId,
           status: 'FAILED',
           failureReason: result.message,
-          ifsc: ifsc.toUpperCase(),
+          ifsc: cleanIfsc,
           accountHolderName,
           maskedAccountNo: CashfreeVerificationService.maskBankAccount(accountNumber),
         },
@@ -75,21 +106,23 @@ export async function POST(req: NextRequest) {
           success: false,
           status: 'FAILED',
           error: result.message,
+          failureReason: result.failureReason || 'BANK_VERIFICATION_FAILED',
         },
         { status: 400 }
       );
     }
 
-    // Success: Store masked account and update status
+    // 4. SUCCESS: Store only required masked details and reference status securely
+    // Full account number is NEVER stored! Only masked string XXXXXXXX1234
     await prisma.bankVerification.upsert({
       where: { workerId },
       update: {
         refId: result.refId,
         status: 'VERIFIED',
-        maskedAccountNo: result.maskedAccountNo!,
-        ifsc: result.ifsc!,
-        accountHolderName: result.accountHolderName!,
-        bankName: result.bankName,
+        maskedAccountNo: result.maskedAccountNo || CashfreeVerificationService.maskBankAccount(accountNumber),
+        ifsc: cleanIfsc,
+        accountHolderName: result.accountHolderName || accountHolderName,
+        bankName: result.bankName || 'Verified Bank',
         nameMatchScore: result.nameMatchScore,
         verifiedAt: new Date(),
         failureReason: null,
@@ -98,27 +131,30 @@ export async function POST(req: NextRequest) {
         workerId,
         refId: result.refId,
         status: 'VERIFIED',
-        maskedAccountNo: result.maskedAccountNo!,
-        ifsc: result.ifsc!,
-        accountHolderName: result.accountHolderName!,
-        bankName: result.bankName,
+        maskedAccountNo: result.maskedAccountNo || CashfreeVerificationService.maskBankAccount(accountNumber),
+        ifsc: cleanIfsc,
+        accountHolderName: result.accountHolderName || accountHolderName,
+        bankName: result.bankName || 'Verified Bank',
         nameMatchScore: result.nameMatchScore,
         verifiedAt: new Date(),
+        failureReason: null,
       },
     });
 
-    // Centralized evaluation: Aadhaar + Bank + Profile = VERIFIED
+    // 5. Centralized evaluation: Aadhaar + Bank + Profile = VERIFIED status update
     await syncWorkerVerificationStatus(workerId);
 
     return NextResponse.json({
       success: true,
       status: 'VERIFIED',
-      message: 'Bank account verified successfully with Cashfree.',
-      maskedAccountNo: result.maskedAccountNo,
-      accountHolderName: result.accountHolderName,
-      bankName: result.bankName,
+      message: result.message || 'Bank account verified successfully with Cashfree.',
+      maskedAccountNo: result.maskedAccountNo || CashfreeVerificationService.maskBankAccount(accountNumber),
+      accountHolderName: result.accountHolderName || accountHolderName,
+      bankName: result.bankName || 'Verified Bank',
+      ifsc: cleanIfsc,
     });
   } catch (err: any) {
+    console.error('Error verifying bank account:', err);
     return NextResponse.json(
       { success: false, error: 'Internal error during bank verification: ' + err.message },
       { status: 500 }

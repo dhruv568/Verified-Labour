@@ -3,13 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  HardHat,
-  CheckCircle2,
   Facebook,
   Instagram,
   Youtube,
   Linkedin,
 } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -21,22 +20,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-10 pb-10 border-b border-slate-200">
           {/* Col 1: Brand & Logo */}
           <div className="space-y-3 sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-amber-400 text-navy-950 shadow-xs">
-                <HardHat className="w-5 h-5 text-navy-950" />
-                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-2xs">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#079447] fill-[#079447] text-white" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center text-xl font-black tracking-tight leading-none">
-                  <span className="text-[#082B66]">Verified</span>
-                  <span className="text-[#079447] ml-1">Labour</span>
-                </div>
-                <span className="text-[10px] font-medium text-slate-500 tracking-tight mt-0.5">
-                  Real People. Real Skills. Real Support.
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2 group" aria-label="Verified Labour Home">
+              <Logo variant="footer" />
             </Link>
 
             <p className="text-xs text-slate-500 leading-relaxed font-normal pt-1">

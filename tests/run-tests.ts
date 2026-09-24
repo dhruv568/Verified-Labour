@@ -10,6 +10,8 @@ import { ALLOWED_TRANSITIONS, JobStateMachine } from '../services/job-state-mach
 import { cashfreeService, CashfreeVerificationService } from '../services/cashfree';
 import { cashfreePaymentService } from '../services/cashfree-payment';
 import { checkRateLimit } from '../lib/rate-limiter';
+import { runAuthFlowTests } from './auth-flow-tests';
+import { runCashfreeVerificationTests } from './cashfree-verification-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -274,6 +276,14 @@ async function runAllTests() {
     assert.strictEqual(platformFee, 50);
     assert.strictEqual(workerShare, 450);
   });
+
+  const authResults = await runAuthFlowTests();
+  passed += authResults.passed;
+  failed += authResults.failed;
+
+  const cfResults = await runCashfreeVerificationTests();
+  passed += cfResults.passed;
+  failed += cfResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);
