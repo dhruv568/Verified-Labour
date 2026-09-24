@@ -145,8 +145,8 @@ export default function Footer() {
 
             <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1">
               <p className="font-semibold text-slate-700">Support Desk:</p>
-              <p className="text-xs sm:text-[11px]">support@verifiedlabour.com</p>
-              <p className="text-xs sm:text-[11px]">+91 99999 99999</p>
+              <p className="text-xs sm:text-[11px]">verifiedlabour@gmail.com</p>
+              <p className="text-xs sm:text-[11px]">+91 93698 99597</p>
             </div>
           </div>
 
@@ -202,6 +202,17 @@ export default function Footer() {
           <p>© 2025 Verified Labour. All rights reserved.</p>
           <p className="text-slate-600 font-semibold">
             Skilled People. Stronger Communities. A Better India.
+          </p>
+          <p>
+            Powered by{' '}
+            <a
+              href="https://myprofunnels.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-brand-600 transition-colors font-semibold text-slate-600 underline"
+            >
+              MyProFunnels ❤️
+            </a>
           </p>
         </div>
       </div>
