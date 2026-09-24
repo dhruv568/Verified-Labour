@@ -44,7 +44,7 @@ export default function HowItWorks() {
           <h2 className="text-2xl sm:text-3xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
             <span>How It Works</span>
             <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
-              यह कैसे काम करता है
+              यह कैसे काम करता है?
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">

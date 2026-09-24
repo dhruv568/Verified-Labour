@@ -170,6 +170,20 @@ export default function Hero({
               verified workers near you, just like Ola or Uber.
             </p>
 
+            {/* Mobile-Only AI Worker Image - Supporting Main Hero Text */}
+            <div className="block md:hidden my-3.5">
+              <div className="relative w-full h-[180px] xs:h-[200px] sm:h-[220px] rounded-2xl overflow-hidden shadow-xs border border-slate-100">
+                <Image
+                  src="/images/home/hero-mobile-verified-workers.jpg"
+                  alt="Verified Labour - Professional Indian verified skilled workers"
+                  fill
+                  priority
+                  className="object-cover object-[50%_25%]"
+                  sizes="100vw"
+                />
+              </div>
+            </div>
+
             {/* 3 Circular Trust Badges */}
             <TrustIndicators />
 
@@ -191,34 +205,14 @@ export default function Hero({
         </div>
 
         {/* ================= MOBILE VIEW: Stacked Layout ================= */}
-        <div className="block md:hidden mt-6 space-y-4">
+        <div className="block md:hidden mt-5 space-y-4">
           {/* Mobile Promotional Tag */}
           <div className="flex justify-end pr-1">
             {renderPromotionalTag()}
           </div>
 
-          {/* Mobile Worker Group Visual - Edge-to-edge organic blend without box/card */}
-          <div
-            className="relative w-full h-[220px] sm:h-[300px] overflow-hidden rounded-2xl"
-            style={{
-              maskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 6%, #000 20%, #000 85%, transparent 100%)',
-              WebkitMaskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 6%, #000 20%, #000 85%, transparent 100%)',
-            }}
-          >
-            <Image
-              src="/images/home/hero-workers-group.jpg"
-              alt="Verified Labour - Professional Indian skilled workers group composition"
-              fill
-              priority
-              className="object-cover object-[55%_25%]"
-              sizes="100vw"
-            />
-          </div>
-
           {/* Mobile Yellow Banner */}
-          <div className="mt-[-12px] relative z-20">
+          <div className="relative z-20">
             {renderYellowBanner()}
           </div>
         </div>

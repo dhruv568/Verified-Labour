@@ -66,7 +66,7 @@ export const translations = {
     servicesSub: '18+ सत्यापित श्रेणियां — सीधे व्यवस्थापक से प्रबंधित।',
     verifiedWorkersTitle: 'सत्यापित कामगार',
     verifiedWorkersSub: 'केवल प्रमाणित और सत्यापित कामगार ही प्रदर्शित किए जाते हैं।',
-    howItWorksTitle: 'यह कैसे काम करता है',
+    howItWorksTitle: 'यह कैसे काम करता है?',
     howStep1Title: 'खोजें',
     howStep1Desc: 'सेवा चुनें और अपना स्थान तय करें।',
     howStep2Title: 'चुनें',

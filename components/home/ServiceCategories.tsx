@@ -160,34 +160,32 @@ export default function ServiceCategories({
   return (
     <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Row: Title with Hindi Subtitle on Left, View All on Right */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
-          <div>
-            {/* Trust Micro-badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
-              <span>सत्यापित कामगार • 100% Aadhaar & Skill Verified</span>
-            </div>
-
-            {/* Main Bilingual Heading */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
-              <span>Choose a Service</span>
-              <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
-                अपनी ज़रूरत का काम चुनें
-              </span>
-            </h2>
-
-            {/* Subtitle with Hindi translation */}
-            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-              <span>18+ Verified Categories — More Coming Soon!</span>
-              <span className="text-slate-400 font-normal ml-1 sm:ml-2">
-                • 18+ सत्यापित सेवाएं — और भी जल्द!
-              </span>
-            </p>
+        {/* Header Row: Centered Title, Hindi Subtitle, Badge & View All Button */}
+        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+          {/* Trust Micro-badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
+            <span>सत्यापित कामगार • 100% Aadhaar & Skill Verified</span>
           </div>
 
+          {/* Main Bilingual Heading */}
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline justify-center gap-2 sm:gap-3 text-center">
+            <span>Choose a Service</span>
+            <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
+              अपनी ज़रूरत का काम चुनें
+            </span>
+          </h2>
+
+          {/* Subtitle with Hindi translation */}
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 text-center">
+            <span>18+ Verified Categories — More Coming Soon!</span>
+            <span className="text-slate-400 font-normal ml-1 sm:ml-2">
+              • 18+ सत्यापित सेवाएं — और भी जल्द!
+            </span>
+          </p>
+
           {/* View All Button */}
-          <div className="shrink-0">
+          <div className="mt-3.5 sm:mt-4 shrink-0">
             <button
               type="button"
               onClick={onViewAll}

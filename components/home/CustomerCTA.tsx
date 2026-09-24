@@ -26,12 +26,12 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
         className="absolute bottom-0 right-0 top-0 w-[55%] sm:w-[50%] md:w-[48%] lg:w-[50%] xl:w-[48%] pointer-events-none select-none z-0 overflow-hidden"
         style={{
           maskImage:
-            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 10%, rgba(0,0,0,0.18) 25%, rgba(0,0,0,0.6) 52%, rgba(0,0,0,0.92) 78%, #000 90%, #000 100%)',
+            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.05) 5%, rgba(0,0,0,0.35) 20%, rgba(0,0,0,0.85) 45%, #000 65%, #000 100%)',
           WebkitMaskImage:
-            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 10%, rgba(0,0,0,0.18) 25%, rgba(0,0,0,0.6) 52%, rgba(0,0,0,0.92) 78%, #000 90%, #000 100%)',
+            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.05) 5%, rgba(0,0,0,0.35) 20%, rgba(0,0,0,0.85) 45%, #000 65%, #000 100%)',
         }}
       >
-        <div className="relative w-full h-full opacity-35 sm:opacity-100">
+        <div className="relative w-full h-full opacity-85 sm:opacity-100">
           <Image
             src="/images/home/customer-cta-woman.jpg"
             alt="Verified Labour - Customer booking skilled workers"
@@ -42,13 +42,13 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
         </div>
       </div>
 
-      {/* Soft Solid Blue Gradient Overlays - Removes all hard boundaries & keeps text area 100% solid */}
-      <div className="absolute inset-y-0 left-0 w-full sm:w-[56%] bg-gradient-to-r from-[#1264D6] via-[#1264D6]/95 via-45% to-[#1264D6]/60 sm:to-transparent pointer-events-none z-10" />
+      {/* Soft Solid Blue Gradient Overlays - Keeps text area solid while revealing image clearly on right */}
+      <div className="absolute inset-y-0 left-0 w-[68%] sm:w-[56%] bg-gradient-to-r from-[#1264D6] via-[#1264D6] via-55% to-transparent pointer-events-none z-10" />
       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#1264D6] via-[#1264D6]/40 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#1264D6] via-[#1264D6]/30 to-transparent pointer-events-none z-10" />
 
       {/* ================= CONTENT AREA ================= */}
-      <div className="relative z-20 max-w-full sm:max-w-[54%] lg:max-w-[55%] space-y-3 sm:space-y-3.5">
+      <div className="relative z-20 max-w-[65%] sm:max-w-[54%] lg:max-w-[55%] space-y-3 sm:space-y-3.5">
         {/* Headings */}
         <div className="space-y-1">
           <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
