@@ -170,15 +170,15 @@ export default function HomePage() {
 
       {/* Active Worker Search Results Modal */}
       {workersModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-navy-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-black text-[#082B66]">
+                <h3 className="text-lg sm:text-xl font-black text-[#082B66]">
                   Nearby Verified Workers
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[220px] sm:max-w-none">
                   Showing available professionals near{' '}
                   <span className="font-bold text-[#1264D6]">
                     {location.displayName || 'your location'}
@@ -189,14 +189,15 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setWorkersModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+                aria-label="Close"
+                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-700 active:bg-slate-200 rounded-full hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Filter Bar */}
-            <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-600">Radius:</span>
                 {[5, 15, 30].map((r) => (
@@ -207,10 +208,10 @@ export default function HomePage() {
                       setSearchRadius(r);
                       fetchWorkers();
                     }}
-                    className={`px-3 py-1 rounded-lg transition-colors ${
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl transition-all flex items-center justify-center ${
                       searchRadius === r
-                        ? 'bg-[#1264D6] text-white font-bold'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                        ? 'bg-[#1264D6] text-white font-bold shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 active:bg-slate-200 font-semibold'
                     }`}
                   >
                     {r} km
@@ -229,7 +230,7 @@ export default function HomePage() {
                       setSelectedCategory('');
                       fetchWorkers('');
                     }}
-                    className="text-red-600 hover:underline font-bold text-xs"
+                    className="min-h-[38px] px-2 text-red-600 hover:underline font-bold text-xs flex items-center"
                   >
                     Clear Filter
                   </button>
@@ -238,7 +239,7 @@ export default function HomePage() {
             </div>
 
             {/* Workers Grid Content */}
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="p-3.5 sm:p-6 overflow-y-auto flex-1">
               {loadingWorkers ? (
                 <div className="py-20 text-center space-y-3">
                   <div className="w-10 h-10 border-4 border-[#1264D6] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -247,7 +248,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ) : workers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                   {workers.map((w) => (
                     <WorkerCard
                       key={w.id}

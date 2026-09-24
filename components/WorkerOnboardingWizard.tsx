@@ -365,23 +365,23 @@ export default function WorkerOnboardingWizard({
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
       {/* Wizard Header & Stepper */}
-      <div className="bg-navy-900 text-white p-6">
+      <div className="bg-navy-900 text-white p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-brand-400 uppercase tracking-wider">
               Worker Onboarding System
             </span>
-            <h2 className="text-xl font-black text-white">
+            <h2 className="text-lg sm:text-xl font-black text-white">
               Become a Verified Labour Professional
             </h2>
           </div>
-          <span className="text-xs font-bold bg-navy-800 text-brand-400 px-3 py-1 rounded-full border border-navy-700">
+          <span className="text-xs font-bold bg-navy-800 text-brand-400 px-3 py-1 rounded-full border border-navy-700 shrink-0">
             Step {currentStep} of 8
           </span>
         </div>
 
-        {/* Stepper Dots/Icons */}
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+        {/* Stepper Dots/Icons with Smooth Touch Scroll Rail */}
+        <div className="flex sm:grid sm:grid-cols-8 gap-2 overflow-x-auto no-scrollbar pb-1">
           {stepsList.map((st) => {
             const isCompleted = currentStep > st.num;
             const isCurrent = currentStep === st.num;
@@ -391,18 +391,18 @@ export default function WorkerOnboardingWizard({
                 onClick={() => {
                   if (st.num < currentStep) setCurrentStep(st.num);
                 }}
-                className={`flex flex-col items-center text-center p-2 rounded-xl transition-all cursor-pointer ${
+                className={`shrink-0 min-w-[72px] sm:min-w-0 min-h-[46px] flex flex-col items-center justify-center text-center p-2 rounded-xl transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-brand-700 text-white font-bold shadow'
+                    ? 'bg-brand-700 text-white font-bold shadow-xs'
                     : isCompleted
-                    ? 'bg-navy-800 text-brand-400 hover:bg-navy-700'
+                    ? 'bg-navy-800 text-brand-400 hover:bg-navy-700 active:bg-navy-600'
                     : 'bg-navy-950/40 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                <span className="text-xs mb-1">
+                <span className="text-xs mb-0.5">
                   {isCompleted ? <CheckCircle2 className="w-4 h-4 text-brand-400" /> : st.num}
                 </span>
-                <span className="text-[10px] truncate max-w-full">{st.title}</span>
+                <span className="text-[10px] truncate max-w-full font-semibold">{st.title}</span>
               </div>
             );
           })}

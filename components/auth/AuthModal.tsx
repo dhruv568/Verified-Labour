@@ -215,8 +215,8 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-none flex flex-col">
         {/* Header */}
         <AuthHeader
           title={
@@ -239,7 +239,7 @@ export default function AuthModal({
         />
 
         {/* Modal Body */}
-        <div className="p-6">
+        <div className="p-5 sm:p-6 overflow-y-auto">
           {tab === 'otp' ? (
             <>
               {step === 'PHONE' && (

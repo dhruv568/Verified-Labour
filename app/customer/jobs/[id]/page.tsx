@@ -288,13 +288,13 @@ export default function CustomerJobTrackerPage({
         </div>
 
         {/* State Machine Progress Bar */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8">
-          <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-xs mb-6 sm:mb-8 overflow-hidden">
+          <div className="flex sm:grid sm:grid-cols-7 gap-3 sm:gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0">
             {steps.map((st, i) => {
               const isPast = currentIdx >= i;
               const isCurrent = job.status === st.key;
               return (
-                <div key={st.key} className="flex flex-col items-center text-center">
+                <div key={st.key} className="shrink-0 min-w-[72px] sm:min-w-0 flex flex-col items-center text-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1.5 transition-colors ${
                       isCurrent
@@ -306,7 +306,7 @@ export default function CustomerJobTrackerPage({
                   >
                     {isPast ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                   </div>
-                  <span className={`text-[11px] font-bold ${isCurrent ? 'text-brand-700' : isPast ? 'text-slate-700' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] sm:text-[11px] font-bold ${isCurrent ? 'text-brand-700' : isPast ? 'text-slate-700' : 'text-slate-400'}`}>
                     {st.label}
                   </span>
                 </div>
@@ -316,23 +316,23 @@ export default function CustomerJobTrackerPage({
         </div>
 
         {/* Main Content: Details + Chat */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* Left: Job & Worker Card */}
           <div className="lg:col-span-7 space-y-6">
             {/* Worker Info */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Assigned Professional
               </span>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-brand-100 text-brand-800 font-bold text-lg flex items-center justify-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-brand-100 text-brand-800 font-bold text-base sm:text-lg flex items-center justify-center shrink-0">
                     {job.worker.fullName[0]}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-1.5">
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
                       {job.worker.fullName}
-                      <CheckCircle2 className="w-4 h-4 text-brand-600 fill-brand-600 text-white" />
+                      <CheckCircle2 className="w-4 h-4 text-brand-600 fill-brand-600 text-white shrink-0" />
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
                       {job.worker.primaryCategory?.name} Specialist
@@ -345,9 +345,9 @@ export default function CustomerJobTrackerPage({
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 block">Total Amount</span>
-                  <span className="text-xl font-black text-navy-900">₹{job.finalAmount}</span>
+                <div className="text-left min-[420px]:text-right pt-2 min-[420px]:pt-0 border-t min-[420px]:border-t-0 border-slate-100">
+                  <span className="text-[11px] sm:text-xs text-slate-400 block">Total Amount</span>
+                  <span className="text-xl sm:text-2xl font-black text-navy-900">₹{job.finalAmount}</span>
                 </div>
               </div>
 
@@ -376,7 +376,7 @@ export default function CustomerJobTrackerPage({
                     <button
                       onClick={handlePayNow}
                       disabled={paymentLoading}
-                      className="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                      className="w-full sm:w-auto px-5 py-3 min-h-[46px] bg-brand-700 hover:bg-brand-800 active:scale-98 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <CreditCard className="w-4 h-4" />
                       {paymentLoading ? 'Processing...' : `Proceed to Payment (₹${job.finalAmount})`}
@@ -515,18 +515,19 @@ export default function CustomerJobTrackerPage({
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex gap-2">
+              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex gap-2 items-center">
                 <input
                   type="text"
                   placeholder="Type a message..."
                   value={newMsg}
                   onChange={(e) => setNewMsg(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-brand-500"
+                  className="flex-1 px-3.5 py-2.5 text-base sm:text-xs rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px]"
                 />
                 <button
                   type="submit"
                   disabled={!newMsg.trim()}
-                  className="p-2 bg-brand-700 hover:bg-brand-800 text-white rounded-xl disabled:opacity-40 transition-colors"
+                  aria-label="Send message"
+                  className="w-11 h-11 flex items-center justify-center bg-brand-700 hover:bg-brand-800 active:scale-95 text-white rounded-xl disabled:opacity-40 transition-all shrink-0"
                 >
                   <Send className="w-4 h-4" />
                 </button>

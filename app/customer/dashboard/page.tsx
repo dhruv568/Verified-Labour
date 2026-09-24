@@ -212,19 +212,56 @@ export default function CustomerDashboardPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6">
-        {/* Mobile Sidebar Toggle */}
-        <div className="lg:hidden flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-xs text-slate-800">Navigation Menu</span>
+        {/* Mobile Navigation Header & Horizontal Tab Bar */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs text-slate-800">Customer Dashboard</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              icon={mobileSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            >
+              {mobileSidebarOpen ? 'Close Menu' : 'All Tabs'}
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-            icon={mobileSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          >
-            {mobileSidebarOpen ? 'Close Menu' : 'Menu'}
-          </Button>
+
+          {/* Quick Tab Scroll Rail for 1-Thumb Switching on Phones */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {navItems.map((item) => {
+              const isActive = activeNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                    isActive
+                      ? 'bg-navy-900 text-white shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 active:bg-slate-100'
+                  }`}
+                >
+                  <span className={isActive ? 'text-brand-400' : 'text-slate-400'}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                  {item.count !== undefined && item.count > 0 && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isActive ? 'bg-navy-800 text-brand-300' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Sidebar Navigation */}
@@ -335,10 +372,10 @@ export default function CustomerDashboardPage() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') fetchNearbyWorkers();
                         }}
-                        className="w-full pl-9 pr-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none"
+                        className="w-full pl-9 pr-3.5 py-2.5 text-base sm:text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none min-h-[44px]"
                       />
                     </div>
-                    <Button variant="primary" size="md" onClick={fetchNearbyWorkers}>
+                    <Button variant="primary" size="md" onClick={fetchNearbyWorkers} className="min-h-[44px]">
                       Search
                     </Button>
                   </div>
@@ -542,7 +579,7 @@ export default function CustomerDashboardPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
                         {job.review ? (
                           <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 fill-amber-400" />
@@ -558,7 +595,7 @@ export default function CustomerDashboardPage() {
 
                         <Link
                           href={`/customer/jobs/${job.id}`}
-                          className="px-4 py-2 bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs rounded-xl transition-colors shadow-xs"
+                          className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] flex items-center justify-center bg-navy-800 hover:bg-navy-900 active:bg-navy-950 text-white font-bold text-xs rounded-xl transition-colors shadow-xs text-center"
                         >
                           View Details & Tracking →
                         </Link>

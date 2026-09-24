@@ -205,17 +205,54 @@ export default function WorkerDashboardPage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6">
-        {/* Mobile Navigation Toggle */}
-        <div className="lg:hidden flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200">
-          <span className="font-bold text-xs text-slate-800">Worker Cockpit Navigation</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-            icon={mobileSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          >
-            {mobileSidebarOpen ? 'Close' : 'Menu'}
-          </Button>
+        {/* Mobile Navigation Toggle & Quick Horizontal Tab Bar */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200">
+            <span className="font-bold text-xs text-slate-800">Worker Dashboard</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              icon={mobileSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            >
+              {mobileSidebarOpen ? 'Close Menu' : 'All Tabs'}
+            </Button>
+          </div>
+
+          {/* Quick Tab Scroll Rail for 1-Thumb Switching on Phones */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {navItems.map((item) => {
+              const isActive = activeNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                    isActive
+                      ? 'bg-navy-900 text-white shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 active:bg-slate-100'
+                  }`}
+                >
+                  <span className={isActive ? 'text-brand-400' : 'text-slate-400'}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                  {item.count !== undefined && item.count > 0 && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isActive ? 'bg-navy-800 text-brand-300' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Sidebar Navigation */}
@@ -290,10 +327,10 @@ export default function WorkerDashboardPage() {
         {/* Main Content Area */}
         <main className="flex-1 space-y-6 min-w-0">
           {/* Header Card: Greeting & Availability Toggle */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-3xl font-black text-slate-900">
                   {greeting}, {workerName}
                 </h1>
                 <StatusBadge status={profile?.status || 'PENDING_REVIEW'} size="sm" />
@@ -304,12 +341,12 @@ export default function WorkerDashboardPage() {
             </div>
 
             {/* Availability Toggle */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 disabled={togglingAvailability}
                 onClick={handleToggleAvailability}
-                className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all ${
+                className={`w-full sm:w-auto px-5 py-3 min-h-[46px] rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 ${
                   isAvailable
                     ? 'bg-brand-700 hover:bg-brand-800 text-white'
                     : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
