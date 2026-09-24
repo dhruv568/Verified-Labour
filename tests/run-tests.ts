@@ -12,6 +12,7 @@ import { cashfreePaymentService } from '../services/cashfree-payment';
 import { checkRateLimit } from '../lib/rate-limiter';
 import { runAuthFlowTests } from './auth-flow-tests';
 import { runCashfreeVerificationTests } from './cashfree-verification-tests';
+import { runResendEmailTests } from './resend-email-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -284,6 +285,10 @@ async function runAllTests() {
   const cfResults = await runCashfreeVerificationTests();
   passed += cfResults.passed;
   failed += cfResults.failed;
+
+  const emailResults = await runResendEmailTests();
+  passed += emailResults.passed;
+  failed += emailResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);
