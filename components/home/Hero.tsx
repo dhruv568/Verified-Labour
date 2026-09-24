@@ -5,9 +5,10 @@ import Image from 'next/image';
 import TrustIndicators from './TrustIndicators';
 import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
+import { ShieldCheck, Users, Clock, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface HeroProps {
-  onSearchWorker?: (query: string) => void;
+  onSearchWorker?: (query?: string) => void;
   onSelectCategory?: (categorySlug: string) => void;
   onViewAllCategories?: () => void;
 }
@@ -106,7 +107,7 @@ export default function Hero({
   );
 
   return (
-    <section className="relative bg-white pt-3 pb-8 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
+    <section className="relative bg-white pt-0 pb-6 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
       {/* ================= DESKTOP & TABLET BACKGROUND BLENDED WORKER GROUP ================= */}
       <div
         className="hidden md:block absolute inset-y-0 right-0 w-[62%] lg:w-[74%] xl:w-[70%] 2xl:w-[66%] h-full pointer-events-none select-none z-0 overflow-hidden"
@@ -184,19 +185,104 @@ export default function Hero({
         </div>
       </div>
 
-      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) ================= */}
-      <div className="block md:hidden w-full max-w-md mx-auto px-3.5 relative z-20 space-y-4">
-        {/* Mobile Hero Design Banner Image */}
-        <div className="relative w-full rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 bg-white">
+      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) - RECREATED WITH PURE HTML/CSS ================= */}
+      <div className="block md:hidden w-full max-w-md mx-auto px-3.5 relative z-20 pt-3 space-y-4">
+        {/* Top Hindi Tagline & Badge Bar */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#1264D6] rounded-full text-xs font-black border border-blue-200/80 font-devanagari shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#1264D6]" />
+            <span>काम के लिए भरोसेमंद लोग</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1 bg-amber-400 text-[#082B66] px-2.5 py-1 rounded-full text-[11px] font-black shadow-2xs border border-amber-300 font-devanagari">
+            <CheckCircle2 className="w-3.5 h-3.5 fill-[#082B66] text-amber-400" />
+            <span>जाँच-परखे कामगार</span>
+          </div>
+        </div>
+
+        {/* Main Bilingual Headlines */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
+            आपके घर और व्यवसाय के लिए <br />
+            <span className="text-[#1264D6]">भरोसेमंद मजदूर</span> और <span className="text-[#079447]">कामगार</span>
+          </h1>
+          <p className="text-xs font-extrabold text-slate-600 font-devanagari tracking-normal">
+            जाँच-परखे • अनुभवी • समय पर उपलब्ध
+          </p>
+        </div>
+
+        {/* Blended Realistic AI Worker Image Card with Gold 3D Badge Overlay */}
+        <div className="relative w-full h-[195px] xs:h-[215px] rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900">
           <Image
-            src="/images/home/hero-mobile-design.png"
-            alt="Verified Labour - आपके घर और व्यवसाय के लिए भरोसेमंद मजदूर और कामगार"
-            width={682}
-            height={416}
+            src="/images/home/worker-cta-man.jpg"
+            alt="Verified Labour Professional Skilled Indian Worker"
+            fill
             priority
-            className="w-full h-auto object-cover"
+            className="object-cover object-[60%_20%] scale-105"
             sizes="(max-width: 767px) 100vw, 430px"
           />
+
+          {/* Left Gradient Overlay with Verification Pill */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#082B66]/85 via-[#082B66]/35 to-transparent p-3.5 flex flex-col justify-end">
+            <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/80 max-w-[210px] shadow-xs">
+              <div className="flex items-center gap-1.5 text-[#079447]">
+                <CheckCircle2 className="w-4 h-4 shrink-0 fill-[#079447] text-white" />
+                <span className="text-[11px] font-black text-[#082B66] font-devanagari">100% Aadhaar Verified</span>
+              </div>
+              <p className="text-[9.5px] text-slate-600 font-semibold leading-tight mt-0.5 font-devanagari">
+                सत्यापित एवं प्रशिक्षित कारीगर
+              </p>
+            </div>
+          </div>
+
+          {/* Floating Gold 3D Badge */}
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 text-slate-950 p-2 rounded-full shadow-lg border-2 border-amber-200 flex flex-col items-center justify-center text-center w-16 h-16 transform rotate-6">
+            <CheckCircle2 className="w-4 h-4 fill-slate-950 text-amber-300 mb-0.5" />
+            <span className="text-[8.5px] font-black font-devanagari leading-tight">जाँच-परखे</span>
+            <span className="text-[7.5px] font-extrabold font-devanagari leading-none">कामगार</span>
+          </div>
+        </div>
+
+        {/* 3 Separate HTML/CSS Rounded Trust Cards */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Card 1: Safe & Reliable */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1.5 shadow-2xs border border-emerald-100">
+              <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              सुरक्षित और भरोसेमंद
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              Safe & Reliable
+            </span>
+          </div>
+
+          {/* Card 2: Skilled Workers */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1.5 shadow-2xs border border-blue-100">
+              <Users className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              अनुभवी कामगार
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              Skilled Workers
+            </span>
+          </div>
+
+          {/* Card 3: Available When Needed */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5 shadow-2xs border border-amber-100">
+              <Clock className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              जब ज़रूरत तब उपलब्ध
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              On-Demand
+            </span>
+          </div>
         </div>
 
         {/* Location & Worker Search Bar */}
