@@ -87,7 +87,7 @@ export default function Hero({
           <p className="text-[10px] sm:text-xs font-black text-[#082B66] uppercase tracking-wider">
             Let us Know...
           </p>
-          <p className="text-xs sm:text-sm lg:text-[15px] font-black text-[#082B66] leading-tight truncate sm:whitespace-normal">
+          <p className="text-xs sm:text-sm lg:text-[15px] font-black text-[#082B66] leading-tight">
             Who is <span className="text-[#DC2626] underline decoration-[#DC2626] decoration-2">NOT</span> on{' '}
             <span className="text-[#082B66]">Verified Labour</span>?
           </p>
@@ -98,7 +98,7 @@ export default function Hero({
       <button
         type="button"
         onClick={onViewAllCategories}
-        className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-[#1264D6] font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-xs hover:shadow transition-all shrink-0 active:scale-95"
+        className="px-3.5 py-2 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-[#1264D6] font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-xs hover:shadow transition-all shrink-0 active:scale-95 min-h-[38px] flex items-center justify-center"
       >
         View All
       </button>
@@ -106,7 +106,7 @@ export default function Hero({
   );
 
   return (
-    <section className="relative bg-white pt-6 pb-12 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
+    <section className="relative bg-white pt-4 pb-10 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
       {/* ================= BACKGROUND BLENDED WORKER GROUP (DESKTOP & TABLET) ================= */}
       {/*
         Horizontal Opacity Gradient:
@@ -152,20 +152,20 @@ export default function Hero({
           <div className="lg:col-span-7 xl:col-span-6 space-y-5 sm:space-y-6 z-20">
             {/* Headline */}
             <div className="space-y-1.5">
-              <h1 className="text-4xl sm:text-5xl xl:text-[54px] font-black text-[#082B66] tracking-tight leading-[1.12]">
+              <h1 className="text-3xl sm:text-5xl xl:text-[54px] font-black text-[#082B66] tracking-tight leading-[1.14]">
                 Skilled People
                 <br />
                 When You Need Them
               </h1>
 
               {/* Subtitle */}
-              <p className="text-xl sm:text-2xl font-bold text-[#1264D6] tracking-tight">
+              <p className="text-lg sm:text-2xl font-bold text-[#1264D6] tracking-tight">
                 Verified. Nearby. Reliable.
               </p>
             </div>
 
             {/* Supporting description */}
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg font-normal">
+            <p className="text-sm sm:text-sm text-slate-600 leading-relaxed max-w-lg font-normal">
               From electricians to cooks, from house caretakers to office boys — find
               verified workers near you, just like Ola or Uber.
             </p>
@@ -191,15 +191,15 @@ export default function Hero({
         </div>
 
         {/* ================= MOBILE VIEW: Stacked Layout ================= */}
-        <div className="block md:hidden mt-8 space-y-4">
+        <div className="block md:hidden mt-6 space-y-4">
           {/* Mobile Promotional Tag */}
-          <div className="flex justify-end pr-2">
+          <div className="flex justify-end pr-1">
             {renderPromotionalTag()}
           </div>
 
           {/* Mobile Worker Group Visual - Edge-to-edge organic blend without box/card */}
           <div
-            className="relative w-full h-[260px] sm:h-[320px] overflow-hidden"
+            className="relative w-full h-[220px] sm:h-[300px] overflow-hidden rounded-2xl"
             style={{
               maskImage:
                 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 6%, #000 20%, #000 85%, transparent 100%)',
@@ -218,7 +218,7 @@ export default function Hero({
           </div>
 
           {/* Mobile Yellow Banner */}
-          <div className="mt-[-16px] relative z-20">
+          <div className="mt-[-12px] relative z-20">
             {renderYellowBanner()}
           </div>
         </div>

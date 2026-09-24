@@ -158,13 +158,13 @@ export default function ServiceCategories({
   onViewAll,
 }: ServiceCategoriesProps) {
   return (
-    <section id="services" className="py-12 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
+    <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Row: Title with Hindi Subtitle on Left, View All on Right */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
           <div>
             {/* Trust Micro-badge */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
               <span>सत्यापित कामगार • 100% Aadhaar & Skill Verified</span>
             </div>
@@ -191,17 +191,17 @@ export default function ServiceCategories({
             <button
               type="button"
               onClick={onViewAll}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#1264D6] hover:bg-blue-50 border border-[#1264D6] rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 bg-white"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[42px] text-xs sm:text-sm font-bold text-[#1264D6] hover:bg-blue-50 border border-[#1264D6] rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 bg-white"
             >
               <span>View All</span>
-              <span className="text-[10px] text-blue-500/80 font-normal">/ सभी देखें</span>
+              <span className="text-[11px] text-blue-500/80 font-normal font-devanagari">/ सभी देखें</span>
               <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
         </div>
 
-        {/* Dense 9-Column Grid matching Screenshot exactly (2 rows of 9 cards) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
+        {/* Responsive Grid: 2 cols on phone, 3 on sm, 4 on md, 6 on lg, 9 on xl */}
+        <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
           {CATEGORY_ITEMS.map((item) => (
             <ServiceCard
               key={item.title}

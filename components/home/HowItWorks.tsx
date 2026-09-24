@@ -53,39 +53,41 @@ export default function HowItWorks() {
         </div>
 
         {/* Content Grid: 4 Steps on Left, Phone Mockup on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Column: 4 Steps */}
           <div className="lg:col-span-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-4 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 relative">
               {steps.map((step, idx) => {
                 const Icon = step.icon;
                 return (
                   <div
                     key={step.num}
-                    className="flex flex-col items-center sm:items-start text-center sm:text-left relative sm:pr-4"
+                    className="flex flex-row sm:flex-col items-center sm:items-start text-left relative p-4 sm:p-0 bg-white sm:bg-transparent rounded-2xl sm:rounded-none border sm:border-0 border-slate-200/90 shadow-2xs sm:shadow-none gap-3.5 sm:gap-0 sm:pr-4"
                   >
                     {/* Step Icon in Light Blue Circle */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#EAF5FF] text-[#1264D6] flex items-center justify-center mb-3 shadow-2xs border border-blue-100">
-                      <Icon className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2]" />
+                    <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-full bg-[#EAF5FF] text-[#1264D6] flex items-center justify-center shrink-0 mb-0 sm:mb-3 shadow-2xs border border-blue-100">
+                      <Icon className="w-6 h-6 sm:w-8 sm:h-8 stroke-[2]" />
                     </div>
 
-                    {/* Step Number + Title */}
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="w-5 h-5 rounded-full bg-[#1264D6] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-                        {step.num}
+                    <div className="flex-1 min-w-0">
+                      {/* Step Number + Title */}
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="w-5 h-5 rounded-full bg-[#1264D6] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                          {step.num}
+                        </span>
+                        <h3 className="font-bold text-sm sm:text-base text-[#082B66] tracking-tight">
+                          {step.title}
+                        </h3>
+                      </div>
+                      <span className="text-xs text-blue-600 font-semibold font-devanagari block mb-1">
+                        {step.hindiTitle}
                       </span>
-                      <h3 className="font-bold text-sm sm:text-base text-[#082B66] tracking-tight">
-                        {step.title}
-                      </h3>
-                    </div>
-                    <span className="text-[11px] text-blue-600 font-medium font-devanagari mb-1">
-                      {step.hindiTitle}
-                    </span>
 
-                    {/* Description */}
-                    <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                      {step.desc}
-                    </p>
+                      {/* Description */}
+                      <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                        {step.desc}
+                      </p>
+                    </div>
 
                     {/* Vertical Divider for Desktop between steps */}
                     {idx < steps.length - 1 && (
@@ -98,7 +100,7 @@ export default function HowItWorks() {
           </div>
 
           {/* Right Column: Phone Mockup with Map Route & Floating Worker Card */}
-          <div className="lg:col-span-4 flex items-center justify-center relative">
+          <div className="lg:col-span-4 flex flex-col items-center justify-center relative pt-4 lg:pt-0">
             <div className="relative">
               {/* Phone Device Frame */}
               <div className="w-56 sm:w-64 bg-slate-900 rounded-[36px] p-3 shadow-2xl border-4 border-slate-800">
@@ -157,14 +159,21 @@ export default function HowItWorks() {
                 <div className="w-20 h-1 bg-slate-700 rounded-full mx-auto mt-2" />
               </div>
 
-              {/* Playful Tagline next to phone matching Reference */}
-              <div className="absolute -right-4 sm:-right-8 top-1/2 -translate-y-1/2 rotate-12 sm:rotate-6 pointer-events-none">
+              {/* Playful Tagline next to phone on desktop */}
+              <div className="hidden sm:block absolute -right-4 sm:-right-8 top-1/2 -translate-y-1/2 rotate-12 sm:rotate-6 pointer-events-none">
                 <span className="text-base sm:text-lg font-black text-[#1264D6] tracking-tight whitespace-nowrap drop-shadow-xs italic">
                   Help is Just
                   <br />
                   a Tap Away! ✨
                 </span>
               </div>
+            </div>
+
+            {/* Playful Tagline on mobile positioned naturally without clipping */}
+            <div className="sm:hidden text-center mt-3">
+              <span className="text-sm font-black text-[#1264D6] tracking-tight drop-shadow-xs italic">
+                Help is Just a Tap Away! ✨
+              </span>
             </div>
           </div>
         </div>

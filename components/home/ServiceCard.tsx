@@ -37,7 +37,7 @@ export default function ServiceCard({
           onClick?.();
         }
       }}
-      className={`group relative flex flex-col justify-between rounded-xl sm:rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none shadow-xs hover:shadow-lg hover:-translate-y-1 ${
+      className={`group relative flex flex-col justify-between rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none shadow-xs hover:shadow-lg hover:-translate-y-1 active:scale-98 ${
         isSelected
           ? 'ring-2 ring-[#1264D6] shadow-md border-[#1264D6]'
           : 'border-slate-200/90 hover:border-slate-300'
@@ -63,12 +63,12 @@ export default function ServiceCard({
 
       {/* Bottom Colorful Category Name Strip matching Reference */}
       <div
-        className={`py-1.5 px-1 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none ${pillColor}`}
+        className={`py-2 px-1.5 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[44px] ${pillColor}`}
       >
-        <span className="truncate block font-bold text-[11px] sm:text-xs tracking-tight leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-bold text-xs sm:text-xs tracking-tight leading-snug line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {title}
         </span>
-        <span className="truncate block font-semibold text-[9.5px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-semibold text-[11px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-devanagari line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {hindiTitle}
         </span>
       </div>

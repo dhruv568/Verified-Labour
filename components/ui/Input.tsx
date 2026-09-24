@@ -59,7 +59,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             disabled={disabled}
             required={required}
-            className={`w-full px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent ${className}`}
+            className={`w-full px-3.5 py-2.5 text-sm sm:text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent ${className}`}
             {...props}
           />
         </div>

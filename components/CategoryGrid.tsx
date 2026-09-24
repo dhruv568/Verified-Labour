@@ -254,7 +254,7 @@ export default function CategoryGrid({
                 onSelectCategory(cat);
               }
             }}
-            className={`group relative flex flex-col justify-between rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none ${
+            className={`group relative flex flex-col justify-between rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none active:scale-98 ${
               isSelected
                 ? 'ring-2 ring-[#1464D2] shadow-md border-[#1464D2]'
                 : 'border-slate-200 hover:border-slate-300 hover:shadow-lg hover:-translate-y-1'
@@ -281,13 +281,13 @@ export default function CategoryGrid({
 
             {/* Bottom Rounded Pill with Category Label matching Reference Design */}
             <div
-              className={`py-1.5 px-1 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none ${visual.pillColor}`}
+              className={`py-2 px-1.5 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[44px] ${visual.pillColor}`}
             >
-              <span className="truncate block font-bold text-[11px] sm:text-xs tracking-tight leading-tight">
+              <span className="block font-bold text-xs sm:text-xs tracking-tight leading-snug line-clamp-1">
                 {cat.name}
               </span>
               {cat.nameHi && (
-                <span className="truncate block font-semibold text-[9.5px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal">
+                <span className="block font-semibold text-[11px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-devanagari line-clamp-1">
                   {cat.nameHi}
                 </span>
               )}

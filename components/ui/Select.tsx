@@ -43,7 +43,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             disabled={disabled}
             required={required}
-            className={`w-full appearance-none px-3.5 py-2.5 pr-10 text-xs rounded-xl border transition-all outline-none bg-white text-slate-900 ${
+            className={`w-full appearance-none px-3.5 py-2.5 pr-10 text-sm sm:text-xs rounded-xl border transition-all outline-none bg-white text-slate-900 ${
               error
                 ? 'border-red-300 focus:ring-2 focus:ring-red-400 bg-red-50/20'
                 : 'border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'

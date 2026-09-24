@@ -77,13 +77,13 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo with Helmet & Verified Badge */}
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-amber-400 text-navy-950 shadow-xs">
-              <HardHat className="w-6 h-6 text-navy-950" />
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
+            <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-400 text-navy-950 shadow-xs">
+              <HardHat className="w-5 h-5 sm:w-6 sm:h-6 text-navy-950" />
               <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs">
-                <CheckCircle2 className="w-4 h-4 text-[#0B9B5A] fill-[#0B9B5A] text-white" />
+                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0B9B5A] fill-[#0B9B5A] text-white" />
               </div>
             </div>
             <div className="flex flex-col">
@@ -91,7 +91,7 @@ export default function Navbar({
                 <span className="text-[#0F2A5F]">Verified</span>
                 <span className="text-[#0B9B5A] ml-1">Labour</span>
               </div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 tracking-tight mt-0.5">
+              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 tracking-tight mt-0.5 max-w-[170px] sm:max-w-none truncate">
                 Real People. Real Skills. Real Support.
               </span>
             </div>
@@ -237,7 +237,7 @@ export default function Navbar({
           <div className="flex lg:hidden items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 focus:outline-none transition-colors"
+              className="w-11 h-11 flex items-center justify-center text-slate-700 hover:text-slate-950 rounded-xl bg-slate-100 hover:bg-slate-200 focus:outline-none transition-colors"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? (
@@ -251,27 +251,27 @@ export default function Navbar({
 
         {/* Mobile Dropdown Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-slate-100 space-y-3 animate-in fade-in duration-150">
+          <div className="lg:hidden py-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
             {/* Location in Mobile Menu */}
-            <div className="px-2 pb-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <div className="px-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
                 Your Service Location:
               </span>
               <LocationSelector isMobile={true} />
             </div>
 
-            <nav className="space-y-1 px-1">
+            <nav className="space-y-1">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-bold text-[#0F2A5F] hover:bg-slate-50 rounded-xl"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#0F2A5F] hover:bg-slate-50 rounded-xl transition-colors"
               >
                 Home
               </Link>
               <a
                 href="/#workers"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 Find a Worker
               </a>
@@ -281,61 +281,75 @@ export default function Navbar({
                   setMobileMenuOpen(false);
                   onOpenAuth?.('register', 'WORKER');
                 }}
-                className="w-full text-left block px-3 py-2 text-sm font-bold text-[#0B9B5A] hover:bg-brand-50/50 rounded-xl"
+                className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#0B9B5A] hover:bg-brand-50/50 rounded-xl transition-colors"
               >
-                Become a Worker
+                <span>Become a Worker</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  Earn Daily
+                </span>
               </button>
               <a
                 href="/#how"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 How It Works
               </a>
               <a
                 href="/#about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 About
               </a>
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 Contact
               </a>
             </nav>
 
-            <div className="pt-3 border-t border-slate-100 px-2">
+            <div className="pt-3 border-t border-slate-100 px-1">
               {sessionUser ? (
                 <div className="space-y-2">
                   <Link
                     href={getDashboardLink()}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center px-4 py-2.5 bg-[#0F2A5F] text-white font-bold rounded-xl shadow-xs text-xs"
+                    className="flex items-center justify-center min-h-[48px] w-full px-4 py-3 bg-[#0F2A5F] text-white font-bold rounded-xl shadow-xs text-sm"
                   >
                     Go to Dashboard ({sessionUser.role})
                   </Link>
+
+                  {sessionUser.role === 'WORKER' && (
+                    <Link
+                      href="/worker/earnings"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center min-h-[44px] w-full px-4 py-2.5 bg-emerald-50 text-[#0B9B5A] font-bold rounded-xl text-sm border border-emerald-200"
+                    >
+                      <span>₹ My Earnings & Wallet</span>
+                    </Link>
+                  )}
+
                   <button
                     onClick={() => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className="block w-full text-center px-4 py-2 text-red-600 font-semibold text-xs hover:bg-red-50 rounded-xl"
+                    className="flex items-center justify-center min-h-[44px] w-full px-4 py-2 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-xl"
                   >
                     Log Out
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => {
                       onOpenAuth?.('login');
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2.5 text-center font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full text-xs shadow-xs transition-colors"
+                    className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
                     Login
                   </button>
@@ -344,7 +358,7 @@ export default function Navbar({
                       onOpenAuth?.('register', 'CUSTOMER');
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2.5 text-center font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full text-xs shadow-xs transition-colors"
+                    className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
                     Sign Up
                   </button>
