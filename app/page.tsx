@@ -8,7 +8,8 @@ import HowItWorks from '@/components/home/HowItWorks';
 import CustomerCTA from '@/components/home/CustomerCTA';
 import WorkerCTA from '@/components/home/WorkerCTA';
 import TrustStats from '@/components/home/TrustStats';
-import Footer from '@/components/Footer';
+import MobileHomeView from '@/components/home/MobileHomeView';
+import Footer from '@/components/home/Footer';
 import AuthModal from '@/components/AuthModal';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';
@@ -114,8 +115,14 @@ export default function HomePage() {
     window.location.href = `/customer/jobs/${jobId}`;
   };
 
-  const handleSearchWorkers = () => {
-    fetchWorkers();
+  const handleSearchWorkers = (query?: string) => {
+    if (query) {
+      // If a search query slug was passed
+      setSelectedCategory(query);
+      fetchWorkers(query);
+    } else {
+      fetchWorkers();
+    }
     setWorkersModalOpen(true);
   };
 
@@ -130,40 +137,45 @@ export default function HomePage() {
       {/* 1. HEADER */}
       <Header onOpenAuth={handleOpenAuth} />
 
-      {/* 2. HERO SECTION */}
-      <Hero
-        onSearchWorker={handleSearchWorkers}
-        onSelectCategory={handleSelectCategory}
-        onViewAllCategories={() => {
-          const el = document.getElementById('services');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-      />
-
-      {/* 3. SERVICE CATEGORIES */}
-      <ServiceCategories
-        selectedCategorySlug={selectedCategory}
-        onSelectCategory={handleSelectCategory}
-        onViewAll={handleSearchWorkers}
-      />
-
-      {/* 4. HOW IT WORKS */}
-      <HowItWorks />
-
-      {/* 5. CUSTOMER CTA + WORKER CTA */}
-      <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            <CustomerCTA onFindWorker={handleSearchWorkers} />
-            <WorkerCTA onRegisterWorker={() => handleOpenAuth('register', 'WORKER')} />
+      {/* ================= DESKTOP VIEW ONLY (md and above) ================= */}
+      <div className="hidden md:block">
+        <Hero
+          onSearchWorker={handleSearchWorkers}
+          onSelectCategory={handleSelectCategory}
+          onViewAllCategories={() => {
+            const el = document.getElementById('services');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+        <ServiceCategories
+          selectedCategorySlug={selectedCategory}
+          onSelectCategory={handleSelectCategory}
+          onViewAll={handleSearchWorkers}
+        />
+        <HowItWorks />
+        <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+              <CustomerCTA onFindWorker={handleSearchWorkers} />
+              <WorkerCTA onRegisterWorker={() => handleOpenAuth('register', 'WORKER')} />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+        <TrustStats stats={platformStats} />
+      </div>
 
-      {/* 6. TRUST / STATISTICS STRIP */}
-      <TrustStats stats={platformStats} />
+      {/* ================= MOBILE VIEW ONLY (< md / 320px - 430px) ================= */}
+      <div className="block md:hidden">
+        <MobileHomeView
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectCategory}
+          onSearchWorker={handleSearchWorkers}
+          onOpenAuth={handleOpenAuth}
+          platformStats={platformStats}
+        />
+      </div>
 
-      {/* 7. FOOTER & 8. COPYRIGHT BAR */}
+      {/* FOOTER */}
       <Footer />
 
       {/* ================= MODALS & ACTIVE FUNCTIONALITY ================= */}
