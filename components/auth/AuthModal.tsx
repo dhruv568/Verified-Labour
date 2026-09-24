@@ -320,14 +320,6 @@ export default function AuthModal({
     router.refresh();
   };
 
-  // Demo user quick login autofill helper
-  const fillDemoCredentials = (email: string, pass: string) => {
-    setLoginEmail(email);
-    setLoginPassword(pass);
-    setFieldErrors({});
-    setError(null);
-  };
-
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[92vh] flex flex-col">
@@ -464,38 +456,6 @@ export default function AuthModal({
                 </button>
               </div>
 
-              {/* Demo Credentials Box */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5 mt-2">
-                <p className="font-bold text-slate-800 flex items-center justify-between">
-                  <span>Demo Accounts (click to pre-fill):</span>
-                </p>
-                <div className="space-y-1 pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => fillDemoCredentials('admin@verifiedlabour.com', 'Admin@123456')}
-                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
-                  >
-                    <span className="font-medium text-slate-700">Admin</span>
-                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">admin@verifiedlabour.com</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoCredentials('rajesh.sharma@example.com', 'Customer@123')}
-                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
-                  >
-                    <span className="font-medium text-slate-700">Customer</span>
-                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">rajesh.sharma@example.com</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoCredentials('ramesh.patel@example.com', 'Worker@123')}
-                    className="w-full text-left p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors flex items-center justify-between group"
-                  >
-                    <span className="font-medium text-slate-700">Plumber Worker</span>
-                    <span className="font-mono text-[11px] text-slate-800 group-hover:text-brand-700">ramesh.patel@example.com</span>
-                  </button>
-                </div>
-              </div>
             </form>
           )}
 
