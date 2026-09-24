@@ -8,7 +8,7 @@ import HowItWorks from '@/components/home/HowItWorks';
 import CustomerCTA from '@/components/home/CustomerCTA';
 import WorkerCTA from '@/components/home/WorkerCTA';
 import TrustStats from '@/components/home/TrustStats';
-import Footer from '@/components/home/Footer';
+import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';

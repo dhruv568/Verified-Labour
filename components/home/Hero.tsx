@@ -106,15 +106,8 @@ export default function Hero({
   );
 
   return (
-    <section className="relative bg-white pt-4 pb-10 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
-      {/* ================= BACKGROUND BLENDED WORKER GROUP (DESKTOP & TABLET) ================= */}
-      {/*
-        Horizontal Opacity Gradient:
-        - Left: Very low opacity / heavily faded into the white background behind the text
-        - Center: Medium opacity with a soft natural transition
-        - Right: High opacity / fully visible and detailed workers
-        - No hard edges, borders, cards, or boxes
-      */}
+    <section className="relative bg-white pt-3 pb-8 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
+      {/* ================= DESKTOP & TABLET BACKGROUND BLENDED WORKER GROUP ================= */}
       <div
         className="hidden md:block absolute inset-y-0 right-0 w-[62%] lg:w-[74%] xl:w-[70%] 2xl:w-[66%] h-full pointer-events-none select-none z-0 overflow-hidden"
         style={{
@@ -136,19 +129,19 @@ export default function Hero({
         </div>
       </div>
 
-      {/* Soft White Left Fade Overlay - Guarantees 100% crisp text readability */}
+      {/* Soft White Left Fade Overlay (Desktop) */}
       <div className="hidden lg:block absolute inset-y-0 left-0 w-[44%] xl:w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none z-10" />
 
-      {/* Soft Bottom Fade Overlay - Smoothly dissolves workers into the white section border */}
+      {/* Soft Bottom Fade Overlay (Desktop) */}
       <div className="hidden md:block absolute inset-x-0 bottom-0 h-16 lg:h-24 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-10" />
 
-      {/* Soft Top Fade Overlay */}
+      {/* Soft Top Fade Overlay (Desktop) */}
       <div className="hidden md:block absolute inset-x-0 top-0 h-10 lg:h-14 bg-gradient-to-b from-white/80 via-white/20 to-transparent pointer-events-none z-10" />
 
-      {/* ================= HERO CONTENT WRAPPER ================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full z-20">
+      {/* ================= DESKTOP / PC HERO CONTENT WRAPPER (md and above) ================= */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full z-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-10 items-center">
-          {/* ================= LEFT COLUMN: Headline & Search ================= */}
+          {/* LEFT COLUMN: Headline & Search */}
           <div className="lg:col-span-7 xl:col-span-6 space-y-5 sm:space-y-6 z-20">
             {/* Headline */}
             <div className="space-y-1.5">
@@ -170,20 +163,6 @@ export default function Hero({
               verified workers near you, just like Ola or Uber.
             </p>
 
-            {/* Mobile-Only AI Worker Image - Supporting Main Hero Text */}
-            <div className="block md:hidden my-3.5">
-              <div className="relative w-full h-[180px] xs:h-[200px] sm:h-[220px] rounded-2xl overflow-hidden shadow-xs border border-slate-100">
-                <Image
-                  src="/images/home/hero-mobile-verified-workers.jpg"
-                  alt="Verified Labour - Professional Indian verified skilled workers"
-                  fill
-                  priority
-                  className="object-cover object-[50%_25%]"
-                  sizes="100vw"
-                />
-              </div>
-            </div>
-
             {/* 3 Circular Trust Badges */}
             <TrustIndicators />
 
@@ -194,7 +173,7 @@ export default function Hero({
             <PopularSearches onSelectCategory={onSelectCategory} />
           </div>
 
-          {/* ================= RIGHT COLUMN: Desktop & Tablet Controls ================= */}
+          {/* RIGHT COLUMN: Desktop & Tablet Controls */}
           <div className="hidden md:flex lg:col-span-5 xl:col-span-6 flex-col justify-between items-end min-h-[380px] lg:min-h-[520px] xl:min-h-[580px] relative z-20 pointer-events-none">
             {/* Top Right Promotional Tag */}
             {renderPromotionalTag()}
@@ -203,18 +182,37 @@ export default function Hero({
             {renderYellowBanner()}
           </div>
         </div>
+      </div>
 
-        {/* ================= MOBILE VIEW: Stacked Layout ================= */}
-        <div className="block md:hidden mt-5 space-y-4">
-          {/* Mobile Promotional Tag */}
-          <div className="flex justify-end pr-1">
-            {renderPromotionalTag()}
-          </div>
+      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) ================= */}
+      <div className="block md:hidden w-full max-w-md mx-auto px-3.5 relative z-20 space-y-4">
+        {/* Mobile Hero Design Banner Image */}
+        <div className="relative w-full rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 bg-white">
+          <Image
+            src="/images/home/hero-mobile-design.png"
+            alt="Verified Labour - आपके घर और व्यवसाय के लिए भरोसेमंद मजदूर और कामगार"
+            width={682}
+            height={416}
+            priority
+            className="w-full h-auto object-cover"
+            sizes="(max-width: 767px) 100vw, 430px"
+          />
+        </div>
 
-          {/* Mobile Yellow Banner */}
-          <div className="relative z-20">
-            {renderYellowBanner()}
-          </div>
+        {/* Location & Worker Search Bar */}
+        <LocationSearch onSearch={onSearchWorker} />
+
+        {/* Category Pills / Popular Searches */}
+        <PopularSearches onSelectCategory={onSelectCategory} />
+
+        {/* Mobile Yellow Callout Banner */}
+        <div className="pt-0.5">
+          {renderYellowBanner()}
+        </div>
+
+        {/* Mobile Promotional Tag */}
+        <div className="flex justify-end pt-0.5 pr-1">
+          {renderPromotionalTag()}
         </div>
       </div>
     </section>
