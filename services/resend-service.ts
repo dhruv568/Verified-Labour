@@ -305,10 +305,6 @@ export function verifyEmailOtpCode(email: string, otpInput: string): { success: 
   const stored = activeOtps.get(normalizedEmail);
 
   if (!stored) {
-    // In dev mode, allow fallback sandbox code '123456' if no stored OTP exists
-    if (process.env.NODE_ENV !== 'production' && otpInput === '123456') {
-      return { success: true };
-    }
     return { success: false, error: 'Invalid or expired verification code. Please request a new code.' };
   }
 
@@ -322,12 +318,16 @@ export function verifyEmailOtpCode(email: string, otpInput: string): { success: 
     return { success: false, error: 'Too many incorrect attempts. Please request a new code.' };
   }
 
-  if (stored.otp === otpInput || (process.env.NODE_ENV !== 'production' && otpInput === '123456')) {
+  if (stored.otp === otpInput) {
     // Invalidate OTP after successful verification
     activeOtps.delete(normalizedEmail);
     return { success: true };
   } else {
     stored.attempts += 1;
+    if (stored.attempts >= 5) {
+      activeOtps.delete(normalizedEmail);
+      return { success: false, error: 'Too many incorrect attempts. Please request a new code.' };
+    }
     return {
       success: false,
       error: `Incorrect verification code. ${5 - stored.attempts} attempts remaining.`,

@@ -120,7 +120,8 @@ export async function POST(req: NextRequest) {
           email: normalizedEmail,
           role,
           status: 'ACTIVE',
-          isPhoneVerified: true,
+          isPhoneVerified: !!formattedPhone,
+          isEmailVerified: !!normalizedEmail,
           ...(role === 'CUSTOMER' && {
             customerProfile: {
               create: {
@@ -158,9 +159,14 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
-      const updateData: any = { isPhoneVerified: true };
-      if (normalizedEmail && !user.email) {
-        updateData.email = normalizedEmail;
+      const updateData: any = {};
+      if (normalizedEmail) {
+        updateData.isEmailVerified = true;
+        updateData.status = 'ACTIVE';
+        if (!user.email) updateData.email = normalizedEmail;
+      }
+      if (phone) {
+        updateData.isPhoneVerified = true;
       }
       if (role === 'WORKER' && !user.workerProfile) {
         await prisma.workerProfile.create({
@@ -203,7 +209,9 @@ export async function POST(req: NextRequest) {
         phone: user.phone,
         email: user.email,
         role: user.role,
+        status: user.status,
         isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,

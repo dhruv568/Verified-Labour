@@ -43,9 +43,6 @@ export default function OtpStep({
         <p className="text-xs text-slate-600 mt-1">
           We sent a 6-digit OTP to: <strong className="text-slate-900">+91 {phone}</strong>
         </p>
-        <p className="text-[11px] text-brand-700 font-semibold mt-1">
-          Sandbox test OTP: <span className="font-mono bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">123456</span>
-        </p>
       </div>
 
       <div>

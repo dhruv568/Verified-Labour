@@ -290,7 +290,7 @@ async function main() {
   const adminPasswordHash = await bcrypt.hash('Admin@123456', 10);
   const adminUser = await prisma.user.upsert({
     where: { phone: '+919999999999' },
-    update: { role: 'ADMIN', status: 'ACTIVE', isPhoneVerified: true },
+    update: { role: 'ADMIN', status: 'ACTIVE', isPhoneVerified: true, isEmailVerified: true },
     create: {
       phone: '+919999999999',
       email: 'admin@verifiedlabour.com',
@@ -298,6 +298,7 @@ async function main() {
       role: 'ADMIN',
       status: 'ACTIVE',
       isPhoneVerified: true,
+      isEmailVerified: true,
       adminUser: {
         create: {
           permissions: 'ALL',
@@ -312,7 +313,7 @@ async function main() {
   const customerPasswordHash = await bcrypt.hash('Customer@123', 10);
   const customerUser = await prisma.user.upsert({
     where: { phone: '+919876543210' },
-    update: { role: 'CUSTOMER', status: 'ACTIVE', isPhoneVerified: true },
+    update: { role: 'CUSTOMER', status: 'ACTIVE', isPhoneVerified: true, isEmailVerified: true },
     create: {
       phone: '+919876543210',
       email: 'rajesh.sharma@example.com',
@@ -320,6 +321,7 @@ async function main() {
       role: 'CUSTOMER',
       status: 'ACTIVE',
       isPhoneVerified: true,
+      isEmailVerified: true,
       customerProfile: {
         create: {
           fullName: 'Rajesh Sharma',
@@ -370,7 +372,7 @@ async function main() {
   const businessPasswordHash = await bcrypt.hash('Business@123', 10);
   const businessUser = await prisma.user.upsert({
     where: { phone: '+919888877777' },
-    update: { role: 'BUSINESS', status: 'ACTIVE', isPhoneVerified: true },
+    update: { role: 'BUSINESS', status: 'ACTIVE', isPhoneVerified: true, isEmailVerified: true },
     create: {
       phone: '+919888877777',
       email: 'operations@suratinfra.com',
@@ -378,6 +380,7 @@ async function main() {
       role: 'BUSINESS',
       status: 'ACTIVE',
       isPhoneVerified: true,
+      isEmailVerified: true,
       businessProfile: {
         create: {
           companyName: 'Surat Infrastructure & Builders Pvt Ltd',
@@ -532,7 +535,7 @@ async function main() {
     const category = categoryMap[w.categorySlug];
     const user = await prisma.user.upsert({
       where: { phone: w.phone },
-      update: { role: 'WORKER', status: 'ACTIVE', email: w.email, isPhoneVerified: true },
+      update: { role: 'WORKER', status: 'ACTIVE', email: w.email, isPhoneVerified: true, isEmailVerified: true },
       create: {
         phone: w.phone,
         email: w.email,
@@ -540,6 +543,7 @@ async function main() {
         role: 'WORKER',
         status: 'ACTIVE',
         isPhoneVerified: true,
+        isEmailVerified: true,
         workerProfile: {
           create: {
             fullName: w.fullName,

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Eye,
   EyeOff,
@@ -30,7 +31,7 @@ export interface AuthModalProps {
   onSuccess?: (user: any) => void;
 }
 
-type TabType = 'login' | 'register' | 'otp';
+type TabType = 'login' | 'register' | 'otp' | 'email-otp';
 
 export default function AuthModal({
   isOpen,
@@ -64,6 +65,7 @@ export default function AuthModal({
 
   // Mobile OTP fallback flow states
   const [otpPhone, setOtpPhone] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpStep, setOtpStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [resendTimer, setResendTimer] = useState(0);
@@ -173,6 +175,16 @@ export default function AuthModal({
         throw new Error(data.error || 'Login failed. Please check your credentials.');
       }
 
+      if (data.requiresVerification) {
+        setPendingEmail(data.email || loginEmail.trim());
+        setTab('email-otp');
+        setResendTimer(60);
+        setSuccessMsg(data.message || 'Verification code sent to your email.');
+        setError(null);
+        setOtpCode('');
+        return;
+      }
+
       completeLogin(data.user);
     } catch (err: any) {
       setError(err.message);
@@ -232,7 +244,75 @@ export default function AuthModal({
         throw new Error(data.error || 'Registration failed. Please check your details.');
       }
 
+      if (data.requiresVerification) {
+        setPendingEmail(data.email || regEmail.trim());
+        setTab('email-otp');
+        setResendTimer(60);
+        setSuccessMsg(data.message || 'Verification code sent to your email.');
+        setError(null);
+        setOtpCode('');
+        return;
+      }
+
       completeLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Verify Email OTP
+  const handleVerifyEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: pendingEmail,
+          otp: otpCode.trim(),
+          role,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Invalid verification code. Please try again.');
+      }
+
+      completeLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Resend Email OTP
+  const handleResendEmailOtp = async () => {
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingEmail }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to resend verification code');
+      }
+
+      setResendTimer(60);
+      setSuccessMsg('Verification code sent to your email.');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -328,6 +408,8 @@ export default function AuthModal({
           title={
             tab === 'register'
               ? 'Create your Verified Labour account'
+              : tab === 'email-otp'
+              ? 'Verify Your Email'
               : tab === 'otp'
               ? 'Sign In with Mobile OTP'
               : 'Login to Verified Labour'
@@ -341,7 +423,7 @@ export default function AuthModal({
             setSuccessMsg(null);
             setFieldErrors({});
           }}
-          showTabs={tab !== 'otp'}
+          showTabs={tab !== 'otp' && tab !== 'email-otp'}
         />
 
         {/* Modal Body */}
@@ -753,6 +835,91 @@ export default function AuthModal({
                 />
               )}
             </div>
+          )}
+
+          {/* TAB 4: EMAIL OTP VERIFICATION FLOW */}
+          {tab === 'email-otp' && (
+            <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
+              <div className="text-center pb-1">
+                <div className="mx-auto w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
+                  <Mail className="w-6 h-6 text-emerald-600" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Verification code sent to your email</h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  Enter the 6-digit OTP code sent to:
+                </p>
+                <p className="text-xs font-bold text-brand-800 mt-1 font-mono bg-brand-50/50 py-1 px-2 rounded-lg inline-block border border-brand-200">
+                  {pendingEmail}
+                </p>
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  maxLength={6}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="• • • • • •"
+                  value={otpCode}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setOtpCode(val);
+                    if (error) setError(null);
+                  }}
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                    if (pasted) {
+                      setOtpCode(pasted);
+                      e.preventDefault();
+                    }
+                  }}
+                  className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none bg-white text-slate-900"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                fullWidth
+                isLoading={loading}
+                disabled={loading || otpCode.length !== 6}
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                {loading ? 'Verifying...' : 'Verify Email & Continue'}
+              </Button>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('login');
+                    setError(null);
+                    setSuccessMsg(null);
+                    setOtpCode('');
+                  }}
+                  className="text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Login</span>
+                </button>
+
+                {resendTimer > 0 ? (
+                  <span className="text-slate-400 font-medium">Resend code in {resendTimer}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendEmailOtp}
+                    disabled={loading}
+                    className="text-brand-700 font-bold hover:underline"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </form>
           )}
         </div>
       </div>

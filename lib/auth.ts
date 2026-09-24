@@ -124,7 +124,7 @@ export async function getSessionUser(req?: NextRequest) {
     },
   });
 
-  if (!user || user.status === 'SUSPENDED') return null;
+  if (!user || user.status === 'SUSPENDED' || user.status === 'PENDING_VERIFICATION' || !user.isEmailVerified) return null;
 
   return user;
 }

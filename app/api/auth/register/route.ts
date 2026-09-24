@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { hashPassword, signAuthToken, setAuthCookie, normalizePhone } from '@/lib/auth';
+import { hashPassword, normalizePhone } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { sendEmailOtp } from '@/services/resend-service';
 
 // Robust Indian mobile phone validation
 // Matches 10 digits starting with 6, 7, 8, or 9 with optional +91, 91, or 0 prefix
@@ -97,17 +98,16 @@ export async function POST(req: NextRequest) {
     // 3. Hash password securely using bcrypt
     const passwordHash = await hashPassword(password);
 
-    // 4. Create User and Role-specific profile in database
-    // Store phone securely in standardized E.164 format (+91XXXXXXXXXX)
-    // isPhoneVerified is set to false initially, ready for future OTP verification.
+    // 4. Create User as PENDING_VERIFICATION with isEmailVerified = false
     const user = await prisma.user.create({
       data: {
         phone: normalizedPhone,
         email: normalizedEmail,
         passwordHash,
         role,
-        status: 'ACTIVE',
+        status: 'PENDING_VERIFICATION',
         isPhoneVerified: false,
+        isEmailVerified: false,
         ...(role === 'CUSTOMER' && {
           customerProfile: {
             create: {
@@ -152,33 +152,34 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5. Sign Auth JWT Token
-    const token = await signAuthToken({
-      userId: user.id,
-      phone: user.phone,
-      email: user.email || undefined,
-      role: user.role as any,
-    });
+    // 5. Generate and send Email OTP via Resend integration
+    const otpResult = await sendEmailOtp({ email: normalizedEmail, name });
+    if (!otpResult.success) {
+      console.error('Failed to send registration OTP email:', otpResult.error);
+    }
 
-    const response = NextResponse.json({
+    // DO NOT create authenticated session JWT
+    // DO NOT set auth cookie
+
+    return NextResponse.json({
       success: true,
+      requiresVerification: true,
+      email: normalizedEmail,
+      message: 'Verification code sent to your email.',
       user: {
         id: user.id,
         phone: user.phone,
         email: user.email,
         role: user.role,
+        status: user.status,
         isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,
         adminUser: user.adminUser,
       },
-      message: 'Account created successfully',
     });
-
-    // 6. Set HTTP-Only Session Cookie
-    setAuthCookie(response, token);
-    return response;
   } catch (err: any) {
     console.error('Registration error:', err);
     return NextResponse.json(

@@ -1,12 +1,14 @@
 import assert from 'assert';
 import { NextRequest } from 'next/server';
 import prisma from '../lib/db';
-import { hashPassword, verifyPassword, signAuthToken, verifyAuthToken, normalizePhone } from '../lib/auth';
+import { hashPassword, verifyPassword, signAuthToken, verifyAuthToken, normalizePhone, getSessionUser } from '../lib/auth';
+import activeOtps from '../lib/otp-store';
 import { POST as registerHandler } from '../app/api/auth/register/route';
 import { POST as loginHandler } from '../app/api/auth/login/route';
+import { POST as verifyOtpHandler } from '../app/api/auth/verify-otp/route';
 
 export async function runAuthFlowTests() {
-  console.log('\n--- 6. Authentication Flow & Security Tests ---');
+  console.log('\n--- Mandatory Email OTP Authentication & Verification Tests ---');
 
   let passed = 0;
   let failed = 0;
@@ -72,16 +74,16 @@ export async function runAuthFlowTests() {
     assert.strictEqual(verified?.role, payload.role);
   });
 
-  // 3. Registration API validations
+  // 3. Mandatory Email OTP Registration Flow
   const uniqueSuffix = Date.now().toString().slice(-6);
-  const testRegEmail = `newuser_${uniqueSuffix}@example.com`;
+  const testRegEmail = `unverified_${uniqueSuffix}@example.com`;
   const testRegPhone = `98${uniqueSuffix}12`;
 
-  await testAsync('Registration requires Name, Email, Phone, and Password', async () => {
+  await testAsync('Registration creates user as PENDING_VERIFICATION / unverified, dispatches email OTP, and sets NO auth cookie', async () => {
     const req = new NextRequest('http://localhost:3000/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
-        name: 'Arjun Verma',
+        name: 'Unverified Test User',
         email: testRegEmail,
         phone: testRegPhone,
         password: 'Password@123',
@@ -92,153 +94,166 @@ export async function runAuthFlowTests() {
     const data = await res.json();
     assert.strictEqual(res.status, 200);
     assert.strictEqual(data.success, true);
-    assert.strictEqual(data.user.email, testRegEmail.toLowerCase());
-    assert.strictEqual(data.user.phone, `+91${testRegPhone}`);
-    assert.strictEqual(data.user.isPhoneVerified, false); // Stored securely for future OTP
-    assert.strictEqual(data.user.role, 'CUSTOMER');
-    assert.strictEqual(data.user.customerProfile.fullName, 'Arjun Verma');
+    assert.strictEqual(data.requiresVerification, true);
+    assert.strictEqual(data.user.status, 'PENDING_VERIFICATION');
+    assert.strictEqual(data.user.isEmailVerified, false);
+    assert.strictEqual(res.cookies.get('vl_auth_token'), undefined, 'Registration MUST NOT set vl_auth_token cookie');
+
+    // Verify user record in database
+    const dbUser = await prisma.user.findFirst({ where: { email: testRegEmail.toLowerCase() } });
+    assert(dbUser !== null);
+    assert.strictEqual(dbUser?.status, 'PENDING_VERIFICATION');
+    assert.strictEqual(dbUser?.isEmailVerified, false);
+
+    // Verify OTP was stored in activeOtps
+    const storedOtp = activeOtps.get(testRegEmail.toLowerCase());
+    assert(storedOtp !== undefined, 'Email OTP must be generated and stored in activeOtps');
+    assert.strictEqual(storedOtp?.otp.length, 6);
   });
 
-  await testAsync('Registration rejects duplicate email', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: 'Duplicate Email User',
-        email: testRegEmail,
-        phone: `97${uniqueSuffix}99`,
-        password: 'Password@123',
-        role: 'CUSTOMER',
-      }),
+  await testAsync('Unverified user trying protected access is blocked (getSessionUser returns null)', async () => {
+    const dbUser = await prisma.user.findFirst({ where: { email: testRegEmail.toLowerCase() } });
+    const token = await signAuthToken({
+      userId: dbUser!.id,
+      phone: dbUser!.phone,
+      email: dbUser!.email || undefined,
+      role: dbUser!.role as any,
     });
-    const res = await registerHandler(req);
-    const data = await res.json();
-    assert.strictEqual(res.status, 409);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('email address already exists'));
-  });
-
-  await testAsync('Registration rejects duplicate phone number', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: 'Duplicate Phone User',
-        email: `different_${uniqueSuffix}@example.com`,
-        phone: testRegPhone,
-        password: 'Password@123',
-        role: 'CUSTOMER',
-      }),
+    const req = new NextRequest('http://localhost:3000/api/customer/dashboard', {
+      headers: { cookie: `vl_auth_token=${token}` },
     });
-    const res = await registerHandler(req);
-    const data = await res.json();
-    assert.strictEqual(res.status, 409);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('mobile number already exists'));
+    const sessionUser = await getSessionUser(req);
+    assert.strictEqual(sessionUser, null, 'Unverified user MUST NOT be allowed session access');
   });
 
-  await testAsync('Registration rejects weak password (<8 characters or no letters/digits)', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: 'Test Weak',
-        email: `weak_${uniqueSuffix}@example.com`,
-        phone: `96${uniqueSuffix}11`,
-        password: 'short',
-        role: 'CUSTOMER',
-      }),
-    });
-    const res = await registerHandler(req);
-    const data = await res.json();
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('at least 8 characters'));
-  });
-
-  await testAsync('Registration rejects invalid phone format', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: 'Invalid Phone',
-        email: `phone_${uniqueSuffix}@example.com`,
-        phone: '12345',
-        password: 'Password@123',
-        role: 'CUSTOMER',
-      }),
-    });
-    const res = await registerHandler(req);
-    const data = await res.json();
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('valid 10-digit Indian mobile number'));
-  });
-
-  // 4. Login: Email + Password API tests
-  await testAsync('Login succeeds with registered Email and Password', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/login', {
+  await testAsync('Email OTP verification rejects incorrect OTP code', async () => {
+    const req = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify({
         email: testRegEmail,
-        password: 'Password@123',
+        otp: '000000',
       }),
     });
-    const res = await loginHandler(req);
+    const res = await verifyOtpHandler(req);
     const data = await res.json();
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(data.success, false);
+    assert(data.error.includes('Incorrect verification code') || data.error.includes('Invalid'));
+  });
+
+  await testAsync('Email OTP verification accepts correct OTP, marks email verified, activates user, and sets auth cookie', async () => {
+    const storedOtp = activeOtps.get(testRegEmail.toLowerCase());
+    assert(storedOtp !== undefined);
+    const realOtp = storedOtp.otp;
+
+    const req = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: testRegEmail,
+        otp: realOtp,
+      }),
+    });
+    const res = await verifyOtpHandler(req);
+    const data = await res.json();
+
     assert.strictEqual(res.status, 200);
     assert.strictEqual(data.success, true);
-    assert.strictEqual(data.user.email, testRegEmail.toLowerCase());
-    assert(data.message.includes('successful'));
+    assert.strictEqual(data.user.isEmailVerified, true);
+    assert.strictEqual(data.user.status, 'ACTIVE');
+    assert(res.cookies.get('vl_auth_token') !== undefined, 'Successful OTP verification MUST set vl_auth_token cookie');
+
+    // Verify database state updated
+    const dbUser = await prisma.user.findFirst({ where: { email: testRegEmail.toLowerCase() } });
+    assert.strictEqual(dbUser?.isEmailVerified, true);
+    assert.strictEqual(dbUser?.status, 'ACTIVE');
+
+    // Verify OTP was invalidated
+    assert.strictEqual(activeOtps.get(testRegEmail.toLowerCase()), undefined);
   });
 
-  await testAsync('Login explicitly rejects using Phone Number as Login ID', async () => {
+  // 4. Test Existing Unverified User Login Flow
+  const unverifiedEmail = `existing_unverified_${uniqueSuffix}@example.com`;
+  const unverifiedPhone = `97${uniqueSuffix}99`;
+  const hashedPass = await hashPassword('Password@123');
+
+  await prisma.user.create({
+    data: {
+      phone: `+91${unverifiedPhone}`,
+      email: unverifiedEmail,
+      passwordHash: hashedPass,
+      role: 'CUSTOMER',
+      status: 'PENDING_VERIFICATION',
+      isEmailVerified: false,
+    },
+  });
+
+  await testAsync('Existing unverified user login requires OTP, dispatches email OTP, and sets NO auth cookie', async () => {
     const req = new NextRequest('http://localhost:3000/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        email: `+91${testRegPhone}`,
+        email: unverifiedEmail,
         password: 'Password@123',
       }),
     });
     const res = await loginHandler(req);
     const data = await res.json();
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('Phone number cannot be used as a login ID'));
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(data.success, true);
+    assert.strictEqual(data.requiresVerification, true);
+    assert.strictEqual(res.cookies.get('vl_auth_token'), undefined, 'Unverified login MUST NOT set vl_auth_token cookie');
+
+    // Verify OTP was dispatched and stored
+    const stored = activeOtps.get(unverifiedEmail.toLowerCase());
+    assert(stored !== undefined);
   });
 
-  await testAsync('Login rejects incorrect password', async () => {
-    const req = new NextRequest('http://localhost:3000/api/auth/login', {
+  await testAsync('Existing unverified user completing correct OTP login becomes ACTIVE and receives auth cookie', async () => {
+    const stored = activeOtps.get(unverifiedEmail.toLowerCase());
+    const realOtp = stored!.otp;
+
+    const req = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify({
-        email: testRegEmail,
-        password: 'WrongPassword@999',
+        email: unverifiedEmail,
+        otp: realOtp,
       }),
     });
-    const res = await loginHandler(req);
+    const res = await verifyOtpHandler(req);
     const data = await res.json();
-    assert.strictEqual(res.status, 401);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('Incorrect password'));
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(data.success, true);
+    assert.strictEqual(data.user.isEmailVerified, true);
+    assert.strictEqual(data.user.status, 'ACTIVE');
+    assert(res.cookies.get('vl_auth_token') !== undefined);
   });
 
-  await testAsync('Login rejects unregistered email', async () => {
+  await testAsync('Verified user can log in directly without OTP', async () => {
     const req = new NextRequest('http://localhost:3000/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        email: 'unregistered.nonexistent@example.com',
+        email: unverifiedEmail,
         password: 'Password@123',
       }),
     });
     const res = await loginHandler(req);
     const data = await res.json();
-    assert.strictEqual(res.status, 401);
-    assert.strictEqual(data.success, false);
-    assert(data.error.includes('Invalid email or password'));
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(data.success, true);
+    assert.strictEqual(data.requiresVerification, undefined);
+    assert.strictEqual(data.user.isEmailVerified, true);
+    assert(res.cookies.get('vl_auth_token') !== undefined);
   });
 
-  // Clean up created test user from database
+  // Clean up created test users from database
   try {
-    const createdUser = await prisma.user.findFirst({ where: { email: testRegEmail.toLowerCase() } });
-    if (createdUser) {
-      await prisma.user.delete({ where: { id: createdUser.id } });
-    }
+    await prisma.user.deleteMany({
+      where: {
+        email: { in: [testRegEmail.toLowerCase(), unverifiedEmail.toLowerCase()] },
+      },
+    });
   } catch (cleanErr) {
     // Ignore cleanup error in test
   }

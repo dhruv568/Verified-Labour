@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/db';
 import { verifyPassword, signAuthToken, setAuthCookie } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { sendEmailOtp } from '@/services/resend-service';
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -112,6 +113,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if user email is verified
+    if (!user.isEmailVerified) {
+      const userName =
+        user.customerProfile?.fullName ||
+        user.workerProfile?.fullName ||
+        user.businessProfile?.companyName;
+
+      // Dispatch new email OTP via Resend integration
+      await sendEmailOtp({ email: normalizedEmail, name: userName, isResend: true });
+
+      // DO NOT create authenticated session or cookie
+      return NextResponse.json({
+        success: true,
+        requiresVerification: true,
+        email: normalizedEmail,
+        message: 'Verification code sent to your email. Please verify your email to complete login.',
+      });
+    }
+
     const token = await signAuthToken({
       userId: user.id,
       phone: user.phone,
@@ -126,7 +146,9 @@ export async function POST(req: NextRequest) {
         phone: user.phone,
         email: user.email,
         role: user.role,
+        status: user.status,
         isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,
