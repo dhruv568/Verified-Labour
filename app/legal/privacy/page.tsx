@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             <p>
               Bank accounts entered by skilled workers are validated via Cashfree Bank Account Verification.
               Account numbers are masked in all user interfaces (e.g., <span className="font-mono font-bold">XXXXXXXX4512</span>).
-              Payment transactions processed via Razorpay follow PCI-DSS compliant protocols.
+              Payment transactions processed via Cashfree Payments follow PCI-DSS compliant protocols.
             </p>
           </section>
 

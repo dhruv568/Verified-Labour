@@ -32,7 +32,7 @@ export default function TermsPage() {
           <section className="space-y-2">
             <h2 className="text-lg font-bold text-slate-900">3. Payments & Commission</h2>
             <p>
-              All online bookings must be settled via the integrated Razorpay payment gateway upon completion
+              All online bookings must be settled via the integrated Cashfree Payments gateway upon completion
               of work. Verified Labour charges a transparent platform facilitation fee (10% standard commission).
             </p>
           </section>

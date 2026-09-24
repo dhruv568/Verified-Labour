@@ -23,11 +23,16 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
 
       {/* Content Area */}
       <div className="relative z-10 max-w-[62%] sm:max-w-[58%] space-y-3">
-        <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
-          Need a Worker?
-        </h3>
-        <p className="text-sm sm:text-base font-bold text-blue-100">
-          Book a Verified Professional Now!
+        <div className="space-y-1">
+          <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
+            Need a Worker?
+          </h3>
+          <p className="text-sm sm:text-base font-bold text-amber-300 font-devanagari">
+            अपने पास सही कामगार खोजें
+          </p>
+        </div>
+        <p className="text-xs sm:text-sm font-semibold text-blue-100">
+          Book a Verified Professional Now • 100% सत्यापित कारीगर
         </p>
 
         {/* Benefits Checklist */}

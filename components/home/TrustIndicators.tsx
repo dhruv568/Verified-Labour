@@ -12,9 +12,10 @@ export default function TrustIndicators() {
           <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
         </div>
         <div className="text-xs sm:text-[13px] font-bold text-[#082B66] leading-tight">
-          <span>Verified</span>
-          <br />
-          <span>Workers</span>
+          <span>Verified Workers</span>
+          <span className="block text-[10px] text-emerald-700 font-medium font-devanagari mt-0.5">
+            सत्यापित कामगार
+          </span>
         </div>
       </div>
 
@@ -24,9 +25,10 @@ export default function TrustIndicators() {
           <Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-white stroke-[2]" />
         </div>
         <div className="text-xs sm:text-[13px] font-bold text-[#082B66] leading-tight">
-          <span>On-Demand</span>
-          <br />
-          <span>Service</span>
+          <span>On-Demand Service</span>
+          <span className="block text-[10px] text-rose-700 font-medium font-devanagari mt-0.5">
+            जब ज़रूरत हो, तब सेवा
+          </span>
         </div>
       </div>
 
@@ -36,9 +38,10 @@ export default function TrustIndicators() {
           <Users className="w-4 h-4 sm:w-5 sm:h-5 fill-white stroke-[2]" />
         </div>
         <div className="text-xs sm:text-[13px] font-bold text-[#082B66] leading-tight">
-          <span>Safe &</span>
-          <br />
-          <span>Reliable</span>
+          <span>Safe & Reliable</span>
+          <span className="block text-[10px] text-blue-700 font-medium font-devanagari mt-0.5">
+            सुरक्षित और भरोसेमंद
+          </span>
         </div>
       </div>
     </div>

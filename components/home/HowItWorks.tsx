@@ -9,24 +9,28 @@ export default function HowItWorks() {
     {
       num: 1,
       title: 'Search / Select',
+      hindiTitle: 'खोजें और चुनें',
       desc: 'Choose the service you need and enter your location.',
       icon: Search,
     },
     {
       num: 2,
       title: 'Find & Book',
+      hindiTitle: 'कामगार चुनें',
       desc: 'See nearby verified workers and tap to request.',
       icon: ClipboardList,
     },
     {
       num: 3,
       title: 'Worker Accepts',
+      hindiTitle: 'कामगार जुड़ेगा',
       desc: 'Get confirmation and connect (call/chat).',
       icon: UserCheck,
     },
     {
       num: 4,
       title: 'Job Done',
+      hindiTitle: 'काम पूरा और भुगतान',
       desc: 'Rate the service and make a safe payment.',
       icon: CheckCircle2,
     },
@@ -37,11 +41,14 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="mb-10 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-black text-[#082B66] tracking-tight">
-            How It Works
+          <h2 className="text-2xl sm:text-3xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
+            <span>How It Works</span>
+            <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
+              यह कैसे काम करता है
+            </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Get the help you need in just a few simple steps
+            Get the help you need in just a few simple steps • कुछ ही आसान चरणों में सेवा पाएं
           </p>
         </div>
 
@@ -63,7 +70,7 @@ export default function HowItWorks() {
                     </div>
 
                     {/* Step Number + Title */}
-                    <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="w-5 h-5 rounded-full bg-[#1264D6] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                         {step.num}
                       </span>
@@ -71,6 +78,9 @@ export default function HowItWorks() {
                         {step.title}
                       </h3>
                     </div>
+                    <span className="text-[11px] text-blue-600 font-medium font-devanagari mb-1">
+                      {step.hindiTitle}
+                    </span>
 
                     {/* Description */}
                     <p className="text-xs text-slate-500 leading-relaxed font-normal">

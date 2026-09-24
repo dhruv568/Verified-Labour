@@ -24,14 +24,17 @@ export default function WorkerCTA({ onRegisterWorker }: WorkerCTAProps) {
 
       {/* Content Area */}
       <div className="relative z-10 max-w-[62%] sm:max-w-[58%] space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <div className="space-y-1">
           <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
             Are You a Worker?
           </h3>
+          <p className="text-sm sm:text-base font-bold text-amber-300 font-devanagari">
+            कामगार बनें और काम पाएं
+          </p>
         </div>
 
-        <p className="text-sm sm:text-base font-bold text-emerald-100">
-          Register, Get Verified & Find Jobs!
+        <p className="text-xs sm:text-sm font-semibold text-emerald-100">
+          Register, Get Verified & Earn Daily • रोज़ाना काम और सम्मान
         </p>
 
         {/* Benefits Checklist */}

@@ -51,6 +51,10 @@ const config: Config = {
           blue: "#1464D2",
         },
       },
+      fontFamily: {
+        sans: ["'Inter'", "'Noto Sans Devanagari'", "system-ui", "sans-serif"],
+        devanagari: ["'Noto Sans Devanagari'", "sans-serif"],
+      },
     },
   },
   plugins: [],

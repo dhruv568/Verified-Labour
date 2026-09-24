@@ -2,25 +2,7 @@
 
 import React from 'react';
 import ServiceCard from './ServiceCard';
-import {
-  Zap,
-  Cpu,
-  Monitor,
-  Cookie,
-  Wrench,
-  Flame,
-  Shield,
-  Home,
-  Briefcase,
-  Utensils,
-  Paintbrush,
-  Hammer,
-  Sparkles,
-  Car,
-  Sprout,
-  Package,
-  Layers,
-} from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface ServiceCategoriesProps {
   selectedCategorySlug?: string;
@@ -28,154 +10,145 @@ interface ServiceCategoriesProps {
   onViewAll?: () => void;
 }
 
-// Exactly 18 categories in the exact order shown in the screenshot
+// Exactly 18 categories matching reference image in exact order and colors
 const CATEGORY_ITEMS = [
   // --- ROW 1 (9 items) ---
   {
     title: 'Electrician',
+    hindiTitle: 'इलेक्ट्रीशियन',
     slug: 'electrical',
+    image: '/images/services/electrician.jpg',
     pillColor: 'bg-[#1264D6]',
-    bgTint: 'bg-blue-50/70',
-    iconColor: 'text-[#1264D6]',
-    IconComponent: Zap,
+    priority: true,
   },
   {
     title: 'Computer Hardware',
+    hindiTitle: 'कंप्यूटर हार्डवेयर',
     slug: 'computer-hardware',
+    image: '/images/services/computer-hardware.jpg',
     pillColor: 'bg-[#079447]',
-    bgTint: 'bg-emerald-50/70',
-    iconColor: 'text-[#079447]',
-    IconComponent: Cpu,
+    priority: true,
   },
   {
     title: 'Computer Software',
+    hindiTitle: 'कंप्यूटर सॉफ्टवेयर',
     slug: 'computer-software',
+    image: '/images/services/computer-software.jpg',
     pillColor: 'bg-[#F25C05]',
-    bgTint: 'bg-orange-50/70',
-    iconColor: 'text-[#F25C05]',
-    IconComponent: Monitor,
+    priority: true,
   },
   {
     title: 'Confectioner',
+    hindiTitle: 'हलवाई / कन्फेक्शनर',
     slug: 'confectioner',
+    image: '/images/services/confectioner.jpg',
     pillColor: 'bg-[#C026D3]',
-    bgTint: 'bg-fuchsia-50/70',
-    iconColor: 'text-[#C026D3]',
-    IconComponent: Cookie,
+    priority: true,
   },
   {
     title: 'Car / 2 Wheeler Mechanic',
+    hindiTitle: 'मैकेनिक',
     slug: 'mechanic',
+    image: '/images/services/mechanic.jpg',
     pillColor: 'bg-[#3730A3]',
-    bgTint: 'bg-indigo-50/70',
-    iconColor: 'text-[#3730A3]',
-    IconComponent: Wrench,
+    priority: true,
   },
   {
     title: 'Gas Cylinder Wala',
+    hindiTitle: 'गैस सिलेंडर वाला',
     slug: 'gas-cylinder',
+    image: '/images/services/gas-cylinder.jpg',
     pillColor: 'bg-[#7C3AED]',
-    bgTint: 'bg-purple-50/70',
-    iconColor: 'text-[#7C3AED]',
-    IconComponent: Flame,
+    priority: true,
   },
   {
     title: 'Watchman',
+    hindiTitle: 'सुरक्षा गार्ड / चौकीदार',
     slug: 'watchman',
+    image: '/images/services/watchman.jpg',
     pillColor: 'bg-[#1E40AF]',
-    bgTint: 'bg-sky-50/70',
-    iconColor: 'text-[#1E40AF]',
-    IconComponent: Shield,
+    priority: true,
   },
   {
     title: 'House Care Taker',
+    hindiTitle: 'घर की देखभाल',
     slug: 'house-care-taker',
+    image: '/images/services/house-care-taker.jpg',
     pillColor: 'bg-[#0D9488]',
-    bgTint: 'bg-teal-50/70',
-    iconColor: 'text-[#0D9488]',
-    IconComponent: Home,
+    priority: true,
   },
   {
     title: 'Office Boy',
+    hindiTitle: 'ऑफिस बॉय',
     slug: 'office-boy',
+    image: '/images/services/office-boy.jpg',
     pillColor: 'bg-[#A16207]',
-    bgTint: 'bg-amber-50/70',
-    iconColor: 'text-[#A16207]',
-    IconComponent: Briefcase,
+    priority: true,
   },
 
   // --- ROW 2 (9 items) ---
   {
     title: 'Cook',
+    hindiTitle: 'रसोइया',
     slug: 'cook',
+    image: '/images/services/cook.jpg',
     pillColor: 'bg-[#059669]',
-    bgTint: 'bg-emerald-50/70',
-    iconColor: 'text-[#059669]',
-    IconComponent: Utensils,
   },
   {
     title: 'Plumber',
+    hindiTitle: 'प्लंबर',
     slug: 'plumbing',
+    image: '/images/services/plumber.jpg',
     pillColor: 'bg-[#D97706]',
-    bgTint: 'bg-amber-50/70',
-    iconColor: 'text-[#D97706]',
-    IconComponent: Wrench,
   },
   {
     title: 'Painter',
+    hindiTitle: 'पेंटर',
     slug: 'painting',
+    image: '/images/services/painter.jpg',
     pillColor: 'bg-[#6D28D9]',
-    bgTint: 'bg-purple-50/70',
-    iconColor: 'text-[#6D28D9]',
-    IconComponent: Paintbrush,
   },
   {
     title: 'Carpenter',
+    hindiTitle: 'बढ़ई',
     slug: 'carpenter',
+    image: '/images/services/carpenter.jpg',
     pillColor: 'bg-[#DC2626]',
-    bgTint: 'bg-rose-50/70',
-    iconColor: 'text-[#DC2626]',
-    IconComponent: Hammer,
   },
   {
     title: 'Maid / House Cleaning',
+    hindiTitle: 'घर की सफाई',
     slug: 'cleaning',
+    image: '/images/services/cleaning.jpg',
     pillColor: 'bg-[#0891B2]',
-    bgTint: 'bg-cyan-50/70',
-    iconColor: 'text-[#0891B2]',
-    IconComponent: Sparkles,
   },
   {
     title: 'Driver',
+    hindiTitle: 'ड्राइवर',
     slug: 'driver',
+    image: '/images/services/driver.jpg',
     pillColor: 'bg-[#EA580C]',
-    bgTint: 'bg-orange-50/70',
-    iconColor: 'text-[#EA580C]',
-    IconComponent: Car,
   },
   {
     title: 'Gardener',
+    hindiTitle: 'माली',
     slug: 'gardener',
+    image: '/images/services/gardener.jpg',
     pillColor: 'bg-[#16A34A]',
-    bgTint: 'bg-green-50/70',
-    iconColor: 'text-[#16A34A]',
-    IconComponent: Sprout,
   },
   {
     title: 'Delivery Helper',
+    hindiTitle: 'डिलीवरी सहायक',
     slug: 'loading-moving',
+    image: '/images/services/delivery.jpg',
     pillColor: 'bg-[#059669]',
-    bgTint: 'bg-emerald-50/70',
-    iconColor: 'text-[#059669]',
-    IconComponent: Package,
   },
   {
     title: 'Others',
+    hindiTitle: 'अन्य सेवाएं',
     slug: 'construction',
+    image: '/images/services/others.jpg',
     pillColor: 'bg-[#0F766E]',
-    bgTint: 'bg-teal-50/70',
-    iconColor: 'text-[#0F766E]',
-    IconComponent: Layers,
   },
 ];
 
@@ -185,43 +158,61 @@ export default function ServiceCategories({
   onViewAll,
 }: ServiceCategoriesProps) {
   return (
-    <section id="services" className="py-12 sm:py-16 bg-white border-b border-slate-200">
+    <section id="services" className="py-12 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Row: Title on Left, View All on Right */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+        {/* Header Row: Title with Hindi Subtitle on Left, View All on Right */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#082B66] tracking-tight">
-              Choose a Service
+            {/* Trust Micro-badge */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
+              <span>सत्यापित कामगार • 100% Aadhaar & Skill Verified</span>
+            </div>
+
+            {/* Main Bilingual Heading */}
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
+              <span>Choose a Service</span>
+              <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
+                अपनी ज़रूरत का काम चुनें
+              </span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              18+ Verified Categories — More Coming Soon!
+
+            {/* Subtitle with Hindi translation */}
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+              <span>18+ Verified Categories — More Coming Soon!</span>
+              <span className="text-slate-400 font-normal ml-1 sm:ml-2">
+                • 18+ सत्यापित सेवाएं — और भी जल्द!
+              </span>
             </p>
           </div>
 
-          <div>
+          {/* View All Button */}
+          <div className="shrink-0">
             <button
               type="button"
               onClick={onViewAll}
-              className="px-4 py-1.5 text-xs font-bold text-[#1264D6] hover:bg-blue-50 border border-[#1264D6] rounded-lg transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#1264D6] hover:bg-blue-50 border border-[#1264D6] rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 bg-white"
             >
-              View All
+              <span>View All</span>
+              <span className="text-[10px] text-blue-500/80 font-normal">/ सभी देखें</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
         </div>
 
-        {/* Dense 9-Column Grid matching Screenshot */}
+        {/* Dense 9-Column Grid matching Screenshot exactly (2 rows of 9 cards) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
           {CATEGORY_ITEMS.map((item) => (
             <ServiceCard
               key={item.title}
               title={item.title}
+              hindiTitle={item.hindiTitle}
               slug={item.slug}
+              image={item.image}
               pillColor={item.pillColor}
-              bgTint={item.bgTint}
-              iconColor={item.iconColor}
-              IconComponent={item.IconComponent}
               isSelected={selectedCategorySlug === item.slug}
               onClick={() => onSelectCategory?.(item.slug)}
+              priority={item.priority}
             />
           ))}
         </div>

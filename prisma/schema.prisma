@@ -404,9 +404,11 @@ model Review {
 model Payment {
   id                 String       @id @default(uuid())
   jobId              String       @unique
-  razorpayOrderId    String?      @unique
-  razorpayPaymentId  String?      @unique
-  razorpaySignature  String?
+  paymentProvider    String       @default("CASHFREE")
+  providerOrderId    String?      @unique
+  providerPaymentId  String?      @unique
+  paymentSessionId   String?
+  providerSignature  String?
   amount             Float
   currency           String       @default("INR")
   status             String       @default("CREATED")

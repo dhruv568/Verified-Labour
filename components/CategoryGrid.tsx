@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Zap,
   Wrench,
@@ -40,6 +41,27 @@ interface CategoryGridProps {
   onSelectCategory: (cat: Category) => void;
   onRequestWorker?: (cat: Category) => void;
 }
+
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+  electrical: '/images/services/electrician.jpg',
+  'computer-hardware': '/images/services/computer-hardware.jpg',
+  'computer-software': '/images/services/computer-software.jpg',
+  confectioner: '/images/services/confectioner.jpg',
+  mechanic: '/images/services/mechanic.jpg',
+  'gas-cylinder': '/images/services/gas-cylinder.jpg',
+  watchman: '/images/services/watchman.jpg',
+  'house-care-taker': '/images/services/house-care-taker.jpg',
+  'office-boy': '/images/services/office-boy.jpg',
+  cook: '/images/services/cook.jpg',
+  plumbing: '/images/services/plumber.jpg',
+  painting: '/images/services/painter.jpg',
+  carpenter: '/images/services/carpenter.jpg',
+  cleaning: '/images/services/cleaning.jpg',
+  driver: '/images/services/driver.jpg',
+  gardener: '/images/services/gardener.jpg',
+  'loading-moving': '/images/services/delivery.jpg',
+  construction: '/images/services/others.jpg',
+};
 
 // Visual style definitions matching the Indian marketplace reference cards
 interface CategoryVisual {
@@ -238,24 +260,37 @@ export default function CategoryGrid({
                 : 'border-slate-200 hover:border-slate-300 hover:shadow-lg hover:-translate-y-1'
             }`}
           >
-            {/* Visual Icon Presentation Area */}
-            <div className={`pt-6 pb-4 px-3 flex flex-col items-center justify-center ${visual.bgColor} transition-colors group-hover:brightness-95`}>
-              <div className="relative w-16 h-16 rounded-2xl bg-white shadow-xs border border-white/60 flex items-center justify-center transition-transform group-hover:scale-110">
-                <Icon className={`w-8 h-8 ${visual.iconColor} stroke-[2.2]`} />
+            {/* Visual Photo / Icon Presentation Area */}
+            {CATEGORY_IMAGE_MAP[cat.slug] ? (
+              <div className="relative w-full aspect-[4/5] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
+                <Image
+                  src={CATEGORY_IMAGE_MAP[cat.slug]}
+                  alt={`${cat.name} - Verified Labour`}
+                  fill
+                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 15vw"
+                  className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                />
               </div>
-
-              {cat.nameHi && (
-                <span className="text-[10px] font-medium text-slate-500 mt-2 truncate max-w-full">
-                  {cat.nameHi}
-                </span>
-              )}
-            </div>
+            ) : (
+              <div className={`pt-6 pb-4 px-3 flex flex-col items-center justify-center ${visual.bgColor} transition-colors group-hover:brightness-95 h-36`}>
+                <div className="relative w-14 h-14 rounded-2xl bg-white shadow-xs border border-white/60 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <Icon className={`w-7 h-7 ${visual.iconColor} stroke-[2.2]`} />
+                </div>
+              </div>
+            )}
 
             {/* Bottom Rounded Pill with Category Label matching Reference Design */}
             <div
-              className={`py-2 px-2 text-center text-white font-bold text-xs tracking-tight select-none transition-colors ${visual.pillColor}`}
+              className={`py-1.5 px-1 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none ${visual.pillColor}`}
             >
-              <span className="truncate block font-semibold">{cat.name}</span>
+              <span className="truncate block font-bold text-[11px] sm:text-xs tracking-tight leading-tight">
+                {cat.name}
+              </span>
+              {cat.nameHi && (
+                <span className="truncate block font-semibold text-[9.5px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal">
+                  {cat.nameHi}
+                </span>
+              )}
             </div>
           </div>
         );

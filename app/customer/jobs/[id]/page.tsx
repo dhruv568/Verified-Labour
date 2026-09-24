@@ -39,6 +39,11 @@ export default function CustomerJobTrackerPage({
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
 
+  // Cashfree Payment States
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentStatusState, setPaymentStatusState] = useState<'PENDING' | 'SUCCESS' | 'FAILED' | null>(null);
+  const [paymentStatusMessage, setPaymentStatusMessage] = useState<string>('');
+
   const fetchJob = async () => {
     try {
       const res = await fetch(`/api/jobs/${jobId}`);
@@ -64,9 +69,53 @@ export default function CustomerJobTrackerPage({
     } catch {}
   };
 
+  // Server-side Cashfree Payment Verification
+  const verifyCashfreePayment = async (orderId: string) => {
+    try {
+      setPaymentLoading(true);
+      setPaymentStatusState('PENDING');
+      setPaymentStatusMessage("We're confirming your payment. Please wait.");
+
+      const resVerify = await fetch('/api/payments/cashfree/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, orderId }),
+      });
+
+      const verifyData = await resVerify.json();
+
+      if (verifyData.success) {
+        setPaymentStatusState('SUCCESS');
+        setPaymentStatusMessage('Your booking has been confirmed.');
+        await fetchJob();
+      } else if (verifyData.status === 'PENDING') {
+        setPaymentStatusState('PENDING');
+        setPaymentStatusMessage("We're confirming your payment. Please wait.");
+      } else {
+        setPaymentStatusState('FAILED');
+        setPaymentStatusMessage(verifyData.error || 'Payment verification failed. Please try again.');
+      }
+    } catch (err: any) {
+      setPaymentStatusState('FAILED');
+      setPaymentStatusMessage('Verification error: ' + err.message);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchJob();
     fetchMessages();
+
+    // Check for Cashfree return redirect with order_id in query params
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlOrderId = searchParams.get('order_id');
+      if (urlOrderId) {
+        verifyCashfreePayment(urlOrderId);
+      }
+    }
+
     const interval = setInterval(() => {
       fetchJob();
       fetchMessages();
@@ -93,45 +142,66 @@ export default function CustomerJobTrackerPage({
     }
   };
 
-  // Pay via Razorpay
+  // Pay via Cashfree Payments
   const handlePayNow = async () => {
     try {
-      setLoading(true);
-      const resOrder = await fetch('/api/payments/razorpay/create-order', {
+      setPaymentLoading(true);
+      setPaymentStatusState('PENDING');
+      setPaymentStatusMessage('Creating secure payment order with Cashfree...');
+
+      const resOrder = await fetch('/api/payments/cashfree/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId }),
       });
+
       const orderData = await resOrder.json();
       if (!resOrder.ok || !orderData.success) {
-        alert(orderData.error || 'Failed to initialize payment');
-        setLoading(false);
+        setPaymentStatusState('FAILED');
+        setPaymentStatusMessage(orderData.error || 'Failed to initialize Cashfree payment.');
+        setPaymentLoading(false);
         return;
       }
 
-      // Simulate payment capture in sandbox mode
-      const resVerify = await fetch('/api/payments/razorpay/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jobId,
-          orderId: orderData.orderId,
-          paymentId: `pay_sim_${Date.now()}`,
-          signature: 'mock_sig_valid_hash',
-        }),
-      });
+      const { paymentSessionId, orderId, environment } = orderData;
 
-      const verifyData = await resVerify.json();
-      if (verifyData.success) {
-        alert('Payment verified and captured successfully!');
-        fetchJob();
-      } else {
-        alert(verifyData.error || 'Payment failed');
+      // In mock / development test mode
+      if (paymentSessionId.startsWith('session_mock_')) {
+        await verifyCashfreePayment(orderId);
+        return;
+      }
+
+      // Initialize Cashfree Payments JS SDK (v3)
+      try {
+        const { load } = await import('@cashfreepayments/cashfree-js');
+        const cashfree = await load({
+          mode: environment?.toLowerCase() === 'production' ? 'production' : 'sandbox',
+        });
+
+        setPaymentStatusMessage('Opening Cashfree Checkout...');
+
+        const checkoutResult = await cashfree.checkout({
+          paymentSessionId,
+          redirectTarget: '_modal',
+        });
+
+        if (checkoutResult?.error) {
+          setPaymentStatusState('FAILED');
+          setPaymentStatusMessage(checkoutResult.error.message || 'Payment was cancelled or failed. Please try again.');
+          setPaymentLoading(false);
+          return;
+        }
+
+        // Verify payment on backend
+        await verifyCashfreePayment(orderId);
+      } catch (sdkErr: any) {
+        console.warn('Cashfree SDK modal fallback to server verification:', sdkErr);
+        await verifyCashfreePayment(orderId);
       }
     } catch (err: any) {
-      alert('Payment error: ' + err.message);
-    } finally {
-      setLoading(false);
+      setPaymentStatusState('FAILED');
+      setPaymentStatusMessage('Payment error: ' + err.message);
+      setPaymentLoading(false);
     }
   };
 
@@ -295,22 +365,69 @@ export default function CustomerJobTrackerPage({
                 </p>
               </div>
 
-              {/* Action Buttons: Pay Now if WORK_COMPLETED */}
+              {/* Action Buttons: Pay Now if WORK_COMPLETED or PAYMENT_PENDING */}
               {['WORK_COMPLETED', 'PAYMENT_PENDING'].includes(job.status) && (
-                <div className="p-4 bg-brand-50 border border-brand-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 bg-brand-50 border border-brand-200 rounded-xl space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold text-brand-900">Work Marked Complete!</p>
-                      <p className="text-[11px] text-brand-700">Please pay ₹{job.finalAmount} securely via Razorpay UPI / Cards.</p>
+                      <p className="text-[11px] text-brand-700">Please pay ₹{job.finalAmount} securely via Cashfree Payments (UPI, Cards, NetBanking).</p>
                     </div>
                     <button
                       onClick={handlePayNow}
-                      className="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-1.5"
+                      disabled={paymentLoading}
+                      className="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <CreditCard className="w-4 h-4" />
-                      Pay ₹{job.finalAmount}
+                      {paymentLoading ? 'Processing...' : `Proceed to Payment (₹${job.finalAmount})`}
                     </button>
                   </div>
+
+                  {/* Cashfree Payment Status Display */}
+                  {paymentStatusState && (
+                    <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs ${
+                      paymentStatusState === 'SUCCESS'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        : paymentStatusState === 'PENDING'
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
+                        : 'bg-red-50 border-red-200 text-red-900'
+                    }`}>
+                      {paymentStatusState === 'SUCCESS' && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      )}
+                      {paymentStatusState === 'PENDING' && (
+                        <Clock className="w-4 h-4 text-blue-600 animate-spin shrink-0 mt-0.5" />
+                      )}
+                      {paymentStatusState === 'FAILED' && (
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-bold">
+                          {paymentStatusState === 'SUCCESS' && 'Payment Successful'}
+                          {paymentStatusState === 'PENDING' && 'Payment Processing'}
+                          {paymentStatusState === 'FAILED' && 'Payment Failed'}
+                        </p>
+                        <p className="text-[11px] mt-0.5">
+                          {paymentStatusMessage || (
+                            paymentStatusState === 'SUCCESS'
+                              ? 'Your booking has been confirmed.'
+                              : paymentStatusState === 'PENDING'
+                              ? "We're confirming your payment. Please wait."
+                              : 'Please try again.'
+                          )}
+                        </p>
+                      </div>
+                      {paymentStatusState === 'FAILED' && (
+                        <button
+                          type="button"
+                          onClick={handlePayNow}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg transition-colors shrink-0"
+                        >
+                          Try Again
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

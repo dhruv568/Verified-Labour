@@ -575,7 +575,7 @@ export default function CustomerDashboardPage() {
             <Card variant="default" padding="lg" className="space-y-4">
               <h3 className="text-base font-black text-slate-900">Payment & Invoices</h3>
               <p className="text-xs text-slate-500">
-                Secure payments processed through Razorpay. You only pay when work is verified and marked complete.
+                Secure payments processed through Cashfree Payments. You only pay when work is verified and marked complete.
               </p>
 
               <div className="p-4 bg-brand-50 border border-brand-200 rounded-2xl text-xs text-brand-900 space-y-1">

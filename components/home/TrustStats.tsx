@@ -25,24 +25,28 @@ export default function TrustStats({ stats }: TrustStatsProps) {
       iconColor: 'text-[#1264D6]',
       value: hasWorkers ? `${stats.verifiedWorkers}+` : '100%',
       label: hasWorkers ? 'Verified Workers' : 'Aadhaar Verified',
+      hindiLabel: 'सत्यापित कामगार',
     },
     {
       icon: Briefcase,
       iconColor: 'text-[#1264D6]',
       value: hasJobs ? `${stats.jobsCompleted}+` : 'Direct',
       label: hasJobs ? 'Jobs Completed' : 'Bank Settlements',
+      hindiLabel: 'सफल काम',
     },
     {
       icon: Star,
       iconColor: 'text-amber-400 fill-amber-400',
       value: hasRating ? `${stats.averageRating}/5` : '4.8/5',
       label: 'Average Rating',
+      hindiLabel: 'औसत रेटिंग',
     },
     {
       icon: MapPin,
       iconColor: 'text-[#1264D6]',
       value: hasCities ? `${stats.citiesCovered}+` : '100+',
       label: 'Cities Covered',
+      hindiLabel: 'शहरों में उपलब्ध',
     },
   ];
 
@@ -63,8 +67,11 @@ export default function TrustStats({ stats }: TrustStatsProps) {
                     <div className="text-lg sm:text-xl font-black text-[#082B66] tracking-tight leading-tight">
                       {m.value}
                     </div>
-                    <div className="text-[11px] sm:text-xs font-semibold text-slate-600 leading-tight mt-0.5">
+                    <div className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-tight mt-0.5">
                       {m.label}
+                    </div>
+                    <div className="text-[10px] text-blue-700 font-medium font-devanagari leading-tight">
+                      {m.hindiLabel}
                     </div>
                   </div>
                 </div>

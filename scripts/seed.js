@@ -657,8 +657,10 @@ async function main() {
             },
             payment: {
               create: {
-                razorpayOrderId: 'order_test_999000111',
-                razorpayPaymentId: 'pay_test_999000111',
+                paymentProvider: 'CASHFREE',
+                providerOrderId: 'order_test_999000111',
+                providerPaymentId: 'pay_test_999000111',
+                paymentSessionId: 'session_mock_test_999000111',
                 amount: 350,
                 status: 'CAPTURED',
                 method: 'UPI',

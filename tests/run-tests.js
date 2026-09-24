@@ -2,7 +2,7 @@ const assert = require('assert');
 const { calculateHaversineDistanceKm, formatDistance } = require('../lib/location');
 const { ALLOWED_TRANSITIONS, JobStateMachine } = require('../services/job-state-machine');
 const { cashfreeService, CashfreeVerificationService } = require('../services/cashfree');
-const { razorpayService } = require('../services/razorpay');
+const { cashfreePaymentService } = require('../services/cashfree-payment');
 
 async function runAllTests() {
   console.log('====================================================');
@@ -148,23 +148,30 @@ async function runAllTests() {
     assert.strictEqual(JobStateMachine.isRoleAuthorized('ACCEPTED', 'WORKER_ON_THE_WAY', 'CUSTOMER'), false);
   });
 
-  // 4. RAZORPAY PAYMENT & COMMISSION TESTS
-  console.log('\n--- 4. Payment Gateway & Fee Calculation Tests ---');
-  await testAsync('Razorpay Order Creation returns valid orderId and paise amount', async () => {
-    const res = await razorpayService.createOrder({
+  // 4. CASHFREE PAYMENT & COMMISSION TESTS
+  console.log('\n--- 4. Cashfree Payments & Fee Calculation Tests ---');
+  await testAsync('Cashfree Order Creation returns valid orderId and paymentSessionId', async () => {
+    const res = await cashfreePaymentService.createOrder({
       jobId: 'job-test-99',
       amount: 350.0,
+      customer: {
+        id: 'cust_test_99',
+        name: 'Test Customer',
+        phone: '9876543210',
+      },
     });
     assert.strictEqual(res.success, true);
-    assert.strictEqual(res.amount, 35000); // 350 INR in paise
+    assert.strictEqual(typeof res.orderId, 'string');
+    assert.strictEqual(typeof res.paymentSessionId, 'string');
+    assert.strictEqual(res.amount, 350.0);
   });
 
-  test('Razorpay cryptographic signature validation succeeds for valid mock sig', () => {
-    const isValid = razorpayService.verifyPaymentSignature({
-      orderId: 'order_123',
-      paymentId: 'pay_123',
-      signature: 'mock_sig_test_123',
-    });
+  test('Cashfree cryptographic signature validation succeeds for valid mock sig', () => {
+    const isValid = cashfreePaymentService.verifyWebhookSignature(
+      JSON.stringify({ type: 'PAYMENT_SUCCESS_WEBHOOK', order_id: 'order_123' }),
+      'mock_cf_sig_valid_hash',
+      '1711234567'
+    );
     assert.strictEqual(isValid, true);
   });
 

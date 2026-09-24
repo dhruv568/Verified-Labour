@@ -72,9 +72,11 @@ CASHFREE_ENVIRONMENT="production"
 CASHFREE_CLIENT_ID="<your_live_cashfree_client_id>"
 CASHFREE_CLIENT_SECRET="<your_live_cashfree_client_secret>"
 
-RAZORPAY_KEY_ID="<your_live_razorpay_key_id>"
-RAZORPAY_KEY_SECRET="<your_live_razorpay_key_secret>"
-RAZORPAY_WEBHOOK_SECRET="<your_live_razorpay_webhook_secret>"
+# Cashfree Payments (PG Gateway)
+CASHFREE_PAYMENT_ENVIRONMENT="PRODUCTION"
+CASHFREE_PAYMENT_APP_ID="<your_live_cashfree_payment_app_id>"
+CASHFREE_PAYMENT_SECRET_KEY="<your_live_cashfree_payment_secret_key>"
+CASHFREE_PAYMENT_WEBHOOK_SECRET="<your_live_cashfree_payment_webhook_secret>"
 ```
 
 ### Step 2.4 — Install Dependencies

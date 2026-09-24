@@ -27,11 +27,11 @@ Production-ready, full-stack on-demand labour marketplace platform built for Ind
 - **Granular Trust Badges**: `Identity Verified`, `Bank Verified`, `Skills Verified`, and `Verified Worker`.
 
 ### Payment & Settlement Infrastructure
-- **Razorpay Integration**: Order creation, cryptographic HMAC-SHA256 signature verification, and idempotent webhook processing.
+- **Cashfree Payments Integration**: Order creation (PG API v2023-08-01), cryptographic signature verification, server-side status verification, and idempotent webhook processing.
 - **Worker Earnings & Wallet**: 10% platform fee calculation, 18% GST deduction, and transparent settlement ledger.
 
 ### Multi-Role Dashboards (RBAC)
-- **Customer Portal** (`/customer/dashboard`): Active bookings, real-time tracking, in-app chat, Razorpay payments, reviews, and saved addresses.
+- **Customer Portal** (`/customer/dashboard`): Active bookings, real-time tracking, in-app chat, Cashfree payments, reviews, and saved addresses.
 - **Worker Cockpit** (`/worker/dashboard`): Mobile-app layout, online/offline availability toggle, incoming job requests (Accept/Reject), live step transitions ("On the way", "Arrived", "Start Work", "Complete Work").
 - **Worker Earnings** (`/worker/earnings`): Daily/weekly/monthly breakdown and bank transfer details.
 - **Commercial Bulk Labour Portal** (`/business/bulk`): Contractors post multi-worker project requirements; workers apply.
@@ -91,9 +91,7 @@ The test suite validates:
 - Sliding-window rate limiter
 - Cashfree Aadhaar consent & OTP validation
 - Cashfree Bank account & IFSC validation
-- Strict Job State Machine transition checks
-- Razorpay order creation and HMAC signature verification
-- Platform fee & GST calculations
+- Cashfree Payments order creation, server verification, and webhook signature verification
 
 ---
 
