@@ -138,64 +138,114 @@ export default function MobileHomeView({
 
   return (
     <div className="w-full bg-[#F4F6F9] pb-8 font-sans space-y-4">
-      {/* ================= 1. HERO SECTION (REFERENCE MATCHING) ================= */}
-      <section className="bg-white pb-4 border-b border-slate-200/80 shadow-2xs">
-        {/* Main Hero Banner Image with Graphic Text & Badges */}
-        <div className="relative w-full overflow-hidden bg-[#F0F4FA]">
-          <Image
-            src="/images/home/hero-mobile-design.png"
-            alt="Verified Labour - आपके घर और व्यवसाय के लिए भरोसेमंद मजदूर और कामगार"
-            width={720}
-            height={440}
-            priority
-            className="w-full h-auto object-cover"
-            sizes="(max-width: 767px) 100vw, 430px"
-          />
+      {/* ================= 1. RECREATED MOBILE HERO SECTION (HTML/CSS UI COMPONENTS) ================= */}
+      <section className="bg-white pt-3 pb-4 px-3.5 border-b border-slate-200/80 shadow-2xs space-y-3.5">
+        {/* Top Tagline & Gold Badge Header Bar */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#1264D6] rounded-full text-xs font-black border border-blue-200/80 font-devanagari shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#1264D6]" />
+            <span>काम के लिए भरोसेमंद लोग</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1 bg-amber-400 text-[#082B66] px-2.5 py-1 rounded-full text-[11px] font-black shadow-2xs border border-amber-300 font-devanagari">
+            <CheckCircle2 className="w-3.5 h-3.5 fill-[#082B66] text-amber-400" />
+            <span>जाँच-परखे कामगार</span>
+          </div>
         </div>
 
-        {/* 3 Trust Cards Strip (Matching reference layout below hero image) */}
-        <div className="px-3 pt-3">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {/* 1. Safe & Reliable */}
-            <div className="bg-white rounded-xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1">
-                <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <span className="text-[11px] font-extrabold text-[#082B66] leading-tight font-devanagari">
-                सुरक्षित और भरोसेमंद
-              </span>
-            </div>
+        {/* Real HTML/CSS Headlines */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
+            आपके घर और व्यवसाय के लिए <br />
+            <span className="text-[#1264D6]">भरोसेमंद मजदूर</span> और <span className="text-[#079447]">कामगार</span>
+          </h1>
+          <p className="text-xs font-extrabold text-slate-600 font-devanagari tracking-normal">
+            जाँच-परखे • अनुभवी • समय पर उपलब्ध
+          </p>
+        </div>
 
-            {/* 2. Experienced Workers */}
-            <div className="bg-white rounded-xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1">
-                <Users className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <span className="text-[11px] font-extrabold text-[#082B66] leading-tight font-devanagari">
-                अनुभवी कामगार
-              </span>
-            </div>
+        {/* Separately Blended AI Worker Image Card with Gold 3D Badge Overlay */}
+        <div className="relative w-full h-[195px] xs:h-[215px] rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900">
+          <Image
+            src="/images/home/worker-cta-man.jpg"
+            alt="Verified Labour Professional Skilled Indian Worker"
+            fill
+            priority
+            className="object-cover object-[60%_20%] scale-105"
+            sizes="(max-width: 767px) 100vw, 430px"
+          />
 
-            {/* 3. Available When Needed */}
-            <div className="bg-white rounded-xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1">
-                <Clock className="w-4 h-4 stroke-[2.5]" />
+          {/* Left Gradient Overlay with Verification Badge */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#082B66]/85 via-[#082B66]/35 to-transparent p-3.5 flex flex-col justify-end">
+            <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/80 max-w-[210px] shadow-xs">
+              <div className="flex items-center gap-1.5 text-[#079447]">
+                <CheckCircle2 className="w-4 h-4 shrink-0 fill-[#079447] text-white" />
+                <span className="text-[11px] font-black text-[#082B66] font-devanagari">100% Aadhaar Verified</span>
               </div>
-              <span className="text-[11px] font-extrabold text-[#082B66] leading-tight font-devanagari">
-                जब ज़रूरत तब उपलब्ध
-              </span>
+              <p className="text-[9.5px] text-slate-600 font-semibold leading-tight mt-0.5 font-devanagari">
+                सत्यापित एवं प्रशिक्षित कारीगर
+              </p>
             </div>
+          </div>
+
+          {/* Floating Gold 3D Badge */}
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 text-slate-950 p-2 rounded-full shadow-lg border-2 border-amber-200 flex flex-col items-center justify-center text-center w-16 h-16 transform rotate-6">
+            <CheckCircle2 className="w-4 h-4 fill-slate-950 text-amber-300 mb-0.5" />
+            <span className="text-[8.5px] font-black font-devanagari leading-tight">जाँच-परखे</span>
+            <span className="text-[7.5px] font-extrabold font-devanagari leading-none">कामगार</span>
+          </div>
+        </div>
+
+        {/* 3 Separate HTML/CSS Rounded Trust Cards */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Card 1: Safe & Reliable */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1.5 shadow-2xs border border-emerald-100">
+              <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              सुरक्षित और भरोसेमंद
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              Safe & Reliable
+            </span>
+          </div>
+
+          {/* Card 2: Skilled Workers */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1.5 shadow-2xs border border-blue-100">
+              <Users className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              अनुभवी कामगार
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              Skilled Workers
+            </span>
+          </div>
+
+          {/* Card 3: Available When Needed */}
+          <div className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
+            <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5 shadow-2xs border border-amber-100">
+              <Clock className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
+              जब ज़रूरत तब उपलब्ध
+            </span>
+            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              On-Demand
+            </span>
           </div>
         </div>
 
         {/* Location & Search Bar */}
-        <div className="px-3 pt-3">
+        <div className="pt-0.5">
           <LocationSearch onSearch={onSearchWorker} />
         </div>
       </section>
 
       {/* ================= 2. 2x4 SERVICE CATEGORY GRID (MATCHING REFERENCE) ================= */}
-      <section className="px-3">
+      <section className="px-3.5">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-2.5 px-0.5">
           <div>
@@ -302,7 +352,7 @@ export default function MobileHomeView({
       </section>
 
       {/* ================= 3. TRUST & VERIFICATION DARK BLUE BAR (MATCHING REFERENCE) ================= */}
-      <section className="px-3">
+      <section className="px-3.5">
         <div className="bg-[#041A40] text-white rounded-2xl p-3.5 shadow-lg border border-blue-900/40">
           <div className="grid grid-cols-3 gap-2 text-center divide-x divide-blue-800/60">
             {/* 1. Identity Verified */}
@@ -342,7 +392,7 @@ export default function MobileHomeView({
       </section>
 
       {/* ================= 4. STRONG BOOKING / FIND-WORKER CTA BUTTON (MATCHING REFERENCE) ================= */}
-      <section className="px-3">
+      <section className="px-3.5">
         <button
           type="button"
           onClick={() => onSearchWorker?.()}
@@ -362,7 +412,7 @@ export default function MobileHomeView({
       </section>
 
       {/* ================= 5. SEGMENT FILTER BAR (HOMES / OFFICE / BUSINESS) ================= */}
-      <section className="px-3">
+      <section className="px-3.5">
         <div className="bg-white rounded-2xl p-1.5 border border-slate-200/90 shadow-2xs grid grid-cols-3 gap-1">
           <button
             type="button"
@@ -406,7 +456,7 @@ export default function MobileHomeView({
       </section>
 
       {/* ================= 6. YELLOW CALLOUT BANNER ("Who is NOT on Verified Labour?") ================= */}
-      <section className="px-3">
+      <section className="px-3.5">
         <div className="w-full bg-[#FFE600] rounded-2xl p-3.5 border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-2xl shrink-0">❓</span>
@@ -431,7 +481,7 @@ export default function MobileHomeView({
       </section>
 
       {/* ================= 7. WORKER REGISTRATION CTA FOR MOBILE ================= */}
-      <section className="px-3 pt-1">
+      <section className="px-3.5 pt-1">
         <div className="bg-gradient-to-br from-[#082B66] to-[#1264D6] text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-3">
           <div className="space-y-1">
             <span className="px-2 py-0.5 bg-amber-400 text-[#082B66] font-extrabold text-[10px] rounded-md uppercase font-devanagari">
