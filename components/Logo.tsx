@@ -21,7 +21,7 @@ export default function Logo({
   if (className) {
     sizeClasses = className;
   } else if (variant === 'header') {
-    sizeClasses = 'h-10 sm:h-12 lg:h-13 xl:h-[50px] w-auto';
+    sizeClasses = 'h-11 sm:h-13 lg:h-[54px] xl:h-[58px] w-auto';
   } else if (variant === 'footer') {
     sizeClasses = 'h-10 sm:h-12 w-auto';
   } else if (variant === 'auth') {

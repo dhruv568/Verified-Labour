@@ -223,7 +223,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
       {/* Navbar Trigger Button: matches reference style with MapPin icon */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors max-w-[190px]"
+        className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 min-h-[38px] h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors max-w-[200px] shrink-0"
         title={displayText}
       >
         <MapPin className="w-3.5 h-3.5 text-[#1464D2] shrink-0" />

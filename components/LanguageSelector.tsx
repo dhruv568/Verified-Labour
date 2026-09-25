@@ -82,7 +82,7 @@ export default function LanguageSelector({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors cursor-pointer select-none"
+        className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 min-h-[38px] h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors cursor-pointer select-none shrink-0"
         title="Change Language / भाषा बदलें"
         aria-expanded={isOpen}
       >
