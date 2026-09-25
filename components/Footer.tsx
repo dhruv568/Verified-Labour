@@ -9,6 +9,17 @@ import {
   Phone,
   MapPin,
   ExternalLink,
+  Home,
+  Search,
+  Briefcase,
+  HelpCircle,
+  Building2,
+  FileText,
+  ShieldCheck,
+  RotateCcw,
+  BadgeCheck,
+  LifeBuoy,
+  Headphones,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useContent } from '@/context/ContentContext';
@@ -38,28 +49,33 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm sm:text-xs font-semibold text-slate-600">
               <li>
-                <Link href="/" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Home
+                <Link href="/" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <Home className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Home</span>
                 </Link>
               </li>
               <li>
-                <a href="/#workers" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Find a Worker
+                <a href="/#workers" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Find a Worker</span>
                 </a>
               </li>
               <li>
-                <Link href="/worker/onboarding" className="inline-block py-1 hover:text-[#0B9B5A] transition-colors">
-                  Become a Worker
+                <Link href="/worker/onboarding" className="inline-flex items-center gap-2 py-1 hover:text-[#0B9B5A] transition-colors group">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0B9B5A] transition-colors shrink-0" />
+                  <span>Become a Worker</span>
                 </Link>
               </li>
               <li>
-                <a href="/#how" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  How It Works
+                <a href="/#how" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>How It Works</span>
                 </a>
               </li>
               <li>
-                <Link href="/business/bulk" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Bulk Labour Portal
+                <Link href="/business/bulk" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Bulk Labour Portal</span>
                 </Link>
               </li>
             </ul>
@@ -72,33 +88,39 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm sm:text-xs font-semibold text-slate-600">
               <li>
-                <Link href="/legal/terms" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Terms & Conditions
+                <Link href="/legal/terms" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Terms & Conditions</span>
                 </Link>
               </li>
               <li>
-                <Link href="/legal/privacy" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Privacy Policy
+                <Link href="/legal/privacy" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Privacy Policy</span>
                 </Link>
               </li>
               <li>
-                <Link href="/legal/cancellation-refund" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Refund Policy
+                <Link href="/legal/cancellation-refund" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Refund Policy</span>
                 </Link>
               </li>
               <li>
-                <Link href="/legal/verification" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Aadhaar Verification Policy
+                <Link href="/legal/verification" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <BadgeCheck className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Aadhaar Verification Policy</span>
                 </Link>
               </li>
               <li>
-                <Link href="/legal/safety" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Grievance Redressal
+                <Link href="/legal/safety" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <LifeBuoy className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Grievance Redressal</span>
                 </Link>
               </li>
               <li>
-                <a href="/#contact" className="inline-block py-1 hover:text-[#1464D2] transition-colors">
-                  Contact
+                <a href="/#contact" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <Headphones className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>Contact</span>
                 </a>
               </li>
             </ul>
@@ -141,10 +163,16 @@ export default function Footer() {
               </a>
             </div>
 
-            <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1">
+            <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1.5">
               <p className="font-semibold text-slate-700">Support Desk:</p>
-              <p className="text-xs sm:text-[11px]">{content.contact_email || 'verifiedlabour@gmail.com'}</p>
-              <p className="text-xs sm:text-[11px]">{content.contact_phone || '+91 93698 99597'}</p>
+              <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>{content.contact_email || 'verifiedlabour@gmail.com'}</span>
+              </p>
+              <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>{content.contact_phone || '+91 93698 99597'}</span>
+              </p>
             </div>
           </div>
 
