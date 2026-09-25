@@ -12,6 +12,7 @@ const onboardingUpdateSchema = z.object({
   bio: z.string().optional(),
   avatarUrl: z.string().optional(),
   primaryCategoryId: z.string().optional(),
+  customTrade: z.string().optional(),
   experienceYears: z.number().int().min(0).max(50).optional(),
   hourlyRate: z.number().min(50).optional(),
   skills: z.array(z.string()).optional(), // array of category/service IDs
@@ -67,7 +68,32 @@ export async function POST(req: NextRequest) {
     if (data.gender) updateData.gender = data.gender;
     if (data.bio) updateData.bio = data.bio;
     if (data.avatarUrl) updateData.avatarUrl = data.avatarUrl;
-    if (data.primaryCategoryId) updateData.primaryCategoryId = data.primaryCategoryId;
+    
+    // Handle category and custom trade
+    if (data.primaryCategoryId) {
+      if (data.primaryCategoryId === 'custom_other') {
+        // Upsert a category for Custom / Other if not exists
+        let customCategory = await prisma.category.findUnique({ where: { slug: 'other' } });
+        if (!customCategory) {
+          customCategory = await prisma.category.create({
+            data: {
+              name: 'Other / Custom Trade',
+              slug: 'other',
+              nameHi: 'अन्य कौशल',
+              description: 'Custom trades and specialized worker skills',
+            },
+          });
+        }
+        updateData.primaryCategoryId = customCategory.id;
+        if (data.customTrade) {
+          const bioPrefix = `Trade: ${data.customTrade.trim()}`;
+          updateData.bio = data.bio ? `${bioPrefix} | ${data.bio}` : bioPrefix;
+        }
+      } else {
+        updateData.primaryCategoryId = data.primaryCategoryId;
+      }
+    }
+
     if (data.experienceYears !== undefined) updateData.experienceYears = data.experienceYears;
     if (data.hourlyRate !== undefined) updateData.hourlyRate = data.hourlyRate;
     if (data.city) updateData.city = data.city;

@@ -289,7 +289,7 @@ export class CashfreeVerificationService {
     const cleanIfsc = ifsc.trim().toUpperCase();
     const cleanName = accountHolderName.trim();
 
-    if (!cleanAcc || cleanAcc.length < 8 || cleanAcc.length > 20) {
+    if (!cleanAcc || cleanAcc.length < 7 || cleanAcc.length > 25) {
       return {
         success: false,
         status: 'FAILED',

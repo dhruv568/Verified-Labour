@@ -9,7 +9,7 @@ import { checkRateLimit } from '@/lib/rate-limiter';
 const verifyBankSchema = z.object({
   workerId: z.string(),
   accountHolderName: z.string().trim().min(2, 'Please enter the full name as per bank records'),
-  accountNumber: z.string().trim().regex(/^\d{8,20}$/, 'Account number must be between 8 and 20 digits'),
+  accountNumber: z.string().trim().regex(/^\d{7,25}$/, 'Account number must be between 7 and 25 digits'),
   ifsc: z.string().trim().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/i, 'Please enter a valid 11-character IFSC code (e.g. SBIN0001824)'),
   phone: z.string().optional(),
 });
