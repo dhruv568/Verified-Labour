@@ -113,52 +113,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user email or account is unverified
-    if (!user.isEmailVerified || user.status === 'PENDING_VERIFICATION') {
-      const userName =
-        user.customerProfile?.fullName ||
-        user.workerProfile?.fullName ||
-        user.businessProfile?.companyName;
+    // EVERY login requires mandatory OTP verification, even for already verified users
+    const userName =
+      user.customerProfile?.fullName ||
+      user.workerProfile?.fullName ||
+      user.businessProfile?.companyName;
 
-      // Dispatch new email OTP via Resend integration
-      await sendEmailOtp({ email: normalizedEmail, name: userName, isResend: true });
-
-      // DO NOT create authenticated session or cookie
-      return NextResponse.json({
-        success: true,
-        requiresVerification: true,
-        email: normalizedEmail,
-        message: 'Verification code sent to your email. Please verify your email to complete login.',
-      });
+    // Dispatch new email OTP via Resend integration
+    const otpResult = await sendEmailOtp({ email: normalizedEmail, name: userName, isResend: false });
+    if (!otpResult.success) {
+      return NextResponse.json(
+        { success: false, error: otpResult.error || 'Failed to send verification code to your email. Please try again.' },
+        { status: 500 }
+      );
     }
 
-    const token = await signAuthToken({
-      userId: user.id,
-      phone: user.phone,
-      email: user.email || undefined,
-      role: user.role as any,
-    });
-
-    const response = NextResponse.json({
+    // DO NOT create authenticated session or cookie until OTP is verified
+    return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        isPhoneVerified: user.isPhoneVerified,
-        isEmailVerified: user.isEmailVerified,
-        customerProfile: user.customerProfile,
-        workerProfile: user.workerProfile,
-        businessProfile: user.businessProfile,
-        adminUser: user.adminUser,
-      },
-      message: 'Login successful',
+      requiresVerification: true,
+      email: normalizedEmail,
+      message: 'Verification code sent to your email. Please verify your email to complete login.',
     });
-
-    setAuthCookie(response, token);
-    return response;
   } catch (err: any) {
     console.error('Login error:', err);
     return NextResponse.json(

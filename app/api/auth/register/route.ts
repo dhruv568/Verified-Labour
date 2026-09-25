@@ -156,6 +156,10 @@ export async function POST(req: NextRequest) {
     const otpResult = await sendEmailOtp({ email: normalizedEmail, name });
     if (!otpResult.success) {
       console.error('Failed to send registration OTP email:', otpResult.error);
+      return NextResponse.json(
+        { success: false, error: otpResult.error || 'Account created, but failed to send verification code. Please try logging in to request a new code.' },
+        { status: 500 }
+      );
     }
 
     // DO NOT create authenticated session JWT

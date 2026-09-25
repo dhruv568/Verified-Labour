@@ -251,7 +251,7 @@ export async function runAuthFlowTests() {
     assert(res.cookies.get('vl_auth_token') !== undefined);
   });
 
-  await testAsync('Verified user can log in directly without OTP', async () => {
+  await testAsync('Mandatory OTP: Even an already active/verified user login requires OTP verification every time', async () => {
     const req = new NextRequest('http://localhost:3000/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
@@ -264,9 +264,26 @@ export async function runAuthFlowTests() {
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(data.success, true);
-    assert.strictEqual(data.requiresVerification, undefined);
-    assert.strictEqual(data.user.isEmailVerified, true);
-    assert(res.cookies.get('vl_auth_token') !== undefined);
+    assert.strictEqual(data.requiresVerification, true, 'Mandatory OTP must require verification on EVERY login');
+    assert.strictEqual(res.cookies.get('vl_auth_token'), undefined, 'Login MUST NOT set auth cookie prior to OTP verification');
+
+    // Complete mandatory OTP login
+    const stored = activeOtps.get(unverifiedEmail.toLowerCase());
+    assert(stored !== undefined);
+
+    const verifyReq = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: unverifiedEmail,
+        otp: stored.otp,
+      }),
+    });
+    const verifyRes = await verifyOtpHandler(verifyReq);
+    const verifyData = await verifyRes.json();
+
+    assert.strictEqual(verifyRes.status, 200);
+    assert.strictEqual(verifyData.success, true);
+    assert(verifyRes.cookies.get('vl_auth_token') !== undefined, 'Auth cookie MUST be set after OTP verification');
   });
 
   // Clean up created test users from database
