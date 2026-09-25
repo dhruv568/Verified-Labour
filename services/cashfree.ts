@@ -1,7 +1,7 @@
 /**
  * Cashfree Secure ID Verification Service
  * Handles:
- * 1. Consent-based Aadhaar OTP verification (Cashfree Secure ID)
+ * 1. Consent-based Aadhaar OTP verification (Cashfree Secure ID Offline Aadhaar / OKYC)
  * 2. Bank Account & IFSC verification with account holder name validation
  *
  * Implements full server-side API integration, masked identifiers,
@@ -54,7 +54,7 @@ export class CashfreeVerificationService {
       process.env.CASHFREE_SECRET_KEY ||
       process.env.CASHFREE_CLIENT_SECRET ||
       '';
-    const rawEnv = (process.env.CASHFREE_ENVIRONMENT || '').toLowerCase();
+    const rawEnv = (process.env.CASHFREE_ENVIRONMENT || '').trim().toLowerCase();
     this.env = rawEnv === 'production' ? 'production' : 'sandbox';
     this.baseUrl =
       this.env === 'production'
@@ -63,8 +63,8 @@ export class CashfreeVerificationService {
   }
 
   private isMockMode(): boolean {
-    // In production environment, NEVER accidentally trigger mock mode.
-    // Production must always use the real Cashfree Secure ID API.
+    // In production environment (CASHFREE_ENVIRONMENT=PRODUCTION), NEVER use mock mode.
+    // Production MUST always execute real calls against Cashfree Secure ID API endpoints.
     if (this.env === 'production') {
       return false;
     }
@@ -102,8 +102,10 @@ export class CashfreeVerificationService {
 
   /**
    * STEP 1 of Aadhaar verification:
-   * Worker enters Aadhaar and provides legal consent.
-   * Generates OTP to the mobile number registered with UIDAI.
+   * Cashfree Secure ID Offline Aadhaar OTP Initiation
+   * Endpoint: POST /verification/offline-aadhaar/otp
+   * Request Body: { "aadhaar_number": "123456789012" }
+   * Response: { "ref_id": "...", "status": "SUCCESS" | "OTP_SENT" }
    */
   async startAadhaarVerification(params: {
     workerId: string;
@@ -131,7 +133,7 @@ export class CashfreeVerificationService {
       };
     }
 
-    // In sandbox / mock mode: simulate Cashfree's OTP send flow
+    // In sandbox / test mock mode (non-production only)
     if (this.isMockMode()) {
       const refId = `CF_AADHAAR_REF_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       return {
@@ -144,7 +146,7 @@ export class CashfreeVerificationService {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       const response = await fetch(`${this.baseUrl}/offline-aadhaar/otp`, {
         method: 'POST',
@@ -152,6 +154,7 @@ export class CashfreeVerificationService {
           'Content-Type': 'application/json',
           'x-client-id': this.clientId,
           'x-client-secret': this.clientSecret,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2022-09-01',
         },
         body: JSON.stringify({
           aadhaar_number: cleanedAadhaar,
@@ -161,11 +164,13 @@ export class CashfreeVerificationService {
       clearTimeout(timeoutId);
 
       const data = await response.json();
+      const returnedRefId = data.ref_id || data.reference_id || '';
+      const isSuccess = response.ok && (data.status === 'SUCCESS' || data.status === 'OTP_SENT' || Boolean(returnedRefId));
 
-      if (response.ok && (data.status === 'SUCCESS' || data.ref_id)) {
+      if (isSuccess && returnedRefId) {
         return {
           success: true,
-          refId: data.ref_id || `${Date.now()}`,
+          refId: returnedRefId,
           status: 'OTP_SENT',
           message: data.message || 'OTP sent successfully to your Aadhaar-linked mobile.',
         };
@@ -189,7 +194,10 @@ export class CashfreeVerificationService {
 
   /**
    * STEP 2 of Aadhaar verification:
-   * Worker enters the OTP received on their Aadhaar-registered phone.
+   * Cashfree Secure ID Offline Aadhaar OTP Verification
+   * Endpoint: POST /verification/offline-aadhaar/verify
+   * Request Body: { "ref_id": "...", "otp": "123456" }
+   * Response: { "status": "VALID", "name": "...", "dob": "...", "gender": "..." }
    */
   async submitAadhaarOtp(params: {
     refId: string;
@@ -207,7 +215,6 @@ export class CashfreeVerificationService {
     }
 
     if (this.isMockMode()) {
-      // Sandbox convention: '123456' succeeds, anything else fails
       if (otp.trim() === '123456') {
         return {
           success: true,
@@ -237,7 +244,7 @@ export class CashfreeVerificationService {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       const response = await fetch(`${this.baseUrl}/offline-aadhaar/verify`, {
         method: 'POST',
@@ -245,6 +252,7 @@ export class CashfreeVerificationService {
           'Content-Type': 'application/json',
           'x-client-id': this.clientId,
           'x-client-secret': this.clientSecret,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2022-09-01',
         },
         body: JSON.stringify({
           ref_id: refId,
@@ -255,16 +263,20 @@ export class CashfreeVerificationService {
       clearTimeout(timeoutId);
 
       const data = await response.json();
+      const isValid = response.ok && (data.status === 'VALID' || data.status === 'SUCCESS' || data.valid === true);
 
-      if (response.ok && data.status === 'VALID') {
-        const masked = data.care_of ? CashfreeVerificationService.maskAadhaar(data.aadhaar_number || '1234') : 'XXXXXXXX8291';
+      if (isValid) {
+        const rawAadhaarNum = data.aadhaar_number || '';
+        const masked = rawAadhaarNum
+          ? CashfreeVerificationService.maskAadhaar(rawAadhaarNum)
+          : 'XXXXXXXX8291';
         return {
           success: true,
           status: 'VERIFIED',
           maskedAadhaar: masked,
-          nameOnAadhaar: data.name,
-          dob: data.dob,
-          gender: data.gender,
+          nameOnAadhaar: data.name || undefined,
+          dob: data.dob || undefined,
+          gender: data.gender || undefined,
           message: 'Aadhaar identity verified successfully.',
         };
       }
@@ -286,8 +298,9 @@ export class CashfreeVerificationService {
   }
 
   /**
-   * Cashfree Bank Account Verification
-   * Validates bank account existence, IFSC validity, and account holder name match.
+   * Cashfree Bank Account Verification (Penny Drop & IFSC)
+   * Endpoint: POST /verification/bank-account/sync
+   * Request Body: { "bank_account": "...", "ifsc": "...", "name": "..." }
    */
   async verifyBankAccount(params: {
     accountNumber: string;
@@ -320,7 +333,6 @@ export class CashfreeVerificationService {
     }
 
     if (this.isMockMode()) {
-      // Simulate realistic bank verification
       if (cleanIfsc === 'INVALID0000') {
         return {
           success: false,
@@ -355,6 +367,7 @@ export class CashfreeVerificationService {
           'Content-Type': 'application/json',
           'x-client-id': this.clientId,
           'x-client-secret': this.clientSecret,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2022-09-01',
         },
         body: JSON.stringify({
           bank_account: cleanAcc,
@@ -368,7 +381,7 @@ export class CashfreeVerificationService {
 
       const data = await response.json();
 
-      if (response.ok && data.account_status === 'VALID') {
+      if (response.ok && (data.account_status === 'VALID' || data.status === 'SUCCESS')) {
         return {
           success: true,
           status: 'VERIFIED',
