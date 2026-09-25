@@ -9,6 +9,7 @@ import CustomerCTA from '@/components/home/CustomerCTA';
 import WorkerCTA from '@/components/home/WorkerCTA';
 import TrustStats from '@/components/home/TrustStats';
 import MobileHomeView from '@/components/home/MobileHomeView';
+import TestimonialsSection from '@/components/home/TestimonialsSection';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
@@ -176,6 +177,9 @@ export default function HomePage() {
           platformStats={platformStats}
         />
       </div>
+
+      {/* TESTIMONIALS SECTION */}
+      <TestimonialsSection />
 
       {/* FOOTER */}
       <Footer />

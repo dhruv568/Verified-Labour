@@ -250,21 +250,24 @@ export default function WorkerOnboardingWizard({
     return list;
   }, [categories]);
 
-  // Prepare searchable State options
+  // Prepare searchable State options in A-Z order
   const stateOptions = useMemo(() => {
-    return INDIAN_STATES_AND_CITIES.map((item) => ({
-      value: item.state,
-      label: item.state,
+    const statesList = INDIAN_STATES_AND_CITIES.map((item) => item.state);
+    statesList.sort((a, b) => a.localeCompare(b));
+    return statesList.map((st) => ({
+      value: st,
+      label: st,
     }));
   }, []);
 
-  // Prepare searchable City options dependent on selected State
+  // Prepare searchable City options dependent on selected State in A-Z order
   const cityOptions = useMemo(() => {
     if (!state) return [];
     const foundState = INDIAN_STATES_AND_CITIES.find(
       (item) => item.state.toLowerCase() === state.toLowerCase()
     );
     const baseCities = foundState ? [...foundState.cities] : [];
+    baseCities.sort((a, b) => a.localeCompare(b));
 
     if (city && !baseCities.some((c) => c.toLowerCase() === city.toLowerCase())) {
       baseCities.unshift(city);

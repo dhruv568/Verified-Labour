@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, Trash2, Mic, RotateCcw } from 'lucide-react';
 
 interface VoiceAudioPlayerProps {
   src: string;
   duration?: number | null;
   onDelete?: () => void;
+  onReRecord?: () => void;
   className?: string;
   label?: string;
 }
@@ -15,6 +16,7 @@ export default function VoiceAudioPlayer({
   src,
   duration,
   onDelete,
+  onReRecord,
   className = '',
   label = 'Voice Note',
 }: VoiceAudioPlayerProps) {
@@ -22,6 +24,12 @@ export default function VoiceAudioPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(duration || 0);
+
+  useEffect(() => {
+    if (duration && duration > 0) {
+      setTotalDuration(duration);
+    }
+  }, [duration]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -115,16 +123,31 @@ export default function VoiceAudioPlayer({
         />
       </div>
 
-      {onDelete && (
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="Re-record voice note"
-          className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0"
-          title="Delete / Re-record"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
+      {(onDelete || onReRecord) && (
+        <div className="flex items-center gap-1 shrink-0">
+          {onReRecord && (
+            <button
+              type="button"
+              onClick={onReRecord}
+              aria-label="Re-record voice note"
+              className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-700 hover:bg-brand-50 flex items-center justify-center transition-colors shrink-0"
+              title="Re-record"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label="Delete voice note"
+              className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

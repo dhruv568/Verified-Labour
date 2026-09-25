@@ -22,6 +22,9 @@ export interface SearchableSelectProps {
   className?: string;
 }
 
+const normalizeText = (str: string) =>
+  (str || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
 export default function SearchableSelect({
   label,
   required,
@@ -39,17 +42,29 @@ export default function SearchableSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedOption = options.find(
+    (opt) =>
+      opt.value === value ||
+      normalizeText(opt.value) === normalizeText(value) ||
+      normalizeText(opt.label) === normalizeText(value)
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // Focus search input when opening
@@ -59,11 +74,37 @@ export default function SearchableSelect({
     }
   }, [isOpen]);
 
-  const filteredOptions = options.filter(
+  const cleanQuery = normalizeText(searchQuery);
+
+  const filteredOptions = options.filter((opt) => {
+    if (!cleanQuery) return true;
+    const normLabel = normalizeText(opt.label);
+    const normValue = normalizeText(opt.value);
+    const normSubtext = opt.subtext ? normalizeText(opt.subtext) : '';
+
+    return (
+      normLabel.includes(cleanQuery) ||
+      normValue.includes(cleanQuery) ||
+      normSubtext.includes(cleanQuery)
+    );
+  });
+
+  const hasExactMatch = options.some(
     (opt) =>
-      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (opt.subtext && opt.subtext.toLowerCase().includes(searchQuery.toLowerCase()))
+      normalizeText(opt.label) === cleanQuery ||
+      normalizeText(opt.value) === cleanQuery
   );
+
+  const rawSearchTrimmed = searchQuery.trim().replace(/\s+/g, ' ');
+
+  const displayOptions = [...filteredOptions];
+  if (rawSearchTrimmed && !hasExactMatch) {
+    displayOptions.unshift({
+      value: rawSearchTrimmed,
+      label: rawSearchTrimmed,
+      subtext: 'Select searched city',
+    });
+  }
 
   const handleSelect = (val: string) => {
     onChange(val);
@@ -102,6 +143,8 @@ export default function SearchableSelect({
                 <span className="text-slate-400 font-normal">({selectedOption.subtext})</span>
               )}
             </span>
+          ) : value ? (
+            <span className="font-semibold text-slate-900">{value}</span>
           ) : (
             <span className="text-slate-400">{placeholder}</span>
           )}
@@ -140,15 +183,30 @@ export default function SearchableSelect({
 
           {/* Options List */}
           <div className="max-h-56 overflow-y-auto p-1 space-y-0.5 custom-scrollbar">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => {
-                const isSelected = opt.value === value;
+            {displayOptions.length > 0 ? (
+              displayOptions.map((opt) => {
+                const isSelected =
+                  opt.value === value ||
+                  normalizeText(opt.value) === normalizeText(value) ||
+                  normalizeText(opt.label) === normalizeText(value);
+
                 return (
                   <button
-                    key={opt.value}
+                    key={`${opt.value}-${opt.label}`}
                     type="button"
-                    onClick={() => handleSelect(opt.value)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(opt.value);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleSelect(opt.value);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSelect(opt.value);
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between transition-colors select-none active:scale-[0.99] cursor-pointer ${
                       isSelected
                         ? 'bg-blue-50 text-[#1264D6] font-bold'
                         : 'text-slate-700 hover:bg-slate-100 font-medium'

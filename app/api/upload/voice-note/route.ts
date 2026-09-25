@@ -17,6 +17,8 @@ const ALLOWED_MIME_TYPES = [
   'audio/wav',
   'audio/x-m4a',
   'audio/mpeg',
+  'audio/mp3',
+  'audio/3gpp',
 ];
 
 export async function POST(req: NextRequest) {
@@ -47,39 +49,80 @@ export async function POST(req: NextRequest) {
     }
 
     const typePrefix = file.type ? file.type.split(';')[0].toLowerCase() : '';
-    const isAudio = typePrefix.startsWith('audio/') || ALLOWED_MIME_TYPES.includes(file.type.toLowerCase());
+    const isAudio =
+      typePrefix.startsWith('audio/') ||
+      ALLOWED_MIME_TYPES.includes(file.type.toLowerCase());
 
-    if (!isAudio && file.name && !/\.(webm|m4a|mp4|ogg|wav|aac|mp3)$/i.test(file.name)) {
+    if (!isAudio && file.name && !/\.(webm|m4a|mp4|ogg|wav|aac|mp3|3gp)$/i.test(file.name)) {
       return NextResponse.json(
         { success: false, error: 'Unsupported file format. Please upload a valid audio file.' },
         { status: 400 }
       );
     }
 
-    // Determine extension
+    // Determine extension safely
     let ext = 'webm';
-    if (file.type.includes('mp4') || file.type.includes('m4a') || file.type.includes('aac')) {
+    const lowerType = (file.type || '').toLowerCase();
+    if (lowerType.includes('mp4') || lowerType.includes('m4a') || lowerType.includes('aac')) {
       ext = 'm4a';
-    } else if (file.type.includes('ogg')) {
+    } else if (lowerType.includes('ogg')) {
       ext = 'ogg';
-    } else if (file.type.includes('wav')) {
+    } else if (lowerType.includes('wav')) {
       ext = 'wav';
+    } else if (lowerType.includes('mpeg') || lowerType.includes('mp3')) {
+      ext = 'mp3';
     } else if (file.name && file.name.includes('.')) {
-      ext = file.name.split('.').pop() || 'webm';
+      const parts = file.name.split('.');
+      const candidateExt = parts.pop()?.toLowerCase();
+      if (candidateExt && ['webm', 'm4a', 'mp4', 'ogg', 'wav', 'aac', 'mp3', '3gp'].includes(candidateExt)) {
+        ext = candidateExt;
+      }
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'voice-notes');
-    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Create target directory if it does not exist with mode 0o755
+    try {
+      await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
+    } catch (dirErr: any) {
+      console.error('[Voice Note Upload] Failed to create upload directory:', dirErr);
+      if (dirErr.code === 'EACCES') {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Permission denied creating upload directory on server. Please check application folder permissions.',
+          },
+          { status: 500 }
+        );
+      }
+      throw dirErr;
+    }
 
     const fileUUID = crypto.randomUUID();
     const filename = `voice-${fileUUID}.${ext}`;
     const relativePath = `/uploads/voice-notes/${filename}`;
     const absolutePath = path.join(uploadDir, filename);
 
-    await fs.writeFile(absolutePath, buffer);
+    try {
+      await fs.writeFile(absolutePath, buffer);
+    } catch (writeErr: any) {
+      console.error('[Voice Note Upload] Write file failed:', writeErr);
+      if (writeErr.code === 'EACCES') {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Permission denied writing audio file to server storage. Please check upload folder write permissions.',
+          },
+          { status: 500 }
+        );
+      }
+      throw writeErr;
+    }
 
     return NextResponse.json({
       success: true,

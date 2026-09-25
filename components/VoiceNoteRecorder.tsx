@@ -8,13 +8,16 @@ import {
   Play,
   RotateCcw,
   AlertCircle,
-  Loader2,
-  Volume2,
+  CheckCircle2,
 } from 'lucide-react';
 import VoiceAudioPlayer from './VoiceAudioPlayer';
 
 interface VoiceNoteRecorderProps {
-  onVoiceNoteChange: (audioUrl: string | null, durationSec: number) => void;
+  onVoiceNoteChange: (
+    blob: Blob | null,
+    durationSec: number,
+    previewUrl: string | null
+  ) => void;
   disabled?: boolean;
 }
 
@@ -22,11 +25,10 @@ export default function VoiceNoteRecorder({
   onVoiceNoteChange,
   disabled = false,
 }: VoiceNoteRecorderProps) {
-  const [status, setStatus] = useState<
-    'idle' | 'recording' | 'paused' | 'uploading' | 'recorded'
-  >('idle');
+  const [status, setStatus] = useState<'idle' | 'recording' | 'paused' | 'recorded'>('idle');
   const [duration, setDuration] = useState<number>(0);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -37,12 +39,15 @@ export default function VoiceNoteRecorder({
   const touchStartTimeRef = useRef<number>(0);
   const isHoldRecordingRef = useRef<boolean>(false);
 
-  // Clean up timer and media stream on unmount
+  // Clean up timer and media stream & object URL on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
       }
     };
   }, []);
@@ -63,6 +68,17 @@ export default function VoiceNoteRecorder({
     return '';
   };
 
+  const cleanupStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   const startRecording = async () => {
     if (disabled) return;
     setError(null);
@@ -72,9 +88,7 @@ export default function VoiceNoteRecorder({
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getUserMedia
     ) {
-      setError(
-        'Voice recording is not supported on this browser or connection.'
-      );
+      setError('Voice recording is not supported on this browser or connection.');
       return;
     }
 
@@ -94,27 +108,38 @@ export default function VoiceNoteRecorder({
         }
       };
 
-      mediaRecorder.onstop = async () => {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
+      mediaRecorder.onstop = () => {
+        cleanupStream();
 
-        const recordedBlob = new Blob(chunksRef.current, {
+        const blob = new Blob(chunksRef.current, {
           type: mimeType || 'audio/webm',
         });
 
-        if (recordedBlob.size === 0) {
+        if (blob.size === 0) {
           setError('Recorded audio was empty. Please try again.');
           setStatus('idle');
           return;
         }
 
-        uploadAudioBlob(recordedBlob, durationRef.current);
+        if (blob.size > 10 * 1024 * 1024) {
+          setError('Recorded audio exceeds 10MB limit. Please record a shorter note.');
+          setStatus('idle');
+          return;
+        }
+
+        // Revoke previous blob URL if exists
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+
+        const url = URL.createObjectURL(blob);
+        const finalDuration = durationRef.current;
+
+        setRecordedBlob(blob);
+        setPreviewUrl(url);
+        setStatus('recorded');
+
+        onVoiceNoteChange(blob, finalDuration, url);
       };
 
       mediaRecorder.start(200);
@@ -188,49 +213,31 @@ export default function VoiceNoteRecorder({
     }
   };
 
-  const uploadAudioBlob = async (blob: Blob, finalDuration: number) => {
-    setStatus('uploading');
-    try {
-      const formData = new FormData();
-      const ext =
-        blob.type.includes('mp4') || blob.type.includes('m4a') ? 'm4a' : 'webm';
-      formData.append('file', blob, `voice-note.${ext}`);
-
-      const res = await fetch('/api/upload/voice-note', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to process voice note');
-      }
-
-      setAudioUrl(data.url);
-      setStatus('recorded');
-      onVoiceNoteChange(data.url, finalDuration);
-    } catch (err: any) {
-      setError('Voice note upload failed: ' + err.message);
-      setStatus('idle');
-    }
-  };
-
   const deleteRecording = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    cleanupStream();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
     }
 
-    setAudioUrl(null);
+    setRecordedBlob(null);
+    setPreviewUrl(null);
     setDuration(0);
     durationRef.current = 0;
     setStatus('idle');
     setError(null);
-    onVoiceNoteChange(null, 0);
+
+    onVoiceNoteChange(null, 0, null);
+  };
+
+  const handleReRecord = () => {
+    deleteRecording();
+    setTimeout(() => {
+      startRecording();
+    }, 50);
   };
 
   const handleMicClick = () => {
@@ -253,7 +260,6 @@ export default function VoiceNoteRecorder({
   const handleTouchEnd = () => {
     const holdTime = Date.now() - touchStartTimeRef.current;
     if (isHoldRecordingRef.current && holdTime > 400) {
-      // User held button for > 400ms -> stop recording on release
       stopRecording();
     }
     isHoldRecordingRef.current = false;
@@ -395,22 +401,23 @@ export default function VoiceNoteRecorder({
         </div>
       )}
 
-      {/* State: Uploading / Processing */}
-      {status === 'uploading' && (
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
-          <Loader2 className="w-4 h-4 text-brand-600 animate-spin" />
-          <span>Processing audio note...</span>
+      {/* State: Recorded -> Audio Player preview mode */}
+      {status === 'recorded' && previewUrl && (
+        <div className="space-y-1.5 animate-in fade-in">
+          <VoiceAudioPlayer
+            src={previewUrl}
+            duration={duration}
+            onDelete={deleteRecording}
+            onReRecord={handleReRecord}
+            label="Attached Voice Note"
+          />
+          <div className="flex items-center justify-between px-1 text-[11px]">
+            <span className="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Voice note attached
+            </span>
+          </div>
         </div>
-      )}
-
-      {/* State: Recorded -> Audio Player review mode */}
-      {status === 'recorded' && audioUrl && (
-        <VoiceAudioPlayer
-          src={audioUrl}
-          duration={duration}
-          onDelete={deleteRecording}
-          label="Attached Voice Note"
-        />
       )}
     </div>
   );

@@ -38,8 +38,9 @@ Ensure the following are installed and running on the VPS:
 ### Step 2.1 — Create Application Directory
 Run as root or sudo user on the VPS:
 ```bash
-sudo mkdir -p /var/www/verifiedlabour
-sudo chown -R $USER:$USER /var/www/verifiedlabour
+sudo mkdir -p /var/www/verifiedlabour/public/uploads/voice-notes
+sudo chown -R verifiedlabour:verifiedlabour /var/www/verifiedlabour
+sudo chmod -R 755 /var/www/verifiedlabour/public/uploads
 cd /var/www/verifiedlabour
 ```
 

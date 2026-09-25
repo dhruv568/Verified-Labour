@@ -36,6 +36,7 @@ import {
   Phone,
   MapPin,
   ExternalLink,
+  Star,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -43,6 +44,7 @@ import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Logo from '@/components/Logo';
+import TestimonialsAdmin from '@/components/admin/TestimonialsAdmin';
 
 type AdminTab =
   | 'dashboard'
@@ -51,6 +53,7 @@ type AdminTab =
   | 'bookings'
   | 'payments'
   | 'content'
+  | 'testimonials'
   | 'categories'
   | 'disputes'
   | 'audit'
@@ -122,7 +125,7 @@ export default function AdminPage() {
 
   // Content Management Form State
   const [contentForm, setContentForm] = useState<Record<string, string>>({});
-  const [contentSubTab, setContentSubTab] = useState<'hero' | 'about' | 'contact' | 'footer' | 'announcement'>('hero');
+  const [contentSubTab, setContentSubTab] = useState<'hero' | 'about' | 'testimonials' | 'contact' | 'footer' | 'announcement'>('hero');
   const [savingContent, setSavingContent] = useState(false);
 
   // Add Category Form State
@@ -649,6 +652,7 @@ export default function AdminPage() {
     { id: 'bookings' as AdminTab, label: 'Jobs & Bookings', icon: <Clock className="w-4 h-4" />, count: jobs.length },
     { id: 'payments' as AdminTab, label: 'Payments & Revenue', icon: <CreditCard className="w-4 h-4" />, count: payments.length },
     { id: 'content' as AdminTab, label: 'Website Content', icon: <Globe className="w-4 h-4" /> },
+    { id: 'testimonials' as AdminTab, label: 'Testimonials (2 Cards)', icon: <Star className="w-4 h-4 text-amber-500" /> },
     { id: 'categories' as AdminTab, label: 'Service Categories', icon: <Building className="w-4 h-4" />, count: categories.length },
     { id: 'disputes' as AdminTab, label: 'Disputes Console', icon: <Scale className="w-4 h-4" />, count: disputes.length },
     { id: 'audit' as AdminTab, label: 'System Audit Logs', icon: <FileText className="w-4 h-4" />, count: auditLogs.length },
@@ -1283,6 +1287,15 @@ export default function AdminPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setContentSubTab('testimonials')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      contentSubTab === 'testimonials' ? 'bg-navy-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Testimonials (2 Cards)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setContentSubTab('contact')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
                       contentSubTab === 'contact' ? 'bg-navy-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -1415,6 +1428,12 @@ export default function AdminPage() {
                           className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {contentSubTab === 'testimonials' && (
+                    <div className="pt-2">
+                      <TestimonialsAdmin />
                     </div>
                   )}
 
@@ -1574,6 +1593,11 @@ export default function AdminPage() {
                 </form>
               </Card>
             </div>
+          )}
+
+          {/* TAB 6.5: TESTIMONIALS (2 SLOTS) */}
+          {activeTab === 'testimonials' && (
+            <TestimonialsAdmin />
           )}
 
           {/* TAB 7: CATEGORIES */}

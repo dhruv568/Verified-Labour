@@ -555,3 +555,17 @@ model PlatformConfig {
   description String?
   updatedAt   DateTime @updatedAt
 }
+
+model Testimonial {
+  id              String   @id @default(uuid())
+  slot            Int      @unique
+  imageUrl        String
+  customerName    String
+  profession      String?
+  location        String?
+  testimonialText String?
+  rating          Int      @default(5)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

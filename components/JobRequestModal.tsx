@@ -26,8 +26,10 @@ export default function JobRequestModal({
   const [services, setServices] = useState<any[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [description, setDescription] = useState('');
-  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const [voiceNoteBlob, setVoiceNoteBlob] = useState<Blob | null>(null);
   const [voiceNoteDuration, setVoiceNoteDuration] = useState<number>(0);
+  const [voiceNotePreviewUrl, setVoiceNotePreviewUrl] = useState<string | null>(null);
+
   const [address, setAddress] = useState(
     selectedLocation?.formattedAddress || selectedLocation?.displayName || ''
   );
@@ -42,6 +44,19 @@ export default function JobRequestModal({
       setAddress(selectedLocation.formattedAddress || selectedLocation.displayName || '');
     }
   }, [selectedLocation]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDescription('');
+      if (voiceNotePreviewUrl) {
+        URL.revokeObjectURL(voiceNotePreviewUrl);
+      }
+      setVoiceNoteBlob(null);
+      setVoiceNoteDuration(0);
+      setVoiceNotePreviewUrl(null);
+      setError(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (worker && worker.primaryCategory) {
@@ -76,16 +91,43 @@ export default function JobRequestModal({
     setLoading(true);
 
     try {
+      let uploadedVoiceUrl: string | null = null;
+
+      // 1. Upload voice note if recorded for this job request
+      if (voiceNoteBlob) {
+        const formData = new FormData();
+        const ext =
+          voiceNoteBlob.type.includes('mp4') || voiceNoteBlob.type.includes('m4a')
+            ? 'm4a'
+            : 'webm';
+        formData.append('file', voiceNoteBlob, `voice-note.${ext}`);
+
+        const uploadRes = await fetch('/api/upload/voice-note', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.success) {
+          throw new Error(uploadData.error || 'Failed to upload voice note');
+        }
+
+        uploadedVoiceUrl = uploadData.url;
+      }
+
+      // 2. Create JobRequest with uploaded voiceNoteUrl
       const res = await fetch('/api/jobs/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workerId: worker.id,
-          categoryId: worker.primaryCategory ? (worker.primaryCategory as any).id || (services[0]?.categoryId) : undefined,
+          categoryId: worker.primaryCategory
+            ? (worker.primaryCategory as any).id || (services[0]?.categoryId)
+            : undefined,
           serviceId: selectedServiceId,
           description,
-          voiceNoteUrl,
-          voiceNoteDuration,
+          voiceNoteUrl: uploadedVoiceUrl,
+          voiceNoteDuration: voiceNoteDuration || 0,
           formattedAddress: address,
           city: selectedLocation.city || '',
           postalCode: selectedLocation.postalCode,
@@ -108,6 +150,14 @@ export default function JobRequestModal({
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to request worker');
       }
+
+      // Cleanup local preview object URL
+      if (voiceNotePreviewUrl) {
+        URL.revokeObjectURL(voiceNotePreviewUrl);
+      }
+      setVoiceNoteBlob(null);
+      setVoiceNoteDuration(0);
+      setVoiceNotePreviewUrl(null);
 
       onSuccess(data.jobId);
       onClose();
@@ -316,9 +366,13 @@ export default function JobRequestModal({
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
             />
             <VoiceNoteRecorder
-              onVoiceNoteChange={(url, durSec) => {
-                setVoiceNoteUrl(url);
+              onVoiceNoteChange={(blob, durSec, previewUrl) => {
+                if (voiceNotePreviewUrl && voiceNotePreviewUrl !== previewUrl) {
+                  URL.revokeObjectURL(voiceNotePreviewUrl);
+                }
+                setVoiceNoteBlob(blob);
                 setVoiceNoteDuration(durSec);
+                setVoiceNotePreviewUrl(previewUrl);
               }}
               disabled={loading}
             />
@@ -338,7 +392,7 @@ export default function JobRequestModal({
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || (!description.trim() && !voiceNoteUrl)}
+            disabled={loading || (!description.trim() && !voiceNoteBlob)}
             className="w-full min-h-[48px] py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base flex items-center justify-center"
           >
             {loading ? 'Sending Request to Worker...' : 'Confirm & Request Worker'}
