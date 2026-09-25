@@ -94,10 +94,10 @@ export default function CustomerDashboardPage() {
           }
           setSession(data.user);
         } else {
-          router.push('/?auth=login');
+          router.replace('/logout?reason=unauthorized');
         }
       })
-      .catch(() => router.push('/'))
+      .catch(() => router.replace('/logout?reason=unauthorized'))
       .finally(() => setLoadingSession(false));
   }, [router]);
 

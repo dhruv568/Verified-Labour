@@ -90,10 +90,10 @@ export default function AdminDashboardPage() {
         if (data.authenticated && data.user && data.user.role === 'ADMIN') {
           setSession(data.user);
         } else {
-          router.push('/?auth=login');
+          router.replace('/logout?reason=unauthorized');
         }
       })
-      .catch(() => router.push('/'))
+      .catch(() => router.replace('/logout?reason=unauthorized'))
       .finally(() => setLoadingSession(false));
   }, [router]);
 

@@ -55,13 +55,13 @@ export default function Navbar({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/me', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST' });
       setSessionUser(null);
       setUserDropdownOpen(false);
-      router.push('/');
-      router.refresh();
+      window.location.href = '/logout';
     } catch (err) {
       console.error('Logout error:', err);
+      window.location.href = '/logout';
     }
   };
 
