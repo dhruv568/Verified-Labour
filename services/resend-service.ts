@@ -23,7 +23,7 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
   const { otp, email, name, appUrl: customAppUrl, verifyUrl: customVerifyUrl } = options;
   const appUrl = customAppUrl || DEFAULT_APP_URL;
   const verifyUrl = customVerifyUrl || `${appUrl}/auth/verify-email?email=${encodeURIComponent(email)}&otp=${otp}`;
-  const logoUrl = `${appUrl}/logo.jpeg`;
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
 
   const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
