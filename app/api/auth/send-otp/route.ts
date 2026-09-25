@@ -44,13 +44,14 @@ export async function POST(req: NextRequest) {
       ? Math.floor(100000 + Math.random() * 900000).toString()
       : '123456';
 
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+    const expiresInSeconds = 600; // 10 minutes
+    const expiresAt = Date.now() + expiresInSeconds * 1000;
     activeOtps.set(phone, { otp, expiresAt, attempts: 0 });
 
     return NextResponse.json({
       success: true,
       message: `OTP sent successfully to ${phone}. (Dev/Sandbox default OTP: 123456)`,
-      expiresInSeconds: 300,
+      expiresInSeconds,
       phone,
     });
   } catch (err: any) {

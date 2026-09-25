@@ -6,6 +6,7 @@ import activeOtps from '../lib/otp-store';
 import { POST as registerHandler } from '../app/api/auth/register/route';
 import { POST as loginHandler } from '../app/api/auth/login/route';
 import { POST as verifyOtpHandler } from '../app/api/auth/verify-otp/route';
+import { POST as resendOtpHandler } from '../app/api/auth/resend-otp/route';
 
 export async function runAuthFlowTests() {
   console.log('\n--- Mandatory Email OTP Authentication & Verification Tests ---');
@@ -109,6 +110,27 @@ export async function runAuthFlowTests() {
     const storedOtp = activeOtps.get(testRegEmail.toLowerCase());
     assert(storedOtp !== undefined, 'Email OTP must be generated and stored in activeOtps');
     assert.strictEqual(storedOtp?.otp.length, 6);
+  });
+
+  await testAsync('Resend OTP API endpoint generates a fresh OTP, invalidates old OTP, and returns 10 min expiry', async () => {
+    const initialOtp = activeOtps.get(testRegEmail.toLowerCase())?.otp;
+    assert(initialOtp !== undefined);
+
+    const req = new NextRequest('http://localhost:3000/api/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email: testRegEmail }),
+    });
+    const res = await resendOtpHandler(req);
+    const data = await res.json();
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(data.success, true);
+    assert.strictEqual(data.expiresInSeconds, 600);
+
+    const newStoredOtp = activeOtps.get(testRegEmail.toLowerCase());
+    assert(newStoredOtp !== undefined);
+    assert.notStrictEqual(newStoredOtp?.otp, initialOtp, 'Resent OTP must differ from initial OTP');
+    assert.strictEqual(newStoredOtp?.otp.length, 6);
   });
 
   await testAsync('Unverified user trying protected access is blocked (getSessionUser returns null)', async () => {

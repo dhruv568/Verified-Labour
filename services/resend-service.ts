@@ -281,6 +281,14 @@ export async function sendEmailOtp(params: {
       messageId = response.data?.id;
     } catch (err: any) {
       console.error('[Resend Service Exception]', err);
+      return {
+        success: false,
+        otp,
+        error: err.message || 'Failed to dispatch email via Resend',
+        html,
+        text,
+        expiresInSeconds,
+      };
     }
   } else {
     console.log(`[Resend Service Mock] OTP Email dispatched to ${normalizedEmail}. Code: ${otp}`);

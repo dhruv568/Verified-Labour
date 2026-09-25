@@ -297,13 +297,20 @@ export default function AuthModal({
   const handleResendEmailOtp = async () => {
     setError(null);
     setSuccessMsg(null);
+
+    const emailToResend = pendingEmail || regEmail.trim() || loginEmail.trim();
+    if (!emailToResend) {
+      setError('Email address is required to resend verification code.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: pendingEmail }),
+        body: JSON.stringify({ email: emailToResend }),
       });
       const data = await res.json();
 
@@ -312,7 +319,7 @@ export default function AuthModal({
       }
 
       setResendTimer(60);
-      setSuccessMsg('Verification code sent to your email.');
+      setSuccessMsg(data.message || 'A new verification code has been sent to your email.');
     } catch (err: any) {
       setError(err.message);
     } finally {

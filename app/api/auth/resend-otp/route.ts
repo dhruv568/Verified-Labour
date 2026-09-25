@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import prisma from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { sendEmailOtp } from '@/services/resend-service';
 import activeOtps from '@/lib/otp-store';
@@ -39,11 +40,25 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Lookup user name if exists
+      const user = await prisma.user.findFirst({
+        where: { email: normalizedEmail },
+        include: { customerProfile: true, workerProfile: true, businessProfile: true },
+      });
+      const userName = user?.customerProfile?.fullName || user?.workerProfile?.fullName || user?.businessProfile?.companyName;
+
       // Invalidate existing OTP explicitly
       activeOtps.delete(normalizedEmail);
 
       // Generate new OTP and dispatch via Resend
-      const result = await sendEmailOtp({ email: normalizedEmail, isResend: true });
+      const result = await sendEmailOtp({ email: normalizedEmail, name: userName, isResend: true });
+
+      if (!result.success) {
+        return NextResponse.json(
+          { success: false, error: result.error || 'Failed to dispatch new verification code. Please try again.' },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({
         success: true,
@@ -77,13 +92,14 @@ export async function POST(req: NextRequest) {
       const otp = process.env.NODE_ENV === 'production'
         ? Math.floor(100000 + Math.random() * 900000).toString()
         : '123456';
-      const expiresAt = Date.now() + 5 * 60 * 1000;
+      const expiresInSeconds = 600; // 10 minutes
+      const expiresAt = Date.now() + expiresInSeconds * 1000;
       activeOtps.set(normalizedPhone, { otp, expiresAt, attempts: 0 });
 
       return NextResponse.json({
         success: true,
         message: `A new OTP has been sent to ${normalizedPhone}`,
-        expiresInSeconds: 300,
+        expiresInSeconds,
         phone: normalizedPhone,
       });
     }

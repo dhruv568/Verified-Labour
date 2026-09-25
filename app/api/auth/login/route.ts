@@ -113,8 +113,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user email is verified
-    if (!user.isEmailVerified) {
+    // Check if user email or account is unverified
+    if (!user.isEmailVerified || user.status === 'PENDING_VERIFICATION') {
       const userName =
         user.customerProfile?.fullName ||
         user.workerProfile?.fullName ||

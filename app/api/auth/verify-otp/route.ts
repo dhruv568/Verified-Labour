@@ -159,10 +159,11 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
-      const updateData: any = {};
+      const updateData: any = {
+        status: 'ACTIVE',
+      };
       if (normalizedEmail) {
         updateData.isEmailVerified = true;
-        updateData.status = 'ACTIVE';
         if (!user.email) updateData.email = normalizedEmail;
       }
       if (phone) {
