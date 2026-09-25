@@ -13,6 +13,7 @@ import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';
+import WorkerProfileModal from '@/components/WorkerProfileModal';
 import { useLocation } from '@/context/LocationContext';
 import {
   X,
@@ -54,6 +55,7 @@ export default function HomePage() {
   const [authDefaultRole, setAuthDefaultRole] = useState<'CUSTOMER' | 'WORKER' | 'BUSINESS'>('CUSTOMER');
   const [bookingModalOpen, setBookingModalOpen] = useState<boolean>(false);
   const [selectedWorkerForBooking, setSelectedWorkerForBooking] = useState<WorkerData | null>(null);
+  const [profileWorker, setProfileWorker] = useState<WorkerData | null>(null);
 
   // Fetch real platform stats
   useEffect(() => {
@@ -266,7 +268,7 @@ export default function HomePage() {
                       key={w.id}
                       worker={w}
                       onRequestBooking={handleStartBooking}
-                      onViewProfile={() => handleStartBooking(w)}
+                      onViewProfile={(worker) => setProfileWorker(worker)}
                     />
                   ))}
                 </div>
@@ -321,6 +323,14 @@ export default function HomePage() {
           setBookingModalOpen(false);
           handleOpenAuth('register', 'CUSTOMER');
         }}
+      />
+
+      {/* Worker Public Profile Modal */}
+      <WorkerProfileModal
+        isOpen={Boolean(profileWorker)}
+        onClose={() => setProfileWorker(null)}
+        worker={profileWorker}
+        onRequestBooking={handleStartBooking}
       />
     </div>
   );

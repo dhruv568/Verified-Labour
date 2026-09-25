@@ -135,14 +135,32 @@ export default function JobRequestModal({
           </button>
         </div>
 
-        {/* Worker Snapshot */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800 truncate">{worker.primaryCategory?.name}</span>
-            <span>•</span>
-            <span className="text-slate-600 font-medium shrink-0">{worker.formattedDistance || 'Nearby'}</span>
+        {/* Worker Snapshot with Live Photo */}
+        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs shrink-0 gap-3">
+          <div className="flex items-center gap-3">
+            {worker.avatarUrl ? (
+              <img
+                src={worker.avatarUrl}
+                alt={worker.fullName}
+                className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 font-bold text-xs flex items-center justify-center border border-brand-200 shrink-0">
+                {worker.fullName ? worker.fullName.slice(0, 2).toUpperCase() : 'WL'}
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
+                <span>{worker.fullName}</span>
+                <span className="text-slate-400 font-normal">•</span>
+                <span className="text-slate-600 font-medium">{worker.primaryCategory?.name}</span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium">
+                {worker.experienceYears || 1}+ yrs exp • {worker.formattedDistance || 'Nearby'}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded border border-brand-200 shrink-0">
+          <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-1 rounded-lg border border-brand-200 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
             <span className="hidden sm:inline">Verified Professional</span>
             <span className="sm:hidden">Verified</span>

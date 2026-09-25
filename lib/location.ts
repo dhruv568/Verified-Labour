@@ -74,7 +74,7 @@ export function sanitizeWorkerForPublic(worker: any, customerLat?: number, custo
   return {
     id: worker.id,
     fullName: worker.fullName,
-    avatarUrl: worker.avatarUrl,
+    avatarUrl: worker.status === 'VERIFIED' || worker.status === 'ACTIVE' ? worker.avatarUrl : null,
     bio: worker.bio,
     experienceYears: worker.experienceYears,
     status: worker.status,

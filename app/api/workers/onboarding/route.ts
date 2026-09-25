@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/auth';
 import { syncWorkerVerificationStatus } from '@/lib/worker-verification';
 
 const onboardingUpdateSchema = z.object({
-  step: z.number().int().min(1).max(8),
+  step: z.number().int().min(1).max(10),
   fullName: z.string().optional(),
   dateOfBirth: z.string().optional(),
   gender: z.string().optional(),

@@ -26,6 +26,7 @@ import {
   Check,
   Clock,
   Building,
+  Camera,
 } from 'lucide-react';
 import Button from './ui/Button';
 import Input from './ui/Input';
@@ -35,6 +36,7 @@ import Card from './ui/Card';
 import Badge from './ui/Badge';
 import SearchableSelect from './ui/SearchableSelect';
 import { INDIAN_STATES_AND_CITIES } from '@/lib/indian-locations';
+import WorkerLivePhotoCapture from './WorkerLivePhotoCapture';
 
 interface WorkerOnboardingWizardProps {
   categories: any[];
@@ -66,7 +68,7 @@ export default function WorkerOnboardingWizard({
   const [customTrade, setCustomTrade] = useState('');
   const [hourlyRate, setHourlyRate] = useState<number | ''>(350);
 
-  // Step 3: Years of Experience (Starts empty initially)
+  // Step 3: Years of Experience
   const [experienceYears, setExperienceYears] = useState<number | ''>('');
 
   // Step 4: Location & Service Radius
@@ -80,7 +82,10 @@ export default function WorkerOnboardingWizard({
   const [serviceAreas, setServiceAreas] = useState('');
   const [locDetecting, setLocDetecting] = useState(false);
 
-  // Step 5: Cashfree Aadhaar Verification
+  // Step 5: Worker Live Photo
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Step 6: Cashfree Aadhaar Verification
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarConsent, setAadhaarConsent] = useState(true);
   const [aadhaarRefId, setAadhaarRefId] = useState('');
@@ -88,20 +93,20 @@ export default function WorkerOnboardingWizard({
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [maskedAadhaar, setMaskedAadhaar] = useState('');
 
-  // Step 6: Cashfree Bank Account
+  // Step 7: Cashfree Bank Account
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifsc, setIfsc] = useState('');
   const [bankVerified, setBankVerified] = useState(false);
   const [maskedAccountNo, setMaskedAccountNo] = useState('');
 
-  // Step 7: Documents & Availability
+  // Step 8: Documents & Availability
   const [certificateName, setCertificateName] = useState('');
   const [documentStatus, setDocumentStatus] = useState<'PENDING' | 'UPLOADED' | 'VERIFIED'>('PENDING');
   const [isAvailable, setIsAvailable] = useState(true);
   const [workingDays, setWorkingDays] = useState('Monday - Saturday (8:00 AM - 8:00 PM)');
 
-  // Step 8: Submission Status
+  // Step 9: Submission Status
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Fetch session on mount
@@ -117,9 +122,9 @@ export default function WorkerOnboardingWizard({
             if (wp.dateOfBirth) setDob(new Date(wp.dateOfBirth).toISOString().split('T')[0]);
             if (wp.gender) setGender(wp.gender);
             if (wp.bio) setBio(wp.bio);
+            if (wp.avatarUrl) setAvatarUrl(wp.avatarUrl);
             if (wp.primaryCategoryId) setPrimaryCategoryId(wp.primaryCategoryId);
-            
-            // Experience starts empty if null/undefined, otherwise set number
+
             if (wp.experienceYears !== undefined && wp.experienceYears !== null) {
               setExperienceYears(wp.experienceYears);
             }
@@ -178,10 +183,11 @@ export default function WorkerOnboardingWizard({
     if (!primaryCategoryId || (primaryCategoryId === 'custom_other' && !customTrade.trim())) return 2;
     if (experienceYears === '' || isNaN(Number(experienceYears)) || Number(experienceYears) < 0) return 3;
     if (!state.trim() || !city.trim()) return 4;
-    if (!aadhaarVerified) return 5;
-    if (!bankVerified) return 6;
-    if (!certificateName && documentStatus === 'PENDING') return 7;
-    return 8;
+    if (!avatarUrl) return 5;
+    if (!aadhaarVerified) return 6;
+    if (!bankVerified) return 7;
+    if (!certificateName && documentStatus === 'PENDING') return 8;
+    return 9;
   }, [
     fullName,
     primaryCategoryId,
@@ -189,6 +195,7 @@ export default function WorkerOnboardingWizard({
     experienceYears,
     state,
     city,
+    avatarUrl,
     aadhaarVerified,
     bankVerified,
     certificateName,
@@ -233,7 +240,6 @@ export default function WorkerOnboardingWizard({
     );
     const baseCities = foundState ? [...foundState.cities] : [];
 
-    // Ensure selected city is in options if detected/custom
     if (city && !baseCities.some((c) => c.toLowerCase() === city.toLowerCase())) {
       baseCities.unshift(city);
     }
@@ -241,7 +247,6 @@ export default function WorkerOnboardingWizard({
     return baseCities.map((c) => ({ value: c, label: c }));
   }, [state, city]);
 
-  // When state changes, clear city if not belonging to new state
   const handleStateChange = (newState: string) => {
     setState(newState);
     setCity('');
@@ -301,8 +306,6 @@ export default function WorkerOnboardingWizard({
             }
           } catch {
             await fallbackIP();
-          } finally {
-            setLocDetecting(false);
           }
         },
         async () => {
@@ -323,7 +326,6 @@ export default function WorkerOnboardingWizard({
     setLoading(true);
 
     try {
-      // Validate step fields before save
       if (stepNum === 1 && !fullName.trim()) {
         throw new Error('Please enter your full name as per Aadhaar.');
       }
@@ -355,6 +357,7 @@ export default function WorkerOnboardingWizard({
           dateOfBirth: dob,
           gender,
           bio,
+          avatarUrl: avatarUrl || undefined,
           primaryCategoryId: primaryCategoryId || categories[0]?.id,
           customTrade: primaryCategoryId === 'custom_other' ? customTrade : undefined,
           experienceYears: Number(experienceYears),
@@ -374,7 +377,6 @@ export default function WorkerOnboardingWizard({
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to save details');
 
-      // Auto advance to next step immediately
       setCurrentStep(stepNum + 1);
     } catch (err: any) {
       setError(err.message);
@@ -450,10 +452,10 @@ export default function WorkerOnboardingWizard({
       setAadhaarVerified(true);
       setMaskedAadhaar(data.maskedAadhaar || 'XXXXXXXX8291');
       setSuccessMsg('✓ Aadhaar identity verified successfully via Cashfree Secure ID!');
-      
-      // Auto-unlock & advance to Step 6 immediately!
+
+      // Auto-unlock & advance to Step 7 (Bank Verification)
       setTimeout(() => {
-        setCurrentStep(6);
+        setCurrentStep(7);
       }, 500);
     } catch (err: any) {
       setError(err.message);
@@ -467,7 +469,6 @@ export default function WorkerOnboardingWizard({
     const workerId = sessionUser?.workerProfile?.id;
     if (!workerId) return;
 
-    // Validate account number length (7 to 25 digits)
     if (accountNumber.length < 7 || accountNumber.length > 25) {
       setError('Bank Account Number must be between 7 and 25 digits.');
       return;
@@ -498,9 +499,9 @@ export default function WorkerOnboardingWizard({
       setMaskedAccountNo(data.maskedAccountNo || 'XXXXXXXX4512');
       setSuccessMsg('✓ Bank account verified successfully with Cashfree!');
 
-      // Auto-unlock & advance to Step 7 immediately!
+      // Auto-unlock & advance to Step 8 (Documents & Availability)
       setTimeout(() => {
-        setCurrentStep(7);
+        setCurrentStep(8);
       }, 500);
     } catch (err: any) {
       setError(err.message);
@@ -525,8 +526,9 @@ export default function WorkerOnboardingWizard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          step: 8,
+          step: 9,
           fullName,
+          avatarUrl: avatarUrl || undefined,
           city,
           state,
           primaryCategoryId: primaryCategoryId === 'custom_other' ? undefined : primaryCategoryId,
@@ -539,7 +541,7 @@ export default function WorkerOnboardingWizard({
 
       setIsSubmitted(true);
       setSuccessMsg('✓ Registration submitted successfully! Redirecting to worker dashboard...');
-      
+
       if (onComplete) {
         onComplete();
       } else {
@@ -559,10 +561,11 @@ export default function WorkerOnboardingWizard({
     { num: 2, title: 'Profession / Trade', icon: <Briefcase className="w-3.5 h-3.5" /> },
     { num: 3, title: 'Experience', icon: <Award className="w-3.5 h-3.5" /> },
     { num: 4, title: 'Location & Radius', icon: <MapPin className="w-3.5 h-3.5" /> },
-    { num: 5, title: 'Aadhaar KYC', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
-    { num: 6, title: 'Bank Account', icon: <CreditCard className="w-3.5 h-3.5" /> },
-    { num: 7, title: 'Documents & Availability', icon: <FileCheck className="w-3.5 h-3.5" /> },
-    { num: 8, title: 'Review & Submit', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+    { num: 5, title: 'Live Photo', icon: <Camera className="w-3.5 h-3.5" /> },
+    { num: 6, title: 'Aadhaar KYC', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+    { num: 7, title: 'Bank Account', icon: <CreditCard className="w-3.5 h-3.5" /> },
+    { num: 8, title: 'Documents & Availability', icon: <FileCheck className="w-3.5 h-3.5" /> },
+    { num: 9, title: 'Review & Submit', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
   ];
 
   if (sessionLoading) {
@@ -574,7 +577,7 @@ export default function WorkerOnboardingWizard({
     );
   }
 
-  const progressPercent = Math.min(100, Math.round((currentStep / 8) * 100));
+  const progressPercent = Math.min(100, Math.round((currentStep / 9) * 100));
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-slate-200/90 overflow-hidden">
@@ -591,7 +594,7 @@ export default function WorkerOnboardingWizard({
             </h2>
           </div>
           <span className="text-xs font-bold bg-[#0F2A5F] text-blue-200 px-3 py-1.5 rounded-full border border-blue-800/80 shrink-0">
-            Step {currentStep} of 8
+            Step {currentStep} of 9
           </span>
         </div>
 
@@ -603,10 +606,10 @@ export default function WorkerOnboardingWizard({
           />
         </div>
 
-        {/* Stepper Rail (8 Steps) */}
-        <div className="flex sm:grid sm:grid-cols-8 gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        {/* Stepper Rail (9 Steps) */}
+        <div className="flex sm:grid sm:grid-cols-9 gap-1.5 overflow-x-auto no-scrollbar pb-1">
           {stepsList.map((st) => {
-            const isCompleted = currentStep > st.num || (st.num === 8 && isSubmitted);
+            const isCompleted = currentStep > st.num || (st.num === 9 && isSubmitted);
             const isCurrent = currentStep === st.num;
             const isUnlocked = st.num <= maxUnlockedStep;
 
@@ -622,7 +625,7 @@ export default function WorkerOnboardingWizard({
                     setCurrentStep(st.num);
                   }
                 }}
-                className={`shrink-0 min-w-[80px] sm:min-w-0 min-h-[52px] flex flex-col items-center justify-center text-center p-1.5 rounded-xl transition-all ${
+                className={`shrink-0 min-w-[76px] sm:min-w-0 min-h-[52px] flex flex-col items-center justify-center text-center p-1.5 rounded-xl transition-all ${
                   isCurrent
                     ? 'bg-[#1264D6] text-white font-bold shadow-lg ring-2 ring-blue-300/40'
                     : isCompleted
@@ -681,7 +684,7 @@ export default function WorkerOnboardingWizard({
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 1 of 8 — Personal Details
+                Step 1 of 9 — Personal Details
               </div>
               <h3 className="text-xl font-black text-slate-900">Personal Information</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -689,7 +692,6 @@ export default function WorkerOnboardingWizard({
               </p>
             </div>
 
-            {/* Mobile Verification Badge */}
             <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -765,7 +767,7 @@ export default function WorkerOnboardingWizard({
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 2 of 8 — Trade & Profession
+                Step 2 of 9 — Trade & Profession
               </div>
               <h3 className="text-xl font-black text-slate-900">Profession / Trade Category</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -774,7 +776,6 @@ export default function WorkerOnboardingWizard({
             </div>
 
             <div className="space-y-3.5">
-              {/* Searchable Trade Dropdown */}
               <SearchableSelect
                 label="Primary Trade Category"
                 required
@@ -789,7 +790,6 @@ export default function WorkerOnboardingWizard({
                 }}
               />
 
-              {/* Show Custom / Other Input Field when Custom / Other is selected */}
               {primaryCategoryId === 'custom_other' && (
                 <div className="p-3.5 bg-blue-50/60 border border-blue-200 rounded-2xl space-y-2 animate-in fade-in">
                   <Input
@@ -848,7 +848,7 @@ export default function WorkerOnboardingWizard({
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 3 of 8 — Experience Level
+                Step 3 of 9 — Experience Level
               </div>
               <h3 className="text-xl font-black text-slate-900">Years of Experience</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -938,7 +938,7 @@ export default function WorkerOnboardingWizard({
             <div className="flex items-center justify-between">
               <div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                  Step 4 of 8 — Coverage Area
+                  Step 4 of 9 — Coverage Area
                 </div>
                 <h3 className="text-xl font-black text-slate-900">Location & Service Radius</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -958,7 +958,6 @@ export default function WorkerOnboardingWizard({
             </div>
 
             <div className="space-y-3.5">
-              {/* State Searchable Dropdown */}
               <SearchableSelect
                 label="State"
                 required
@@ -968,7 +967,6 @@ export default function WorkerOnboardingWizard({
                 onChange={handleStateChange}
               />
 
-              {/* City Searchable Dropdown (Disabled until State selected) */}
               <SearchableSelect
                 label="City"
                 required
@@ -1045,18 +1043,62 @@ export default function WorkerOnboardingWizard({
                 onClick={() => saveStepData(4)}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
-                Save & Proceed to Aadhaar KYC
+                Save & Proceed to Live Photo
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 5: CASHFREE AADHAAR VERIFICATION */}
+        {/* STEP 5: WORKER LIVE PHOTO CAPTURE */}
         {currentStep === 5 && (
+          <div className="max-w-xl mx-auto py-2 space-y-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
+                Step 5 of 9 — Worker Live Selfie
+              </div>
+              <h3 className="text-xl font-black text-slate-900">Worker Live Photo</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Take a live front-facing camera photo for identity verification and customer trust.
+              </p>
+            </div>
+
+            <WorkerLivePhotoCapture
+              existingAvatarUrl={avatarUrl}
+              onPhotoSaved={(url) => {
+                setAvatarUrl(url);
+                setSuccessMsg('✓ Live photo saved successfully!');
+              }}
+            />
+
+            <div className="flex gap-2.5 pt-2">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setCurrentStep(4)}
+                icon={<ArrowLeft className="w-4 h-4" />}
+              >
+                Back
+              </Button>
+              <Button
+                variant="brand"
+                size="lg"
+                fullWidth
+                disabled={!avatarUrl}
+                onClick={() => setCurrentStep(6)}
+                icon={!avatarUrl ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+              >
+                {avatarUrl ? 'Continue to Aadhaar KYC' : 'Live Photo Required to Unlock'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: CASHFREE AADHAAR VERIFICATION */}
+        {currentStep === 6 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 5 of 8 — Aadhaar KYC
+                Step 6 of 9 — Aadhaar KYC
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-[#079447]" />
@@ -1177,7 +1219,7 @@ export default function WorkerOnboardingWizard({
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => setCurrentStep(4)}
+                onClick={() => setCurrentStep(5)}
                 icon={<ArrowLeft className="w-4 h-4" />}
               >
                 Back
@@ -1187,7 +1229,7 @@ export default function WorkerOnboardingWizard({
                 size="lg"
                 fullWidth
                 disabled={!aadhaarVerified}
-                onClick={() => setCurrentStep(6)}
+                onClick={() => setCurrentStep(7)}
                 icon={!aadhaarVerified ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               >
                 {aadhaarVerified ? 'Continue to Bank Verification' : 'Verification Required to Unlock'}
@@ -1196,12 +1238,12 @@ export default function WorkerOnboardingWizard({
           </div>
         )}
 
-        {/* STEP 6: CASHFREE BANK ACCOUNT VERIFICATION */}
-        {currentStep === 6 && (
+        {/* STEP 7: CASHFREE BANK ACCOUNT VERIFICATION */}
+        {currentStep === 7 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 6 of 8 — Bank Account Payouts
+                Step 7 of 9 — Bank Account Payouts
               </div>
               <div className="flex items-center gap-2">
                 <CreditCard className="w-6 h-6 text-[#079447]" />
@@ -1280,7 +1322,7 @@ export default function WorkerOnboardingWizard({
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => setCurrentStep(5)}
+                onClick={() => setCurrentStep(6)}
                 icon={<ArrowLeft className="w-4 h-4" />}
               >
                 Back
@@ -1290,7 +1332,7 @@ export default function WorkerOnboardingWizard({
                 size="lg"
                 fullWidth
                 disabled={!bankVerified}
-                onClick={() => setCurrentStep(7)}
+                onClick={() => setCurrentStep(8)}
                 icon={!bankVerified ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               >
                 {bankVerified ? 'Continue to Documents & Availability' : 'Verification Required to Unlock'}
@@ -1299,12 +1341,12 @@ export default function WorkerOnboardingWizard({
           </div>
         )}
 
-        {/* STEP 7: DOCUMENTS & AVAILABILITY */}
-        {currentStep === 7 && (
+        {/* STEP 8: DOCUMENTS & AVAILABILITY */}
+        {currentStep === 8 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 7 of 8 — Proof & Schedule
+                Step 8 of 9 — Proof & Schedule
               </div>
               <h3 className="text-xl font-black text-slate-900">Documents & Availability</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1312,7 +1354,6 @@ export default function WorkerOnboardingWizard({
               </p>
             </div>
 
-            {/* Document Upload Box */}
             <div className="border-2 border-dashed border-slate-300 hover:border-[#1264D6] bg-slate-50/50 rounded-2xl p-6 text-center transition-colors">
               <Upload className="w-9 h-9 text-slate-400 mx-auto mb-2" />
               <p className="text-xs font-bold text-slate-800">
@@ -1338,7 +1379,6 @@ export default function WorkerOnboardingWizard({
                 Choose Document File
               </label>
 
-              {/* Sample Proof Generator for fast onboarding */}
               <button
                 type="button"
                 onClick={() => {
@@ -1359,7 +1399,6 @@ export default function WorkerOnboardingWizard({
               )}
             </div>
 
-            {/* Online Job Dispatch Toggle */}
             <Card variant="default" padding="md">
               <div className="flex items-center justify-between">
                 <div>
@@ -1394,7 +1433,7 @@ export default function WorkerOnboardingWizard({
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => setCurrentStep(6)}
+                onClick={() => setCurrentStep(7)}
                 icon={<ArrowLeft className="w-4 h-4" />}
               >
                 Back
@@ -1404,7 +1443,7 @@ export default function WorkerOnboardingWizard({
                 size="lg"
                 fullWidth
                 disabled={!certificateName && documentStatus === 'PENDING'}
-                onClick={() => setCurrentStep(8)}
+                onClick={() => setCurrentStep(9)}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
                 Save & Proceed to Final Review
@@ -1413,12 +1452,12 @@ export default function WorkerOnboardingWizard({
           </div>
         )}
 
-        {/* STEP 8: FINAL REVIEW & SUBMISSION */}
-        {currentStep === 8 && (
+        {/* STEP 9: FINAL REVIEW & SUBMISSION */}
+        {currentStep === 9 && (
           <div className="max-w-xl mx-auto py-2 space-y-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 text-[#1264D6] rounded-full text-[11px] font-bold mb-1">
-                Step 8 of 8 — Final Review
+                Step 9 of 9 — Final Review
               </div>
               <h3 className="text-xl font-black text-slate-900">Final Review & Submission</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1428,12 +1467,12 @@ export default function WorkerOnboardingWizard({
 
             {/* Summary Review Cards */}
             <div className="space-y-3.5">
-              {/* Personal Details Section */}
+              {/* Personal Details & Live Photo Section */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs relative">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-[#1264D6]" />
-                    <span className="font-bold text-slate-900">1. Personal Information</span>
+                    <span className="font-bold text-slate-900">1. Personal Information & Live Photo</span>
                   </div>
                   <button
                     type="button"
@@ -1443,14 +1482,29 @@ export default function WorkerOnboardingWizard({
                     <Edit3 className="w-3 h-3" /> Edit
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-slate-700">
-                  <div>
-                    <span className="text-slate-400 block font-medium">Full Name</span>
-                    <strong className="text-slate-900">{fullName || 'Not provided'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Date of Birth / Gender</span>
-                    <strong className="text-slate-900">{dob} ({gender})</strong>
+
+                <div className="flex items-center gap-4">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Worker Live Photo"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0">
+                      No Photo
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 text-slate-700 flex-1">
+                    <div>
+                      <span className="text-slate-400 block font-medium">Full Name</span>
+                      <strong className="text-slate-900">{fullName || 'Not provided'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Date of Birth / Gender</span>
+                      <strong className="text-slate-900">{dob} ({gender})</strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1541,7 +1595,7 @@ export default function WorkerOnboardingWizard({
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => setCurrentStep(7)}
+                onClick={() => setCurrentStep(8)}
                 icon={<ArrowLeft className="w-4 h-4" />}
               >
                 Back
@@ -1551,7 +1605,7 @@ export default function WorkerOnboardingWizard({
                 size="lg"
                 fullWidth
                 isLoading={loading}
-                disabled={loading || !aadhaarVerified || !bankVerified}
+                disabled={loading || !aadhaarVerified || !bankVerified || !avatarUrl}
                 onClick={handleFinalSubmit}
                 icon={<CheckCircle2 className="w-5 h-5 stroke-[2.5]" />}
               >

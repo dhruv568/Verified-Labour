@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import {
   LayoutDashboard,
   Briefcase,
@@ -328,16 +327,29 @@ export default function WorkerDashboardPage() {
         <main className="flex-1 space-y-6 min-w-0">
           {/* Header Card: Greeting & Availability Toggle */}
           <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-3xl font-black text-slate-900">
-                  {greeting}, {workerName}
-                </h1>
-                <StatusBadge status={profile?.status || 'PENDING_REVIEW'} size="sm" />
+            <div className="flex items-center gap-4">
+              {profile?.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={workerName}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-brand-100 text-brand-800 font-black text-xl flex items-center justify-center border border-brand-200 shrink-0">
+                  {workerName ? workerName.slice(0, 2).toUpperCase() : 'WL'}
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-3xl font-black text-slate-900">
+                    {greeting}, {workerName}
+                  </h1>
+                  <StatusBadge status={profile?.status || 'PENDING_REVIEW'} size="sm" />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Trade: <strong className="text-slate-700">{profile?.primaryCategory?.name || 'Skilled Labour'}</strong> • Coverage Radius: {profile?.serviceRadiusKm || 15} km
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Trade: <strong className="text-slate-700">{profile?.primaryCategory?.name || 'Skilled Labour'}</strong> • Coverage Radius: {profile?.serviceRadiusKm || 15} km
-              </p>
             </div>
 
             {/* Availability Toggle */}
@@ -734,8 +746,6 @@ export default function WorkerDashboardPage() {
           )}
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 }

@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';
+import WorkerProfileModal from '@/components/WorkerProfileModal';
 import { useLocation } from '@/context/LocationContext';
 import {
   LayoutDashboard,
@@ -696,8 +696,6 @@ export default function CustomerDashboardPage() {
           setBookingModalOpen(false);
         }}
       />
-
-      <Footer />
     </div>
   );
 }
