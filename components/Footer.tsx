@@ -13,8 +13,10 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { useContent } from '@/context/ContentContext';
 
 export default function Footer() {
+  const { content } = useContent();
   return (
     <footer className="bg-white text-slate-600 pt-12 sm:pt-16 pb-8 border-t border-slate-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,8 +28,8 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-slate-500 leading-relaxed font-normal">
-              India's trusted on-demand local skilled labour marketplace. Connecting customers and
-              businesses with Aadhaar KYC verified & bank-validated craftsmen.
+              {content.footer_text ||
+                "India's trusted on-demand local skilled labour marketplace. Connecting customers and businesses with Aadhaar KYC verified & bank-validated craftsmen."}
             </p>
           </div>
 
@@ -145,8 +147,8 @@ export default function Footer() {
 
             <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1">
               <p className="font-semibold text-slate-700">Support Desk:</p>
-              <p className="text-xs sm:text-[11px]">verifiedlabour@gmail.com</p>
-              <p className="text-xs sm:text-[11px]">+91 93698 99597</p>
+              <p className="text-xs sm:text-[11px]">{content.contact_email || 'verifiedlabour@gmail.com'}</p>
+              <p className="text-xs sm:text-[11px]">{content.contact_phone || '+91 93698 99597'}</p>
             </div>
           </div>
 

@@ -287,13 +287,13 @@ async function main() {
   console.log(`✔ All ${categoryDefs.length} blueprint categories & services seeded.`);
 
   // 3. Admin User
-  const adminPasswordHash = await bcrypt.hash('Admin@123456', 10);
+  const adminPasswordHash = await bcrypt.hash('Pass@123', 10);
   const adminUser = await prisma.user.upsert({
-    where: { phone: '+919999999999' },
-    update: { role: 'ADMIN', status: 'ACTIVE', isPhoneVerified: true, isEmailVerified: true },
+    where: { email: 'verifiedlabour@gmail.com' },
+    update: { role: 'ADMIN', status: 'ACTIVE', passwordHash: adminPasswordHash, isPhoneVerified: true, isEmailVerified: true },
     create: {
-      phone: '+919999999999',
-      email: 'admin@verifiedlabour.com',
+      phone: '+910000000000',
+      email: 'verifiedlabour@gmail.com',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       status: 'ACTIVE',
@@ -307,7 +307,7 @@ async function main() {
       },
     },
   });
-  console.log('✔ Admin user seeded (+919999999999 / Admin@123456).');
+  console.log('✔ Admin user seeded (verifiedlabour@gmail.com / Pass@123).');
 
   // 4. Test Customer User
   const customerPasswordHash = await bcrypt.hash('Customer@123', 10);
@@ -672,9 +672,9 @@ async function main() {
             payment: {
               create: {
                 paymentProvider: 'CASHFREE',
-                providerOrderId: 'order_test_999000111',
-                providerPaymentId: 'pay_test_999000111',
-                paymentSessionId: 'session_mock_test_999000111',
+                providerOrderId: `order_test_${Date.now()}`,
+                providerPaymentId: `pay_test_${Date.now()}`,
+                paymentSessionId: `session_mock_${Date.now()}`,
                 amount: 350,
                 status: 'CAPTURED',
                 method: 'UPI',

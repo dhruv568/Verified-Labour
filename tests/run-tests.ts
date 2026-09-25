@@ -13,6 +13,7 @@ import { checkRateLimit } from '../lib/rate-limiter';
 import { runAuthFlowTests } from './auth-flow-tests';
 import { runCashfreeVerificationTests } from './cashfree-verification-tests';
 import { runResendEmailTests } from './resend-email-tests';
+import { runAdminPanelTests } from './admin-panel-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -289,6 +290,10 @@ async function runAllTests() {
   const emailResults = await runResendEmailTests();
   passed += emailResults.passed;
   failed += emailResults.failed;
+
+  const adminResults = await runAdminPanelTests();
+  passed += adminResults.passed;
+  failed += adminResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

@@ -6,6 +6,7 @@ import TrustIndicators from './TrustIndicators';
 import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
 import { ShieldCheck, Users, Clock, CheckCircle2, Sparkles } from 'lucide-react';
+import { useContent } from '@/context/ContentContext';
 
 interface HeroProps {
   onSearchWorker?: (query?: string) => void;
@@ -18,6 +19,7 @@ export default function Hero({
   onSelectCategory,
   onViewAllCategories,
 }: HeroProps) {
+  const { content } = useContent();
   // Shared Promotional Top-Right Handwritten Tag
   const renderPromotionalTag = () => (
     <div className="text-right select-none pointer-events-auto">
@@ -147,21 +149,19 @@ export default function Hero({
             {/* Headline */}
             <div className="space-y-1.5">
               <h1 className="text-3xl sm:text-5xl xl:text-[54px] font-black text-[#082B66] tracking-tight leading-[1.14]">
-                Skilled People
-                <br />
-                When You Need Them
+                {content.hero_title || 'Skilled People When You Need Them'}
               </h1>
 
               {/* Subtitle */}
               <p className="text-lg sm:text-2xl font-bold text-[#1264D6] tracking-tight">
-                Verified. Nearby. Reliable.
+                {content.hero_subtitle || 'Verified. Nearby. Reliable.'}
               </p>
             </div>
 
             {/* Supporting description */}
             <p className="text-sm sm:text-sm text-slate-600 leading-relaxed max-w-lg font-normal">
-              From electricians to cooks, from house caretakers to office boys — find
-              verified workers near you, just like Ola or Uber.
+              {content.hero_description ||
+                'From electricians to cooks, from house caretakers to office boys — find verified workers near you, just like Ola or Uber.'}
             </p>
 
             {/* 3 Circular Trust Badges */}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { LocationProvider } from '@/context/LocationContext';
+import { ContentProvider } from '@/context/ContentContext';
 
 export const viewport = {
   width: 'device-width',
@@ -47,9 +48,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
-        <LocationProvider>
-          {children}
-        </LocationProvider>
+        <ContentProvider>
+          <LocationProvider>
+            {children}
+          </LocationProvider>
+        </ContentProvider>
       </body>
     </html>
   );

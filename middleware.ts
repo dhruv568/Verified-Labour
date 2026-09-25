@@ -25,6 +25,10 @@ export async function middleware(req: NextRequest) {
 
   const token = req.cookies.get('vl_auth_token')?.value;
 
+  if (pathname === '/admin' || pathname === '/admin/login') {
+    return NextResponse.next();
+  }
+
   if (!token) {
     const url = new URL('/logout', req.url);
     url.searchParams.set('reason', 'unauthorized');
