@@ -215,8 +215,8 @@ export default function Hero({
                 {isHindi ? (
                   <>
                     आपके घर और व्यवसाय के लिए{' '}
-                    <span className="text-[#1264D6] inline-block">भरोसेमंद मजदूर</span>{' '}
-                    <span className="text-[#079447] inline-block">और कामगार</span>
+                    <span className="text-[#1264D6] inline-block">भरोसेमंद लोग</span>{' '}
+                    <span className="text-[#079447] inline-block">और कुशल कामगार</span>
                   </>
                 ) : (
                   <>

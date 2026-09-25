@@ -165,8 +165,8 @@ export default function MobileHomeView({
             <div className="col-span-7 space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
               <h1 className="text-[17px] xs:text-xl sm:text-2xl font-black text-[#082B66] leading-[1.22] font-devanagari tracking-tight">
                 आपके घर और व्यवसाय के लिए{' '}
-                <span className="text-[#1264D6] inline-block">भरोसेमंद मजदूर</span>{' '}
-                <span className="text-[#079447] inline-block">और कामगार</span>
+                <span className="text-[#1264D6] inline-block">भरोसेमंद लोग</span>{' '}
+                <span className="text-[#079447] inline-block">और कुशल कामगार</span>
               </h1>
 
               <p className="text-[10px] xs:text-[11px] sm:text-xs font-extrabold text-slate-600 font-devanagari tracking-normal leading-tight">
