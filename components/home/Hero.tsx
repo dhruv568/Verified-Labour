@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import TrustIndicators from './TrustIndicators';
 import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
@@ -100,13 +101,12 @@ export default function Hero({
       </div>
 
       {/* View All Button */}
-      <button
-        type="button"
-        onClick={onViewAllCategories}
-        className="px-3.5 py-2 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-[#1264D6] font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-xs hover:shadow transition-all shrink-0 active:scale-95 min-h-[38px] flex items-center justify-center"
+      <Link
+        href="/who-is-not-verified"
+        className="px-3.5 py-2 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-[#1264D6] font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-xs hover:shadow transition-all shrink-0 active:scale-95 min-h-[38px] flex items-center justify-center cursor-pointer"
       >
         View All
-      </button>
+      </Link>
     </div>
   );
 
@@ -188,110 +188,124 @@ export default function Hero({
       </div>
 
       {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) ================= */}
-      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-gradient-to-b from-blue-50/70 via-white to-[#F4F6F9] pb-4 pt-3.5 border-b border-slate-200/80">
-        {/* Background Worker Image - Smooth Horizontal Gradient Masking on Right Side */}
-        <div
-          className="absolute inset-y-0 right-0 w-[46%] xs:w-[42%] h-[235px] pointer-events-none select-none z-0 overflow-hidden"
-          style={{
-            maskImage:
-              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, #000 75%)',
-            WebkitMaskImage:
-              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, #000 75%)',
-          }}
-        >
-          <div className="relative w-full h-full">
-            <Image
-              src="/images/home/worker-cta-man.jpg"
-              alt="Verified Labour Professional Skilled Indian Worker"
-              fill
-              priority
-              className="object-cover object-[68%_15%] scale-105"
-              sizes="46vw"
-            />
-          </div>
-        </div>
+      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-gradient-to-b from-blue-50/80 via-white to-slate-50/90 pb-4 pt-3.5 border-b border-slate-200/80 shadow-2xs">
+        {/* Soft Ambient Background Glows */}
+        <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-10 right-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Soft Left Background Gradient Fade to guarantee crisp readable text */}
-        <div className="absolute top-0 left-0 w-[60%] h-[235px] bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none z-10" />
-
-        {/* Content Wrapper */}
         <div className="max-w-md mx-auto px-3.5 relative z-20 space-y-3">
           {/* Top Tagline & Badge Header Bar */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-[#079447] rounded-full text-[11px] font-black border border-emerald-200/90 font-devanagari shadow-2xs backdrop-blur-xs transition-transform active:scale-95 cursor-pointer">
-              <Sparkles className="w-3 h-3 text-[#079447]" />
-              <span>काम के लिए भरोसेमंद लोग</span>
+          <div className="flex items-center justify-between gap-1.5 animate-fade-in-up">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-[#079447] rounded-full text-[11px] xs:text-xs font-black border border-emerald-200/90 font-devanagari shadow-2xs backdrop-blur-xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#079447] shrink-0 animate-pulse" />
+              <span className="truncate">काम के लिए भरोसेमंद लोग</span>
             </div>
 
-            <div className="inline-flex items-center gap-1 bg-[#079447] text-white px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xs border border-emerald-600 font-devanagari transition-transform active:scale-95 cursor-pointer">
-              <CheckCircle2 className="w-3 h-3 fill-white text-[#079447]" />
+            <div className="inline-flex items-center gap-1 bg-[#079447] text-white px-2.5 py-1 rounded-full text-[10px] xs:text-[11px] font-black shadow-2xs border border-emerald-600 font-devanagari shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5 fill-white text-[#079447]" />
               <span>वेरिफाइड लेबर</span>
             </div>
           </div>
 
-          {/* Main Bilingual Headlines - Compact size & bounded width to avoid covering worker image */}
-          <div className="space-y-1 max-w-[55%]">
-            <h1 className="text-base sm:text-lg font-extrabold text-[#082B66] leading-snug font-devanagari tracking-tight">
-              {isHindi ? (
-                <>
-                  आपके घर और व्यवसाय के लिए <br />
-                  <span className="text-[#1264D6]">भरोसेमंद मजदूर</span> और <span className="text-[#079447]">कामगार</span>
-                </>
-              ) : (
-                <>
-                  Trusted Professionals for <br />
-                  <span className="text-[#1264D6]">Home & Business</span> <span className="text-[#079447]">Needs</span>
-                </>
-              )}
-            </h1>
-            <p className="text-[10px] sm:text-[11px] font-bold text-slate-600 font-devanagari tracking-normal">
-              {isHindi ? 'जाँच-परखे • अनुभवी • समय पर उपलब्ध' : 'Verified • Experienced • On-Demand'}
-            </p>
-          </div>
+          {/* MAIN HERO GRID: 2 Dedicated Non-Overlapping Columns (Left Text, Right Worker Image) */}
+          <div className="grid grid-cols-12 gap-2 xs:gap-3 items-center pt-0.5">
+            {/* LEFT COLUMN (7 of 12 cols = ~58% width): Dedicated Text Area */}
+            <div className="col-span-7 space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+              <h1 className="text-[17px] xs:text-xl sm:text-2xl font-black text-[#082B66] leading-[1.22] font-devanagari tracking-tight">
+                {isHindi ? (
+                  <>
+                    आपके घर और व्यवसाय के लिए{' '}
+                    <span className="text-[#1264D6] inline-block">भरोसेमंद मजदूर</span>{' '}
+                    <span className="text-[#079447] inline-block">और कामगार</span>
+                  </>
+                ) : (
+                  <>
+                    Trusted Professionals for{' '}
+                    <span className="text-[#1264D6] inline-block">Home & Business</span>{' '}
+                    <span className="text-[#079447] inline-block">Needs</span>
+                  </>
+                )}
+              </h1>
 
-          {/* Micro Verification Tag */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 shadow-2xs active:scale-98 transition-all">
-            <CheckCircle2 className="w-3.5 h-3.5 fill-[#079447] text-white shrink-0" />
-            <span className="text-[10px] font-black text-[#082B66] font-devanagari">100% Aadhaar Verified & Trained</span>
-          </div>
+              <p className="text-[10px] xs:text-[11px] sm:text-xs font-extrabold text-slate-600 font-devanagari tracking-normal leading-tight">
+                {isHindi ? 'जाँच-परखे • अनुभवी • समय पर उपलब्ध' : 'Verified • Experienced • On-Demand'}
+              </p>
 
-          {/* 3 Interactive HTML/CSS Rounded Trust Cards */}
-          <div className="grid grid-cols-3 gap-2 pt-0.5">
-            {/* Card 1: Safe & Reliable */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1 shadow-2xs border border-emerald-100">
-                <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
+              {/* Micro Aadhaar Verification Tag */}
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 shadow-2xs">
+                <CheckCircle2 className="w-3 h-3 fill-[#079447] text-white shrink-0" />
+                <span className="text-[9px] xs:text-[10px] font-black text-[#082B66] font-devanagari">
+                  100% Aadhaar Verified & Trained
+                </span>
               </div>
-              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+            </div>
+
+            {/* RIGHT COLUMN (5 of 12 cols = ~42% width): Dedicated Worker Image & Verification Seal */}
+            <div className="col-span-5 relative flex flex-col items-center justify-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+              {/* Worker Image Container with Gentle Floating Motion & Crisp Framing */}
+              <div className="relative w-full aspect-[4/5] max-h-[195px] xs:max-h-[220px] rounded-2xl overflow-hidden border border-blue-100 bg-gradient-to-b from-blue-100/50 to-slate-100/80 shadow-xs animate-gentle-float">
+                <Image
+                  src="/images/home/worker-cta-man.jpg"
+                  alt="Verified Labour Professional Skilled Indian Worker"
+                  fill
+                  priority
+                  className="object-cover object-[50%_8%] scale-105"
+                  sizes="(max-width: 640px) 45vw, 30vw"
+                />
+
+                {/* Gradient Vignette at bottom of image for badge contrast */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy-950/40 to-transparent pointer-events-none" />
+              </div>
+
+              {/* Gold Verification Seal Badge overlayed at bottom edge of worker image (chest level, face fully unobstructed) */}
+              <div className="absolute -bottom-2.5 -left-2.5 xs:-left-3 z-10 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                <div className="relative flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-[#082B66] px-2 py-1 rounded-xl shadow-md border border-amber-200/90 text-[9px] xs:text-[10px] font-black font-devanagari tracking-tight">
+                  <div className="w-4 h-4 rounded-full bg-[#082B66] text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
+                    <CheckCircle2 className="w-3 h-3 fill-amber-300 text-[#082B66]" />
+                  </div>
+                  <span className="leading-tight whitespace-nowrap">जांच-परखे कामगार</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 HTML/CSS Rounded Trust Feature Cards with Interactive Touch Feedback */}
+          <div className="grid grid-cols-3 gap-1.5 xs:gap-2 pt-1 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
+            {/* Card 1: Safe & Reliable */}
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-emerald-300 active:scale-95 transition-all duration-150 cursor-pointer group">
+              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1 shadow-2xs border border-emerald-100 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
+              </div>
+              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
                 {isHindi ? 'सुरक्षित और भरोसेमंद' : 'Safe & Reliable'}
               </span>
-              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
                 Safe & Reliable
               </span>
             </div>
 
             {/* Card 2: Skilled Workers */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1 shadow-2xs border border-blue-100">
-                <Users className="w-4 h-4 stroke-[2.5]" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-blue-300 active:scale-95 transition-all duration-150 cursor-pointer group">
+              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1 shadow-2xs border border-blue-100 group-hover:scale-110 transition-transform">
+                <Users className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
               </div>
-              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
                 {isHindi ? 'अनुभवी कामगार' : 'Skilled Workers'}
               </span>
-              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
                 Skilled Workers
               </span>
             </div>
 
             {/* Card 3: Available When Needed */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1 shadow-2xs border border-amber-100">
-                <Clock className="w-4 h-4 stroke-[2.5]" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-amber-300 active:scale-95 transition-all duration-150 cursor-pointer group">
+              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1 shadow-2xs border border-amber-100 group-hover:scale-110 transition-transform">
+                <Clock className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
               </div>
-              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
                 {isHindi ? 'जब ज़रूरत तब उपलब्ध' : 'On-Demand'}
               </span>
-              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
                 On-Demand
               </span>
             </div>
@@ -304,12 +318,12 @@ export default function Hero({
           <PopularSearches onSelectCategory={onSelectCategory} />
 
           {/* Mobile Yellow Callout Banner */}
-          <div className="pt-0.5">
+          <div className="pt-0.5 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
             {renderYellowBanner()}
           </div>
 
           {/* Mobile Promotional Tag */}
-          <div className="flex justify-end pt-0.5 pr-1">
+          <div className="flex justify-end pt-0.5 pr-1 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
             {renderPromotionalTag()}
           </div>
         </div>
