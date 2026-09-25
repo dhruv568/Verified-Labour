@@ -8,6 +8,7 @@ async function main() {
 
   // 1. Seed Platform Configuration
   const configs = [
+    { key: 'hero_title', value: "India's #1 Labour Hub", description: 'Homepage Hero Title' },
     { key: 'PLATFORM_COMMISSION_PCT', value: '10', description: 'Platform fee percentage on completed jobs' },
     { key: 'DEFAULT_SEARCH_RADIUS_KM', value: '15', description: 'Default radius for worker search in KM' },
     { key: 'MAX_SEARCH_RADIUS_KM', value: '50', description: 'Maximum radius allowed for search' },

@@ -10,7 +10,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   default_search_radius_km: '15',
 
   // Hero Section
-  hero_title: 'Skilled People When You Need Them',
+  hero_title: "India's #1 Labour Hub",
   hero_subtitle: 'Verified. Nearby. Reliable.',
   hero_description:
     'From electricians to cooks, from house caretakers to office boys — find verified workers near you, just like Ola or Uber.',

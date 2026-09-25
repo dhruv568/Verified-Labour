@@ -71,14 +71,14 @@ export default function Header({ onOpenAuth }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-4 xl:gap-8">
           {/* Left: Verified Labour Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
             <Logo variant="header" priority />
           </Link>
 
           {/* Center Navigation Links matching Screenshot */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold text-slate-700">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-semibold text-slate-700 shrink-0">
             <Link
               href="/"
               className="text-[#082B66] font-bold hover:text-[#1264D6] transition-colors"
@@ -119,7 +119,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
           </nav>
 
           {/* Right Area: Dynamic Location Selector + Language Selector + Green Login + Blue Sign Up */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2.5 xl:gap-3 shrink-0">
             {/* Dynamic Location Selector with MapPin */}
             <LocationSelector />
 
@@ -130,7 +130,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-300 hover:border-[#1264D6] transition-colors text-xs font-semibold bg-white"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-300 hover:border-[#1264D6] transition-colors text-xs font-semibold bg-white min-h-[36px]"
                 >
                   <div className="w-7 h-7 rounded-full bg-slate-100 text-[#082B66] flex items-center justify-center font-bold text-xs">
                     {sessionUser.customerProfile?.fullName?.[0] ||
@@ -172,12 +172,12 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {/* Green Login Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors"
+                  className="px-4 xl:px-5 py-2 min-h-[36px] text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0"
                 >
                   Login
                 </button>
@@ -186,7 +186,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors"
+                  className="px-4 xl:px-5 py-2 min-h-[36px] text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0"
                 >
                   Sign Up
                 </button>

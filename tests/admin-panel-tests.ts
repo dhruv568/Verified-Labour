@@ -64,15 +64,22 @@ export async function runAdminPanelTests(): Promise<{ passed: number; failed: nu
 
   // 4. Admin Website Content Management & Live Public Update
   await testAsync('Admin content update in DB appears on public site immediately', async () => {
-    const testHeadline = `India's #1 Labour Hub ${Date.now()}`;
+    const originalContent = await getSiteContent();
+    const originalHeroTitle = originalContent.hero_title || "India's #1 Labour Hub";
+    const testHeadline = `India's #1 Labour Hub Test`;
     
-    // Update site content via helper
-    const updateSuccess = await updateSiteContent({ hero_title: testHeadline });
-    assert(updateSuccess, 'Site content update should succeed');
+    try {
+      // Update site content via helper
+      const updateSuccess = await updateSiteContent({ hero_title: testHeadline });
+      assert(updateSuccess, 'Site content update should succeed');
 
-    // Fetch site content
-    const siteContent = await getSiteContent();
-    assert.strictEqual(siteContent.hero_title, testHeadline, 'Public site content must reflect new DB title');
+      // Fetch site content
+      const siteContent = await getSiteContent();
+      assert.strictEqual(siteContent.hero_title, testHeadline, 'Public site content must reflect new DB title');
+    } finally {
+      // Always restore original hero title so test execution does not pollute the database
+      await updateSiteContent({ hero_title: originalHeroTitle });
+    }
   });
 
   // 5. Admin Password Change Flow

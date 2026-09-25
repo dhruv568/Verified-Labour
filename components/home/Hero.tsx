@@ -151,7 +151,7 @@ export default function Hero({
             {/* Headline */}
             <div className="space-y-1.5">
               <h1 className="text-3xl sm:text-5xl xl:text-[54px] font-black text-[#082B66] tracking-tight leading-[1.14]">
-                {content.hero_title || 'Skilled People When You Need Them'}
+                {content.hero_title || "India's #1 Labour Hub"}
               </h1>
 
               {/* Subtitle */}

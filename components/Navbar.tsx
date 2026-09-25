@@ -80,14 +80,14 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-4 xl:gap-8">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
             <Logo variant="header" priority />
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold text-slate-700">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-semibold text-slate-700 shrink-0">
             <Link
               href="/"
               className="text-slate-800 hover:text-[#1464D2] transition-colors font-bold"
@@ -128,7 +128,7 @@ export default function Navbar({
           </nav>
 
           {/* Right Action Area: Location + Language + Auth */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2.5 xl:gap-3 shrink-0">
             {/* Dynamic Location Selector with MapPin */}
             <LocationSelector />
 
@@ -139,7 +139,7 @@ export default function Navbar({
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-300 hover:border-[#1464D2] transition-colors text-sm font-medium bg-white"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-300 hover:border-[#1464D2] transition-colors text-xs font-semibold bg-white min-h-[36px]"
                 >
                   <div className="w-7 h-7 rounded-full bg-slate-100 text-[#0F2A5F] flex items-center justify-center font-bold text-xs">
                     {sessionUser.customerProfile?.fullName?.[0] ||
@@ -203,12 +203,12 @@ export default function Navbar({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {/* Login Button (Green style inspired by reference) */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all"
+                  className="px-4 xl:px-5 py-2 min-h-[36px] text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0"
                 >
                   Login
                 </button>
@@ -217,7 +217,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all"
+                  className="px-4 xl:px-5 py-2 min-h-[36px] text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0"
                 >
                   Sign Up
                 </button>
