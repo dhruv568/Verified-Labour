@@ -3,6 +3,7 @@ import Script from 'next/script';
 import './globals.css';
 import { LocationProvider } from '@/context/LocationContext';
 import { ContentProvider } from '@/context/ContentContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 export const viewport = {
   width: 'device-width',
@@ -31,8 +32,13 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/fevicon.jpeg', type: 'image/jpeg' },
+    ],
+    shortcut: ['/fevicon.jpeg'],
+    apple: [
+      { url: '/fevicon.jpeg', type: 'image/jpeg' },
+    ],
   },
 };
 
@@ -45,8 +51,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <Script
           id="meta-pixel"
           strategy="afterInteractive"
@@ -77,9 +81,11 @@ fbq('track', 'PageView');
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
         <ContentProvider>
-          <LocationProvider>
-            {children}
-          </LocationProvider>
+          <LanguageProvider>
+            <LocationProvider>
+              {children}
+            </LocationProvider>
+          </LanguageProvider>
         </ContentProvider>
       </body>
     </html>

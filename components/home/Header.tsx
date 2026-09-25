@@ -12,7 +12,9 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import LocationSelector from '@/components/LocationSelector';
+import LanguageSelector from '@/components/LanguageSelector';
 import Logo from '@/components/Logo';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface HeaderProps {
   onOpenAuth?: (
@@ -23,6 +25,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenAuth }: HeaderProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -80,45 +83,48 @@ export default function Header({ onOpenAuth }: HeaderProps) {
               href="/"
               className="text-[#082B66] font-bold hover:text-[#1264D6] transition-colors"
             >
-              Home
+              {t.home}
             </Link>
             <a
               href="/#workers"
               className="hover:text-[#1264D6] transition-colors"
             >
-              Find a Worker
+              {t.findWorker}
             </a>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
               className="hover:text-[#079447] transition-colors text-slate-700"
             >
-              Become a Worker
+              {t.becomeWorker}
             </button>
             <a
               href="/#how"
               className="hover:text-[#1264D6] transition-colors"
             >
-              How It Works
+              {t.howItWorks}
             </a>
             <a
               href="/#about"
               className="hover:text-[#1264D6] transition-colors"
             >
-              About
+              {t.about}
             </a>
             <a
               href="/#contact"
               className="hover:text-[#1264D6] transition-colors"
             >
-              Contact
+              {t.contact}
             </a>
           </nav>
 
-          {/* Right Area: Dynamic Location Selector + Green Login + Blue Sign Up */}
+          {/* Right Area: Dynamic Location Selector + Language Selector + Green Login + Blue Sign Up */}
           <div className="hidden md:flex items-center gap-3">
             {/* Dynamic Location Selector with MapPin */}
             <LocationSelector />
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {sessionUser ? (
               <div className="relative">
@@ -211,20 +217,25 @@ export default function Header({ onOpenAuth }: HeaderProps) {
               <LocationSelector isMobile={true} />
             </div>
 
+            {/* Language Selector on Mobile */}
+            <div className="px-1">
+              <LanguageSelector isMobile={true} />
+            </div>
+
             <nav className="space-y-1">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#082B66] hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Home
+                {t.home}
               </Link>
               <a
                 href="/#workers"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Find a Worker
+                {t.findWorker}
               </a>
               <button
                 type="button"
@@ -234,9 +245,9 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 }}
                 className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#079447] hover:bg-emerald-50 rounded-xl transition-colors"
               >
-                <span>Become a Worker</span>
+                <span>{t.becomeWorker}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  Earn Daily
+                  {t.earnDaily}
                 </span>
               </button>
               <a
@@ -244,21 +255,21 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                How It Works
+                {t.howItWorks}
               </a>
               <a
                 href="/#about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                About
+                {t.about}
               </a>
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Contact
+                {t.contact}
               </a>
             </nav>
 

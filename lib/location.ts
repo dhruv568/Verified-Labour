@@ -204,3 +204,92 @@ export async function reverseGeocode(lat: number, lng: number): Promise<{
     area: '',
   };
 }
+
+/**
+ * Detects approximate location using server-side IP lookup as a fallback
+ * when browser Geolocation is denied or unavailable.
+ */
+export async function detectLocationFromIP(): Promise<{
+  formattedAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  area: string;
+  latitude: number | null;
+  longitude: number | null;
+}> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch('https://ipwho.is/', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        const city = data.city || '';
+        const state = data.region || '';
+        const postalCode = data.postal || '';
+        const lat = data.latitude ? parseFloat(data.latitude.toFixed(3)) : null;
+        const lng = data.longitude ? parseFloat(data.longitude.toFixed(3)) : null;
+        const displayName = city && state ? `${city}, ${state}` : city || 'Surat, Gujarat';
+
+        return {
+          formattedAddress: displayName,
+          city: city || 'Surat',
+          state: state || 'Gujarat',
+          postalCode,
+          area: '',
+          latitude: lat,
+          longitude: lng,
+        };
+      }
+    }
+  } catch {}
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch('http://ip-api.com/json/?fields=status,city,regionName,zip,lat,lon', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 'success') {
+        const city = data.city || '';
+        const state = data.regionName || '';
+        const postalCode = data.zip || '';
+        const lat = data.lat ? parseFloat(data.lat.toFixed(3)) : null;
+        const lng = data.lon ? parseFloat(data.lon.toFixed(3)) : null;
+        const displayName = city && state ? `${city}, ${state}` : city || 'Surat, Gujarat';
+
+        return {
+          formattedAddress: displayName,
+          city: city || 'Surat',
+          state: state || 'Gujarat',
+          postalCode,
+          area: '',
+          latitude: lat,
+          longitude: lng,
+        };
+      }
+    }
+  } catch {}
+
+  return {
+    formattedAddress: 'Surat, Gujarat',
+    city: 'Surat',
+    state: 'Gujarat',
+    postalCode: '395007',
+    area: '',
+    latitude: 21.170,
+    longitude: 72.831,
+  };
+}
+

@@ -28,35 +28,71 @@ export interface LocationContextType {
 
 const STORAGE_KEY = 'vl_user_location';
 
-const DEFAULT_EMPTY_LOCATION: LocationData = {
-  displayName: 'Select location',
-  city: '',
-  state: '',
+const DEFAULT_FALLBACK_LOCATION: LocationData = {
+  displayName: 'Surat, Gujarat',
+  city: 'Surat',
+  state: 'Gujarat',
   area: '',
-  formattedAddress: '',
-  postalCode: '',
-  latitude: null,
-  longitude: null,
-  isConfirmed: false,
+  formattedAddress: 'Surat, Gujarat',
+  postalCode: '395007',
+  latitude: 21.170,
+  longitude: 72.831,
+  isConfirmed: true,
   source: 'default',
 };
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const [location, setLocation] = useState<LocationData>(DEFAULT_EMPTY_LOCATION);
+  const [location, setLocation] = useState<LocationData>(DEFAULT_FALLBACK_LOCATION);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [permissionState, setPermissionState] = useState<
     'idle' | 'prompt' | 'granted' | 'denied' | 'unavailable'
   >('idle');
 
+  const fallbackToIPLocation = async (): Promise<LocationData> => {
+    try {
+      const res = await fetch('/api/location/ip');
+      const json = await res.json();
+      if (json.success && json.data) {
+        const d = json.data;
+        const displayName = d.formattedAddress || (d.city && d.state ? `${d.city}, ${d.state}` : d.city || 'Surat, Gujarat');
+        const loc: LocationData = {
+          displayName,
+          city: d.city || 'Surat',
+          state: d.state || 'Gujarat',
+          area: d.area || '',
+          formattedAddress: d.formattedAddress || displayName,
+          postalCode: d.postalCode || '',
+          latitude: d.latitude ? parseFloat(d.latitude.toFixed(3)) : null,
+          longitude: d.longitude ? parseFloat(d.longitude.toFixed(3)) : null,
+          isConfirmed: true,
+          source: 'geolocation',
+        };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(loc));
+        } catch {}
+        return loc;
+      }
+    } catch {}
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_FALLBACK_LOCATION));
+    } catch {}
+    return DEFAULT_FALLBACK_LOCATION;
+  };
+
   // Detect current location via browser navigator.geolocation
   const detectCurrentLocation = async (): Promise<boolean> => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
+      setError('Geolocation is not supported by your browser. Used IP fallback.');
       setPermissionState('unavailable');
-      return false;
+      setIsLoading(true);
+      const ipLoc = await fallbackToIPLocation();
+      setLocation(ipLoc);
+      setIsLoading(false);
+      return true;
     }
 
     setIsLoading(true);
@@ -68,9 +104,11 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
+            const roundLat = parseFloat(latitude.toFixed(3));
+            const roundLng = parseFloat(longitude.toFixed(3));
             setPermissionState('granted');
 
-            const res = await fetch(`/api/location/reverse?lat=${latitude}&lng=${longitude}`);
+            const res = await fetch(`/api/location/reverse?lat=${roundLat}&lng=${roundLng}`);
             const json = await res.json();
 
             let area = '';
@@ -90,14 +128,14 @@ export function LocationProvider({ children }: { children: ReactNode }) {
             const displayName = formatLocationDisplayName({ area, city, state, formattedAddress });
 
             const newLoc: LocationData = {
-              displayName: displayName !== 'Select location' ? displayName : 'Current Location',
-              city,
+              displayName: displayName !== 'Select location' ? displayName : `${city || 'Surat'}, ${state || 'Gujarat'}`,
+              city: city || 'Surat',
               state,
               area,
               formattedAddress: formattedAddress || displayName,
               postalCode,
-              latitude,
-              longitude,
+              latitude: roundLat,
+              longitude: roundLng,
               isConfirmed: true,
               source: 'geolocation',
             };
@@ -110,26 +148,24 @@ export function LocationProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
             resolve(true);
           } catch {
-            setError('Failed to resolve address from coordinates.');
+            const ipLoc = await fallbackToIPLocation();
+            setLocation(ipLoc);
             setIsLoading(false);
-            resolve(false);
+            resolve(true);
           }
         },
-        (geoErr) => {
-          setIsLoading(false);
+        async (geoErr) => {
           if (geoErr.code === geoErr.PERMISSION_DENIED) {
             setPermissionState('denied');
-            setError('Location permission was denied in your browser.');
-          } else if (geoErr.code === geoErr.TIMEOUT) {
-            setPermissionState('unavailable');
-            setError('Location request timed out. Please enter your location manually.');
           } else {
             setPermissionState('unavailable');
-            setError('Location information is unavailable. Please enter your location manually.');
           }
-          resolve(false);
+          const ipLoc = await fallbackToIPLocation();
+          setLocation(ipLoc);
+          setIsLoading(false);
+          resolve(true);
         },
-        { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
+        { timeout: 7000, enableHighAccuracy: true, maximumAge: 60000 }
       );
     });
   };
@@ -143,8 +179,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       area: manualData.area || '',
       formattedAddress: manualData.formattedAddress || manualData.displayName,
       postalCode: manualData.postalCode || '',
-      latitude: manualData.latitude ?? null,
-      longitude: manualData.longitude ?? null,
+      latitude: manualData.latitude ? parseFloat(manualData.latitude.toFixed(3)) : null,
+      longitude: manualData.longitude ? parseFloat(manualData.longitude.toFixed(3)) : null,
       isConfirmed: true,
       source: 'manual',
     };
@@ -158,7 +194,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
   // Clear location
   const clearLocation = () => {
-    setLocation(DEFAULT_EMPTY_LOCATION);
+    setLocation(DEFAULT_FALLBACK_LOCATION);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
@@ -171,7 +207,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.displayName) {
+        if (parsed && parsed.displayName && parsed.displayName !== 'Select location') {
           setLocation({
             ...parsed,
             source: 'cached',
@@ -182,7 +218,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
 
-    // 2. If no saved location, request browser geolocation permission
+    // 2. If no saved location, automatically trigger location detection
     detectCurrentLocation();
   }, []);
 

@@ -1498,22 +1498,13 @@ export default function AdminPage() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Facebook URL</label>
                           <input
                             type="text"
                             value={contentForm.social_facebook || ''}
                             onChange={(e) => setContentForm({ ...contentForm, social_facebook: e.target.value })}
-                            className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">Twitter / X URL</label>
-                          <input
-                            type="text"
-                            value={contentForm.social_twitter || ''}
-                            onChange={(e) => setContentForm({ ...contentForm, social_twitter: e.target.value })}
                             className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300"
                           />
                         </div>
@@ -1527,11 +1518,11 @@ export default function AdminPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">LinkedIn URL</label>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp Link / Number</label>
                           <input
                             type="text"
-                            value={contentForm.social_linkedin || ''}
-                            onChange={(e) => setContentForm({ ...contentForm, social_linkedin: e.target.value })}
+                            value={contentForm.social_whatsapp || ''}
+                            onChange={(e) => setContentForm({ ...contentForm, social_whatsapp: e.target.value })}
                             className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300"
                           />
                         </div>

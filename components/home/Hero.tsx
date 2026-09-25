@@ -7,6 +7,7 @@ import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
 import { ShieldCheck, Users, Clock, CheckCircle2, Sparkles } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface HeroProps {
   onSearchWorker?: (query?: string) => void;
@@ -20,6 +21,7 @@ export default function Hero({
   onViewAllCategories,
 }: HeroProps) {
   const { content } = useContent();
+  const { isHindi } = useLanguage();
   // Shared Promotional Top-Right Handwritten Tag
   const renderPromotionalTag = () => (
     <div className="text-right select-none pointer-events-auto">
@@ -185,16 +187,16 @@ export default function Hero({
         </div>
       </div>
 
-      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) - SMOOTH HORIZONTAL BLENDED WORKER ================= */}
-      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-gradient-to-b from-blue-50/60 via-white to-[#F4F6F9] pb-4 pt-3 border-b border-slate-200/80">
+      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) ================= */}
+      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-gradient-to-b from-blue-50/70 via-white to-[#F4F6F9] pb-4 pt-3.5 border-b border-slate-200/80">
         {/* Background Worker Image - Smooth Horizontal Gradient Masking on Right Side */}
         <div
-          className="absolute inset-y-0 right-0 w-[68%] xs:w-[62%] h-[260px] pointer-events-none select-none z-0 overflow-hidden"
+          className="absolute inset-y-0 right-0 w-[46%] xs:w-[42%] h-[235px] pointer-events-none select-none z-0 overflow-hidden"
           style={{
             maskImage:
-              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 12%, rgba(0,0,0,0.25) 32%, rgba(0,0,0,0.7) 65%, #000 88%, #000 100%)',
+              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, #000 75%)',
             WebkitMaskImage:
-              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 12%, rgba(0,0,0,0.25) 32%, rgba(0,0,0,0.7) 65%, #000 88%, #000 100%)',
+              'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, #000 75%)',
           }}
         >
           <div className="relative w-full h-full">
@@ -203,84 +205,93 @@ export default function Hero({
               alt="Verified Labour Professional Skilled Indian Worker"
               fill
               priority
-              className="object-cover object-[62%_15%] scale-110"
-              sizes="70vw"
+              className="object-cover object-[68%_15%] scale-105"
+              sizes="46vw"
             />
           </div>
         </div>
 
         {/* Soft Left Background Gradient Fade to guarantee crisp readable text */}
-        <div className="absolute top-0 left-0 w-[55%] h-[260px] bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none z-10" />
+        <div className="absolute top-0 left-0 w-[60%] h-[235px] bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none z-10" />
 
         {/* Content Wrapper */}
-        <div className="max-w-md mx-auto px-3.5 relative z-20 space-y-3.5">
+        <div className="max-w-md mx-auto px-3.5 relative z-20 space-y-3">
           {/* Top Tagline & Badge Header Bar */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/90 text-[#1264D6] rounded-full text-xs font-black border border-blue-200/80 font-devanagari shadow-2xs backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#1264D6]" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-[#079447] rounded-full text-[11px] font-black border border-emerald-200/90 font-devanagari shadow-2xs backdrop-blur-xs transition-transform active:scale-95 cursor-pointer">
+              <Sparkles className="w-3 h-3 text-[#079447]" />
               <span>काम के लिए भरोसेमंद लोग</span>
             </div>
 
-            <div className="inline-flex items-center gap-1 bg-amber-400 text-[#082B66] px-2.5 py-1 rounded-full text-[11px] font-black shadow-2xs border border-amber-300 font-devanagari">
-              <CheckCircle2 className="w-3.5 h-3.5 fill-[#082B66] text-amber-400" />
-              <span>जाँच-परखे कामगार</span>
+            <div className="inline-flex items-center gap-1 bg-[#079447] text-white px-2.5 py-1 rounded-full text-[10px] font-black shadow-2xs border border-emerald-600 font-devanagari transition-transform active:scale-95 cursor-pointer">
+              <CheckCircle2 className="w-3 h-3 fill-white text-[#079447]" />
+              <span>वेरिफाइड लेबर</span>
             </div>
           </div>
 
-          {/* Main Bilingual Headlines */}
-          <div className="space-y-1 max-w-[70%]">
-            <h1 className="text-2xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
-              आपके घर और व्यवसाय के लिए <br />
-              <span className="text-[#1264D6]">भरोसेमंद मजदूर</span> और <span className="text-[#079447]">कामगार</span>
+          {/* Main Bilingual Headlines - Compact size & bounded width to avoid covering worker image */}
+          <div className="space-y-1 max-w-[55%]">
+            <h1 className="text-base sm:text-lg font-extrabold text-[#082B66] leading-snug font-devanagari tracking-tight">
+              {isHindi ? (
+                <>
+                  आपके घर और व्यवसाय के लिए <br />
+                  <span className="text-[#1264D6]">भरोसेमंद मजदूर</span> और <span className="text-[#079447]">कामगार</span>
+                </>
+              ) : (
+                <>
+                  Trusted Professionals for <br />
+                  <span className="text-[#1264D6]">Home & Business</span> <span className="text-[#079447]">Needs</span>
+                </>
+              )}
             </h1>
-            <p className="text-xs font-extrabold text-slate-600 font-devanagari tracking-normal">
-              जाँच-परखे • अनुभवी • समय पर उपलब्ध
+            <p className="text-[10px] sm:text-[11px] font-bold text-slate-600 font-devanagari tracking-normal">
+              {isHindi ? 'जाँच-परखे • अनुभवी • समय पर उपलब्ध' : 'Verified • Experienced • On-Demand'}
             </p>
           </div>
 
           {/* Micro Verification Tag */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-2xs">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 shadow-2xs active:scale-98 transition-all">
             <CheckCircle2 className="w-3.5 h-3.5 fill-[#079447] text-white shrink-0" />
             <span className="text-[10px] font-black text-[#082B66] font-devanagari">100% Aadhaar Verified & Trained</span>
           </div>
 
-          {/* 3 Separate HTML/CSS Rounded Trust Cards */}
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          {/* 3 Interactive HTML/CSS Rounded Trust Cards */}
+          <div className="grid grid-cols-3 gap-2 pt-0.5">
             {/* Card 1: Safe & Reliable */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
-              <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1.5 shadow-2xs border border-emerald-100">
-                <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1 shadow-2xs border border-emerald-100">
+                <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                सुरक्षित और भरोसेमंद
+              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+                {isHindi ? 'सुरक्षित और भरोसेमंद' : 'Safe & Reliable'}
               </span>
-              <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
                 Safe & Reliable
               </span>
             </div>
 
             {/* Card 2: Skilled Workers */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
-              <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1.5 shadow-2xs border border-blue-100">
-                <Users className="w-5 h-5 stroke-[2.5]" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1 shadow-2xs border border-blue-100">
+                <Users className="w-4 h-4 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                अनुभवी कामगार
+              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+                {isHindi ? 'अनुभवी कामगार' : 'Skilled Workers'}
               </span>
-              <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
                 Skilled Workers
               </span>
             </div>
 
             {/* Card 3: Available When Needed */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs transition-shadow">
-              <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5 shadow-2xs border border-amber-100">
-                <Clock className="w-5 h-5 stroke-[2.5]" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs active:scale-95 transition-all duration-150 cursor-pointer">
+              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1 shadow-2xs border border-amber-100">
+                <Clock className="w-4 h-4 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                जब ज़रूरत तब उपलब्ध
+              <span className="text-[10px] font-black text-[#082B66] font-devanagari leading-tight">
+                {isHindi ? 'जब ज़रूरत तब उपलब्ध' : 'On-Demand'}
               </span>
-              <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+              <span className="text-[8px] text-slate-500 font-semibold mt-0.5">
                 On-Demand
               </span>
             </div>

@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import { Locale, getTranslation } from '@/lib/translations';
 import LocationSelector from './LocationSelector';
+import LanguageSelector from './LanguageSelector';
 import Logo from '@/components/Logo';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface NavbarProps {
   currentLocale?: Locale;
@@ -25,15 +27,17 @@ interface NavbarProps {
 }
 
 export default function Navbar({
-  currentLocale = 'en',
+  currentLocale,
   onLocaleChange,
   onOpenAuth,
 }: NavbarProps) {
   const router = useRouter();
+  const { locale: contextLocale, t: contextT } = useLanguage();
+  const activeLocale = currentLocale || contextLocale || 'en';
+  const t = getTranslation(activeLocale) || contextT;
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const t = getTranslation(currentLocale);
 
   const fetchSession = async () => {
     try {
@@ -88,45 +92,48 @@ export default function Navbar({
               href="/"
               className="text-slate-800 hover:text-[#1464D2] transition-colors font-bold"
             >
-              Home
+              {t.home}
             </Link>
             <a
               href="/#workers"
               className="hover:text-[#1464D2] transition-colors"
             >
-              Find a Worker
+              {t.findWorker}
             </a>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
               className="hover:text-[#0B9B5A] transition-colors text-slate-700"
             >
-              Become a Worker
+              {t.becomeWorker}
             </button>
             <a
               href="/#how"
               className="hover:text-[#1464D2] transition-colors"
             >
-              How It Works
+              {t.howItWorks}
             </a>
             <a
               href="/#about"
               className="hover:text-[#1464D2] transition-colors"
             >
-              About
+              {t.about}
             </a>
             <a
               href="/#contact"
               className="hover:text-[#1464D2] transition-colors"
             >
-              Contact
+              {t.contact}
             </a>
           </nav>
 
-          {/* Right Action Area: Location + Auth */}
+          {/* Right Action Area: Location + Language + Auth */}
           <div className="hidden md:flex items-center gap-3">
             {/* Dynamic Location Selector with MapPin */}
             <LocationSelector />
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {sessionUser ? (
               <div className="relative">
@@ -245,20 +252,25 @@ export default function Navbar({
               <LocationSelector isMobile={true} />
             </div>
 
+            {/* Language Selector in Mobile Menu */}
+            <div className="px-1">
+              <LanguageSelector isMobile={true} />
+            </div>
+
             <nav className="space-y-1">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#0F2A5F] hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Home
+                {t.home}
               </Link>
               <a
                 href="/#workers"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Find a Worker
+                {t.findWorker}
               </a>
               <button
                 type="button"
@@ -268,9 +280,9 @@ export default function Navbar({
                 }}
                 className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#0B9B5A] hover:bg-brand-50/50 rounded-xl transition-colors"
               >
-                <span>Become a Worker</span>
+                <span>{t.becomeWorker}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  Earn Daily
+                  {t.earnDaily}
                 </span>
               </button>
               <a
@@ -278,21 +290,21 @@ export default function Navbar({
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                How It Works
+                {t.howItWorks}
               </a>
               <a
                 href="/#about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                About
+                {t.about}
               </a>
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                Contact
+                {t.contact}
               </a>
             </nav>
 

@@ -42,7 +42,7 @@ export async function runResendEmailTests() {
     });
 
     // 1. Logo & Tagline
-    assert(html.includes('logo.png'), 'HTML must include logo reference');
+    assert(html.includes('logo.jpeg'), 'HTML must include logo reference');
     assert(html.includes("India's Trusted Skilled Labour Marketplace"), 'HTML must include tagline');
 
     // 2. Heading & Message

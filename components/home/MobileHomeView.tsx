@@ -169,14 +169,14 @@ export default function MobileHomeView({
         <div className="px-3.5 relative z-20 space-y-3.5">
           {/* Top Tagline & Badge Header Bar */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/90 text-[#1264D6] rounded-full text-xs font-black border border-blue-200/80 font-devanagari shadow-2xs backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#1264D6]" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-[#079447] rounded-full text-xs font-black border border-emerald-200 font-devanagari shadow-2xs backdrop-blur-xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#079447]" />
               <span>काम के लिए भरोसेमंद लोग</span>
             </div>
 
-            <div className="inline-flex items-center gap-1 bg-amber-400 text-[#082B66] px-2.5 py-1 rounded-full text-[11px] font-black shadow-2xs border border-amber-300 font-devanagari">
-              <CheckCircle2 className="w-3.5 h-3.5 fill-[#082B66] text-amber-400" />
-              <span>जाँच-परखे कामगार</span>
+            <div className="inline-flex items-center gap-1 bg-[#079447] text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-2xs border border-emerald-600 font-devanagari">
+              <CheckCircle2 className="w-3.5 h-3.5 fill-white text-[#079447]" />
+              <span>वेरिफाइड लेबर</span>
             </div>
           </div>
 

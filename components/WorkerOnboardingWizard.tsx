@@ -13,11 +13,12 @@ import {
   MapPin,
   FileCheck,
   CreditCard,
-  Building,
   Upload,
   Navigation,
   Loader2,
   Power,
+  Sparkles,
+  IndianRupee,
 } from 'lucide-react';
 import Button from './ui/Button';
 import Input from './ui/Input';
@@ -42,21 +43,21 @@ export default function WorkerOnboardingWizard({
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Authenticated worker profile session
+  // Session state
   const [sessionUser, setSessionUser] = useState<any>(null);
 
-  // Step 1: Personal Info
+  // Step 1: Basic Details
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState('1995-06-15');
   const [gender, setGender] = useState('Male');
   const [bio, setBio] = useState('');
 
-  // Step 2: Professional Information
+  // Step 2: Skills & Trade
   const [primaryCategoryId, setPrimaryCategoryId] = useState(categories[0]?.id || '');
   const [experienceYears, setExperienceYears] = useState(3);
   const [hourlyRate, setHourlyRate] = useState(350);
 
-  // Step 3: Location
+  // Step 3: Location & Coverage
   const [area, setArea] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -82,11 +83,9 @@ export default function WorkerOnboardingWizard({
   const [bankVerified, setBankVerified] = useState(false);
   const [maskedAccountNo, setMaskedAccountNo] = useState('');
 
-  // Step 6: Documents
+  // Step 6: Professional Profile & Certificate Proof
   const [certificateName, setCertificateName] = useState('');
   const [documentStatus, setDocumentStatus] = useState<'PENDING' | 'UPLOADED' | 'VERIFIED'>('PENDING');
-
-  // Step 7: Availability
   const [isAvailable, setIsAvailable] = useState(true);
 
   // Fetch session on mount
@@ -137,47 +136,77 @@ export default function WorkerOnboardingWizard({
     }
   }, [categories, primaryCategoryId]);
 
-  // Location Geolocation Handler
-  const handleDetectLocation = async () => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      setError('Geolocation is not supported by your browser. Please enter location manually.');
-      return;
+  // Auto-detect location on Step 3
+  useEffect(() => {
+    if (currentStep === 3 && !city && typeof window !== 'undefined') {
+      handleDetectLocation();
     }
+  }, [currentStep]);
 
+  // Location Geolocation Handler with Fallback
+  const handleDetectLocation = async () => {
     setLocDetecting(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setLatitude(lat);
-          setLongitude(lng);
-
-          const res = await fetch(`/api/location/reverse?lat=${lat}&lng=${lng}`);
-          const json = await res.json();
-          if (json.success && json.data) {
-            setCity(json.data.city || '');
-            setState(json.data.state || '');
-            setPostalCode(json.data.postalCode || '');
-            setArea(json.data.area || '');
-            if (!serviceAreas && json.data.area) {
-              setServiceAreas(json.data.area);
-            }
+    const fallbackIP = async () => {
+      try {
+        const res = await fetch('/api/location/ip');
+        const json = await res.json();
+        if (json.success && json.data) {
+          if (json.data.city) setCity(json.data.city);
+          if (json.data.state) setState(json.data.state);
+          if (json.data.postalCode) setPostalCode(json.data.postalCode);
+          if (json.data.area) {
+            setArea(json.data.area);
+            if (!serviceAreas) setServiceAreas(json.data.area);
           }
-        } catch {
-          setError('Failed to resolve address from coordinates. Please enter manually.');
-        } finally {
-          setLocDetecting(false);
+          if (json.data.latitude) setLatitude(json.data.latitude);
+          if (json.data.longitude) setLongitude(json.data.longitude);
         }
-      },
-      (err) => {
-        setLocDetecting(false);
-        setError('Location access was denied. Please enter your city and area manually below.');
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+      } catch {
+        if (!city) setCity('Surat');
+        if (!state) setState('Gujarat');
+      }
+    };
+
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const lat = parseFloat(pos.coords.latitude.toFixed(3));
+            const lng = parseFloat(pos.coords.longitude.toFixed(3));
+            setLatitude(lat);
+            setLongitude(lng);
+
+            const res = await fetch(`/api/location/reverse?lat=${lat}&lng=${lng}`);
+            const json = await res.json();
+            if (json.success && json.data) {
+              setCity(json.data.city || '');
+              setState(json.data.state || '');
+              setPostalCode(json.data.postalCode || '');
+              setArea(json.data.area || '');
+              if (!serviceAreas && json.data.area) {
+                setServiceAreas(json.data.area);
+              }
+            } else {
+              await fallbackIP();
+            }
+          } catch {
+            await fallbackIP();
+          } finally {
+            setLocDetecting(false);
+          }
+        },
+        async () => {
+          await fallbackIP();
+          setLocDetecting(false);
+        },
+        { timeout: 7000, enableHighAccuracy: true }
+      );
+    } else {
+      await fallbackIP();
+      setLocDetecting(false);
+    }
   };
 
   // Save Step Details
@@ -223,7 +252,7 @@ export default function WorkerOnboardingWizard({
   const handleStartAadhaar = async () => {
     const workerId = sessionUser?.workerProfile?.id;
     if (!workerId) {
-      setError('Worker profile session not found. Please log in.');
+      setError('Worker profile session not found. Please complete basic details first.');
       return;
     }
 
@@ -255,7 +284,7 @@ export default function WorkerOnboardingWizard({
       }
 
       setAadhaarRefId(data.refId);
-      setSuccessMsg('Cashfree Secure ID OTP sent! (Use sandbox test code: 123456)');
+      setSuccessMsg('Cashfree Secure ID OTP sent! (Use test code: 123456)');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -347,12 +376,7 @@ export default function WorkerOnboardingWizard({
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to submit onboarding');
 
-      if (onComplete) {
-        onComplete();
-      } else {
-        router.push('/worker/dashboard');
-        router.refresh();
-      }
+      setCurrentStep(7);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -361,45 +385,54 @@ export default function WorkerOnboardingWizard({
   };
 
   const stepsList = [
-    { num: 1, title: 'Personal', icon: <User className="w-3.5 h-3.5" /> },
-    { num: 2, title: 'Profession', icon: <Briefcase className="w-3.5 h-3.5" /> },
+    { num: 1, title: 'Basic Details', icon: <User className="w-3.5 h-3.5" /> },
+    { num: 2, title: 'Skills & Trade', icon: <Briefcase className="w-3.5 h-3.5" /> },
     { num: 3, title: 'Location', icon: <MapPin className="w-3.5 h-3.5" /> },
     { num: 4, title: 'Aadhaar KYC', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
     { num: 5, title: 'Bank Account', icon: <CreditCard className="w-3.5 h-3.5" /> },
-    { num: 6, title: 'Documents', icon: <FileCheck className="w-3.5 h-3.5" /> },
-    { num: 7, title: 'Availability', icon: <Power className="w-3.5 h-3.5" /> },
-    { num: 8, title: 'Review & Submit', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+    { num: 6, title: 'Profile & Proof', icon: <FileCheck className="w-3.5 h-3.5" /> },
+    { num: 7, title: 'Completion', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
   ];
 
   if (sessionLoading) {
     return (
-      <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-700 mx-auto mb-2" />
-        <p className="text-xs text-slate-500 font-medium">Loading worker profile session...</p>
+      <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center shadow-sm">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1264D6] mx-auto mb-2" />
+        <p className="text-xs text-slate-500 font-semibold">Loading Verified Labour portal...</p>
       </div>
     );
   }
 
+  const progressPercent = Math.min(100, Math.round((currentStep / 7) * 100));
+
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-xl border border-slate-200/90 overflow-hidden">
       {/* Wizard Header & Stepper */}
-      <div className="bg-navy-900 text-white p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-[#082B66] text-white p-5 sm:p-7">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="text-[11px] sm:text-xs font-bold text-brand-400 uppercase tracking-wider">
-              Worker Onboarding System
+            <span className="text-[11px] sm:text-xs font-bold text-amber-300 uppercase tracking-wider font-devanagari">
+              कामगार पंजीकरण पोर्टलन
             </span>
-            <h2 className="text-lg sm:text-xl font-black text-white">
+            <h2 className="text-lg sm:text-2xl font-black text-white">
               Become a Verified Labour Professional
             </h2>
           </div>
-          <span className="text-xs font-bold bg-navy-800 text-brand-400 px-3 py-1 rounded-full border border-navy-700 shrink-0">
-            Step {currentStep} of 8
+          <span className="text-xs font-bold bg-[#0F2A5F] text-blue-200 px-3 py-1.5 rounded-full border border-blue-800/80 shrink-0">
+            Step {currentStep} of 7
           </span>
         </div>
 
-        {/* Stepper Dots/Icons with Smooth Touch Scroll Rail */}
-        <div className="flex sm:grid sm:grid-cols-8 gap-2 overflow-x-auto no-scrollbar pb-1">
+        {/* Progress Bar */}
+        <div className="w-full bg-blue-950/60 h-2 rounded-full overflow-hidden mb-4 border border-blue-900/40">
+          <div
+            className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full transition-all duration-300 rounded-full"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {/* Stepper Rail */}
+        <div className="flex sm:grid sm:grid-cols-7 gap-2 overflow-x-auto no-scrollbar pb-1">
           {stepsList.map((st) => {
             const isCompleted = currentStep > st.num;
             const isCurrent = currentStep === st.num;
@@ -407,18 +440,18 @@ export default function WorkerOnboardingWizard({
               <div
                 key={st.num}
                 onClick={() => {
-                  if (st.num < currentStep) setCurrentStep(st.num);
+                  if (st.num < currentStep && currentStep !== 7) setCurrentStep(st.num);
                 }}
-                className={`shrink-0 min-w-[72px] sm:min-w-0 min-h-[46px] flex flex-col items-center justify-center text-center p-2 rounded-xl transition-all cursor-pointer ${
+                className={`shrink-0 min-w-[76px] sm:min-w-0 min-h-[46px] flex flex-col items-center justify-center text-center p-2 rounded-xl transition-all ${
                   isCurrent
-                    ? 'bg-brand-700 text-white font-bold shadow-xs'
+                    ? 'bg-[#1264D6] text-white font-bold shadow-md'
                     : isCompleted
-                    ? 'bg-navy-800 text-brand-400 hover:bg-navy-700 active:bg-navy-600'
-                    : 'bg-navy-950/40 text-slate-500 cursor-not-allowed'
+                    ? 'bg-[#0F2A5F] text-emerald-300 cursor-pointer hover:bg-blue-900'
+                    : 'bg-blue-950/30 text-slate-400 cursor-not-allowed'
                 }`}
               >
                 <span className="text-xs mb-0.5">
-                  {isCompleted ? <CheckCircle2 className="w-4 h-4 text-brand-400" /> : st.num}
+                  {isCompleted ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : st.num}
                 </span>
                 <span className="text-[10px] truncate max-w-full font-semibold">{st.title}</span>
               </div>
@@ -428,34 +461,34 @@ export default function WorkerOnboardingWizard({
       </div>
 
       {/* Messages */}
-      <div className="p-6">
+      <div className="p-5 sm:p-7">
         {error && (
-          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {successMsg && !error && (
-          <div className="mb-4 p-3.5 bg-brand-50 border border-brand-200 rounded-xl text-xs text-brand-800 flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
+          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 flex items-start gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* STEP 1: PERSONAL INFORMATION */}
+        {/* STEP 1: BASIC DETAILS */}
         {currentStep === 1 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Step 1 — Personal Information</h3>
+              <h3 className="text-lg font-black text-slate-900">Step 1 — Basic Details</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Provide your official identity details for client trust and legal compliance.
+                Provide your official identity details as per your Aadhaar card.
               </p>
             </div>
 
             <div className="space-y-3">
               <Input
-                label="Full Name (as per Aadhaar / Official ID)"
+                label="Full Name (as per Aadhaar)"
                 required
                 placeholder="e.g. Ramesh Mohanbhai Patel"
                 value={fullName}
@@ -482,9 +515,9 @@ export default function WorkerOnboardingWizard({
               </div>
 
               <Textarea
-                label="Professional Summary / Bio"
+                label="Short Bio / Experience Overview"
                 rows={2}
-                placeholder="Briefly describe your trade experience, specialized tools owned, and years active."
+                placeholder="Describe your active trade experience, tools owned, and major projects completed."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
               />
@@ -499,18 +532,18 @@ export default function WorkerOnboardingWizard({
               onClick={() => saveStepData(1)}
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Save & Continue to Profession
+              Save & Continue to Skills & Trade
             </Button>
           </div>
         )}
 
-        {/* STEP 2: PROFESSION */}
+        {/* STEP 2: SKILLS & TRADE */}
         {currentStep === 2 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Step 2 — Trade & Profession</h3>
+              <h3 className="text-lg font-black text-slate-900">Step 2 — Skills & Trade</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Select your primary trade category, years of experience, and expected rate.
+                Select your primary trade category, years of active experience, and expected rate.
               </p>
             </div>
 
@@ -576,9 +609,9 @@ export default function WorkerOnboardingWizard({
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Step 3 — Location & Service Radius</h3>
+                <h3 className="text-lg font-black text-slate-900">Step 3 — Location & Service Radius</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Customers in this radius can discover and book your services.
+                  Customers in this radius will discover and book your service.
                 </p>
               </div>
 
@@ -587,7 +620,7 @@ export default function WorkerOnboardingWizard({
                 size="sm"
                 onClick={handleDetectLocation}
                 isLoading={locDetecting}
-                icon={<Navigation className="w-3.5 h-3.5 text-brand-700" />}
+                icon={<Navigation className="w-3.5 h-3.5 text-[#1264D6]" />}
               >
                 Auto-Detect
               </Button>
@@ -618,7 +651,7 @@ export default function WorkerOnboardingWizard({
                   onChange={(e) => setPostalCode(e.target.value)}
                 />
                 <Input
-                  label="Base Area / Landmark"
+                  label="Base Area / Locality"
                   placeholder="e.g. Adajan"
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
@@ -627,7 +660,7 @@ export default function WorkerOnboardingWizard({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Service Radius: <span className="text-brand-700 font-extrabold">{serviceRadiusKm} km</span>
+                  Service Radius: <span className="text-[#1264D6] font-extrabold">{serviceRadiusKm} km</span>
                 </label>
                 <input
                   type="range"
@@ -636,7 +669,7 @@ export default function WorkerOnboardingWizard({
                   step={5}
                   value={serviceRadiusKm}
                   onChange={(e) => setServiceRadiusKm(Number(e.target.value))}
-                  className="w-full accent-brand-700 cursor-pointer"
+                  className="w-full accent-[#1264D6] cursor-pointer"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400 font-medium">
                   <span>5 km (Local)</span>
@@ -646,7 +679,7 @@ export default function WorkerOnboardingWizard({
               </div>
 
               <Input
-                label="Localities / Neighborhoods Served (Comma separated)"
+                label="Localities Served (Comma separated)"
                 placeholder="e.g. Adajan, Pal, Vesu, Rander"
                 value={serviceAreas}
                 onChange={(e) => setServiceAreas(e.target.value)}
@@ -681,29 +714,27 @@ export default function WorkerOnboardingWizard({
         {currentStep === 4 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-brand-600" />
+              <ShieldCheck className="w-6 h-6 text-[#079447]" />
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-lg font-black text-slate-900">
                   Step 4 — Cashfree Secure ID Aadhaar KYC
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Consent-based OTP authentication with UIDAI.
+                  Official UIDAI Aadhaar OTP verification.
                 </p>
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 leading-relaxed">
-              <strong>Official Consent Notice:</strong> Aadhaar verification is processed via
-              Cashfree Secure ID using OTP sent to your Aadhaar-linked phone. Your full Aadhaar
-              number is never stored or exposed publicly.
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 leading-relaxed">
+              <strong>Consent Notice:</strong> Aadhaar verification is executed securely via Cashfree using OTP sent to your registered mobile. Your full Aadhaar number is never exposed.
             </div>
 
             {aadhaarVerified ? (
-              <div className="p-4 bg-brand-50 border border-brand-200 rounded-2xl flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-brand-600 shrink-0" />
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="font-bold text-brand-900 text-sm">Aadhaar Identity Verified!</h4>
-                  <p className="text-xs text-brand-700 mt-0.5">
+                  <h4 className="font-bold text-emerald-900 text-sm">Aadhaar Identity Verified!</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">
                     Masked Aadhaar: <span className="font-mono font-bold">{maskedAadhaar}</span>
                   </p>
                 </div>
@@ -724,11 +755,10 @@ export default function WorkerOnboardingWizard({
                     type="checkbox"
                     checked={aadhaarConsent}
                     onChange={(e) => setAadhaarConsent(e.target.checked)}
-                    className="mt-0.5 accent-brand-700"
+                    className="mt-0.5 accent-[#079447]"
                   />
                   <span>
-                    I voluntarily consent to Verified Labour and Cashfree authenticating my identity
-                    using UIDAI Aadhaar OTP verification.
+                    I consent to Verified Labour and Cashfree verifying my identity with UIDAI Aadhaar OTP authentication.
                   </span>
                 </label>
 
@@ -747,7 +777,7 @@ export default function WorkerOnboardingWizard({
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Enter 6-digit Aadhaar OTP received from UIDAI
+                    Enter 6-digit Aadhaar OTP
                   </label>
                   <input
                     type="text"
@@ -755,9 +785,9 @@ export default function WorkerOnboardingWizard({
                     placeholder="123456"
                     value={aadhaarOtp}
                     onChange={(e) => setAadhaarOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full text-center tracking-widest text-2xl font-bold py-3 rounded-xl border border-slate-300 outline-none bg-white text-slate-900"
+                    className="w-full text-center tracking-widest text-2xl font-bold py-3 rounded-2xl border border-slate-300 outline-none bg-white text-slate-900"
                   />
-                  <p className="text-[11px] text-brand-700 font-semibold mt-1">
+                  <p className="text-[11px] text-[#079447] font-semibold mt-1">
                     Sandbox test OTP: 123456
                   </p>
                 </div>
@@ -770,7 +800,7 @@ export default function WorkerOnboardingWizard({
                   disabled={loading || aadhaarOtp.length !== 6}
                   onClick={handleVerifyAadhaar}
                 >
-                  Verify Aadhaar OTP with Cashfree
+                  Verify Aadhaar OTP
                 </Button>
 
                 <div className="flex items-center justify-between text-xs pt-1">
@@ -781,16 +811,16 @@ export default function WorkerOnboardingWizard({
                       setAadhaarOtp('');
                       setError(null);
                     }}
-                    className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 transition-colors"
+                    className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Change Aadhaar Number</span>
+                    <span>Change Number</span>
                   </button>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={handleStartAadhaar}
-                    className="text-brand-700 font-bold hover:underline disabled:opacity-50"
+                    className="text-[#079447] font-bold hover:underline disabled:opacity-50"
                   >
                     Resend OTP
                   </button>
@@ -814,7 +844,7 @@ export default function WorkerOnboardingWizard({
                 onClick={() => setCurrentStep(5)}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
-                Continue to Bank Account Verification
+                Continue to Bank Verification
               </Button>
             </div>
           </div>
@@ -824,23 +854,23 @@ export default function WorkerOnboardingWizard({
         {currentStep === 5 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div className="flex items-center gap-2">
-              <CreditCard className="w-6 h-6 text-brand-600" />
+              <CreditCard className="w-6 h-6 text-[#079447]" />
               <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Step 5 — Bank Account Verification (Cashfree)
+                <h3 className="text-lg font-black text-slate-900">
+                  Step 5 — Bank Account Verification (Penny Drop)
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Direct earnings settlement via Cashfree instant payout validation.
+                  Validate direct daily payouts account via Cashfree.
                 </p>
               </div>
             </div>
 
             {bankVerified ? (
-              <div className="p-4 bg-brand-50 border border-brand-200 rounded-2xl flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-brand-600 shrink-0" />
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="font-bold text-brand-900 text-sm">Bank Account Verified!</h4>
-                  <p className="text-xs text-brand-700 mt-0.5">
+                  <h4 className="font-bold text-emerald-900 text-sm">Bank Account Verified!</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">
                     Account: <span className="font-mono font-bold">{maskedAccountNo}</span> • IFSC: {ifsc}
                   </p>
                 </div>
@@ -850,7 +880,7 @@ export default function WorkerOnboardingWizard({
                 <Input
                   label="Account Holder Name"
                   required
-                  placeholder="Full name as printed on bank passbook"
+                  placeholder="Name as printed on bank passbook"
                   value={accountHolderName}
                   onChange={(e) => setAccountHolderName(e.target.value)}
                 />
@@ -902,23 +932,23 @@ export default function WorkerOnboardingWizard({
                 onClick={() => setCurrentStep(6)}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
-                Continue to Documents
+                Continue to Profile & Proof
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 6: DOCUMENTS */}
+        {/* STEP 6: PROFESSIONAL PROFILE & PROOF */}
         {currentStep === 6 && (
           <div className="max-w-lg mx-auto py-2 space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Step 6 — Supporting Documents</h3>
+              <h3 className="text-lg font-black text-slate-900">Step 6 — Professional Profile & Proof</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Upload trade certifications, ITI diplomas, or licenses to boost profile rank.
+                Upload trade certifications or ITI diplomas and set availability.
               </p>
             </div>
 
-            <div className="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-6 text-center transition-colors">
+            <div className="border-2 border-dashed border-slate-300 hover:border-[#1264D6] rounded-2xl p-6 text-center transition-colors">
               <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
               <p className="text-xs font-bold text-slate-700">Upload Skill Certificate / ITI Proof</p>
               <p className="text-[11px] text-slate-400 mt-1">PDF, JPG, PNG up to 5MB</p>
@@ -942,12 +972,35 @@ export default function WorkerOnboardingWizard({
               </label>
 
               {certificateName && (
-                <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-700 font-bold">
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[#079447] font-bold">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{certificateName} ({documentStatus})</span>
                 </div>
               )}
             </div>
+
+            <Card variant="default" padding="md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Online Job Dispatch Toggle</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Receive direct bookings within {serviceRadiusKm} km radius.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAvailable(!isAvailable)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                    isAvailable
+                      ? 'bg-[#079447] text-white shadow-xs'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  <Power className="w-3.5 h-3.5" />
+                  <span>{isAvailable ? 'ON' : 'OFF'}</span>
+                </button>
+              </div>
+            </Card>
 
             <div className="flex gap-2 pt-2">
               <Button
@@ -962,157 +1015,94 @@ export default function WorkerOnboardingWizard({
                 variant="brand"
                 size="lg"
                 fullWidth
-                onClick={() => setCurrentStep(7)}
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                Continue to Availability
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 7: AVAILABILITY */}
-        {currentStep === 7 && (
-          <div className="max-w-lg mx-auto py-2 space-y-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Step 7 — Availability Control</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Control when you receive new job requests from customers.
-              </p>
-            </div>
-
-            <Card variant="default" padding="md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Available for New Jobs</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    When ON, customers within {serviceRadiusKm} km can request your services.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAvailable(!isAvailable)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    isAvailable
-                      ? 'bg-brand-700 text-white shadow-xs'
-                      : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  <Power className="w-3.5 h-3.5" />
-                  <span>{isAvailable ? 'ON' : 'OFF'}</span>
-                </button>
-              </div>
-            </Card>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setCurrentStep(6)}
-                icon={<ArrowLeft className="w-4 h-4" />}
-              >
-                Back
-              </Button>
-              <Button
-                variant="brand"
-                size="lg"
-                fullWidth
-                onClick={() => setCurrentStep(8)}
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                Review & Submit Profile
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 8: REVIEW & SUBMIT */}
-        {currentStep === 8 && (
-          <div className="max-w-lg mx-auto py-2 space-y-5">
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center mx-auto mb-2">
-                <ShieldCheck className="w-8 h-8 stroke-[2.5]" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Review & Submit Profile</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Verify all information before submitting for final platform activation.
-              </p>
-            </div>
-
-            {/* Complete Checklist Summary */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Personal Information</span>
-                <span className="font-bold text-slate-900">{fullName}</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Primary Trade</span>
-                <span className="font-bold text-slate-900">
-                  {categories.find((c) => c.id === primaryCategoryId)?.name || 'Specialist'} ({experienceYears} yrs)
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Location</span>
-                <span className="font-bold text-slate-900">{city}, {state || 'India'} ({serviceRadiusKm} km)</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Aadhaar Status</span>
-                {aadhaarVerified ? (
-                  <Badge variant="brand" size="sm">
-                    <CheckCircle2 className="w-3 h-3 text-brand-600" />
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="warning" size="sm">Pending</Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Bank Status</span>
-                {bankVerified ? (
-                  <Badge variant="brand" size="sm">
-                    <CheckCircle2 className="w-3 h-3 text-brand-600" />
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="warning" size="sm">Pending</Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="font-semibold text-slate-600">Documents</span>
-                <span className="font-bold text-slate-900">{certificateName ? 'Uploaded' : 'None provided'}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-600">Availability</span>
-                <span className="font-bold text-brand-700">{isAvailable ? 'Online (Accepting Jobs)' : 'Offline'}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setCurrentStep(7)}
-                icon={<ArrowLeft className="w-4 h-4" />}
-              >
-                Back
-              </Button>
-              <Button
-                variant="brand"
-                size="lg"
-                fullWidth
                 isLoading={loading}
                 onClick={handleFinalSubmit}
                 icon={<CheckCircle2 className="w-4 h-4" />}
               >
-                Submit for Verification
+                Submit Profile for Activation
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* STEP 7: COMPLETION CONFIRMATION */}
+        {currentStep === 7 && (
+          <div className="max-w-xl mx-auto py-4 text-center space-y-6">
+            {aadhaarVerified && bankVerified ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[#079447] text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30">
+                  <ShieldCheck className="w-10 h-10 stroke-[2.5]" />
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-200/60 text-emerald-900 font-black text-xs rounded-full uppercase tracking-wider">
+                  ✓ 100% Aadhaar & Bank Verified
+                </div>
+                <h3 className="text-2xl font-black text-slate-900">
+                  You're Verified & Ready to Earn!
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  Congratulations! Your Aadhaar identity and bank account details have been verified with Cashfree. Your worker profile is now active on the Verified Labour network.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-3xl p-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-amber-400 text-[#082B66] flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
+                  <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-200/60 text-amber-900 font-black text-xs rounded-full uppercase tracking-wider">
+                  Verification Submitted
+                </div>
+                <h3 className="text-2xl font-black text-slate-900">
+                  Profile Submitted for Verification
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  Thank you! Your worker profile and documents have been submitted to the Verified Labour verification desk. Verification completes within 2 to 4 hours.
+                </p>
+              </div>
+            )}
+
+            {/* Profile Summary Card */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-left space-y-3 text-xs">
+              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                Registered Profile Details
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-slate-500 font-medium block">Name</span>
+                  <strong className="text-slate-800">{fullName || 'Worker Professional'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium block">City / Service Radius</span>
+                  <strong className="text-slate-800">{city || 'Surat'} ({serviceRadiusKm} km)</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium block">Aadhaar Status</span>
+                  <strong className={aadhaarVerified ? 'text-[#079447] font-bold' : 'text-amber-700 font-bold'}>
+                    {aadhaarVerified ? '✓ Verified (Cashfree)' : 'Pending'}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium block">Bank Settlement Status</span>
+                  <strong className={bankVerified ? 'text-[#079447] font-bold' : 'text-amber-700 font-bold'}>
+                    {bankVerified ? '✓ Verified (Cashfree)' : 'Pending'}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onComplete) {
+                  onComplete();
+                } else {
+                  router.push('/worker/dashboard');
+                }
+              }}
+              className="w-full min-h-[50px] py-3.5 px-6 bg-[#079447] hover:bg-[#067c3b] active:scale-98 text-white font-black text-base rounded-2xl shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Continue to Worker Dashboard</span>
+              <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+            </button>
           </div>
         )}
       </div>

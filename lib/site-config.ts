@@ -4,7 +4,7 @@ import { hashPassword } from './auth';
 export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   // Site Basic Settings
   site_name: 'Verified Labour',
-  site_tagline: 'Skilled People. Stronger Communities. A Better India.',
+  site_tagline: 'Shrivastava ProFunnels Ventures Pvt Ltd',
   maintenance_mode: 'false',
   platform_fee_percent: '10',
   default_search_radius_km: '15',
@@ -70,10 +70,8 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
 
   // Social Links
   social_facebook: 'https://facebook.com/verifiedlabour',
-  social_twitter: 'https://twitter.com/verifiedlabour',
   social_instagram: 'https://instagram.com/verifiedlabour',
-  social_linkedin: 'https://linkedin.com/company/verifiedlabour',
-  social_youtube: 'https://youtube.com/c/verifiedlabour',
+  social_whatsapp: 'https://wa.me/919369899597',
 
   // Announcement Banner
   announcement_enabled: 'false',
