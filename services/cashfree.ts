@@ -46,9 +46,16 @@ export class CashfreeVerificationService {
   private baseUrl: string;
 
   constructor() {
-    this.clientId = process.env.CASHFREE_CLIENT_ID || '';
-    this.clientSecret = process.env.CASHFREE_CLIENT_SECRET || '';
-    this.env = (process.env.CASHFREE_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox';
+    this.clientId =
+      process.env.CASHFREE_APP_ID ||
+      process.env.CASHFREE_CLIENT_ID ||
+      '';
+    this.clientSecret =
+      process.env.CASHFREE_SECRET_KEY ||
+      process.env.CASHFREE_CLIENT_SECRET ||
+      '';
+    const rawEnv = (process.env.CASHFREE_ENVIRONMENT || '').toLowerCase();
+    this.env = rawEnv === 'production' ? 'production' : 'sandbox';
     this.baseUrl =
       this.env === 'production'
         ? 'https://api.cashfree.com/verification'
@@ -56,11 +63,16 @@ export class CashfreeVerificationService {
   }
 
   private isMockMode(): boolean {
+    // In production environment, NEVER accidentally trigger mock mode.
+    // Production must always use the real Cashfree Secure ID API.
+    if (this.env === 'production') {
+      return false;
+    }
     return (
+      process.env.NODE_ENV === 'test' ||
       !this.clientId ||
       !this.clientSecret ||
-      this.clientId.startsWith('TEST_CF') ||
-      process.env.NODE_ENV === 'test'
+      this.clientId.startsWith('TEST_CF')
     );
   }
 
