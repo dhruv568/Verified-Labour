@@ -42,6 +42,8 @@ prisma/*.db-journal
 
 # Uploads, user storage, and temporary scratch
 /uploads
+public/uploads/*
+!public/uploads/**/.gitkeep
 /storage
 /tmp
 /temp
