@@ -5,21 +5,31 @@ import { getSessionUser } from '@/lib/auth';
 import { calculateHaversineDistanceKm } from '@/lib/location';
 import { NotificationService } from '@/services/notification';
 
-const createJobSchema = z.object({
-  workerId: z.string(),
-  serviceId: z.string(),
-  categoryId: z.string(),
-  description: z.string().min(5, 'Please provide a brief description of the job requirement'),
-  formattedAddress: z.string().min(5, 'Address is required'),
-  city: z.string().default('Surat'),
-  postalCode: z.string().optional(),
-  latitude: z.number(),
-  longitude: z.number(),
-  preferredDate: z.string(), // YYYY-MM-DD
-  preferredTime: z.string(), // e.g. "10:00 AM"
-  urgency: z.enum(['IMMEDIATE', 'TODAY', 'SCHEDULED']).default('SCHEDULED'),
-  budget: z.number().optional(),
-});
+const createJobSchema = z
+  .object({
+    workerId: z.string(),
+    serviceId: z.string(),
+    categoryId: z.string(),
+    description: z.string().optional().default(''),
+    voiceNoteUrl: z.string().optional().nullable(),
+    voiceNoteDuration: z.number().optional().nullable(),
+    formattedAddress: z.string().min(5, 'Address is required'),
+    city: z.string().default('Surat'),
+    postalCode: z.string().optional(),
+    latitude: z.number(),
+    longitude: z.number(),
+    preferredDate: z.string(), // YYYY-MM-DD
+    preferredTime: z.string(), // e.g. "10:00 AM"
+    urgency: z.enum(['IMMEDIATE', 'TODAY', 'SCHEDULED']).default('SCHEDULED'),
+    budget: z.number().optional(),
+  })
+  .refine(
+    (data) => (data.description && data.description.trim().length >= 3) || !!data.voiceNoteUrl,
+    {
+      message: 'Please describe your requirement in text or attach a voice note',
+      path: ['description'],
+    }
+  );
 
 export async function POST(req: NextRequest) {
   try {
@@ -138,7 +148,9 @@ export async function POST(req: NextRequest) {
           customerId: customerProfileId,
           categoryId: data.categoryId,
           serviceId: data.serviceId,
-          description: data.description,
+          description: data.description?.trim() || 'Voice note requirement attached',
+          voiceNoteUrl: data.voiceNoteUrl || null,
+          voiceNoteDuration: data.voiceNoteDuration || null,
           formattedAddress: data.formattedAddress,
           city: data.city,
           postalCode: data.postalCode,

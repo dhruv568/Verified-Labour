@@ -35,6 +35,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
+import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
 import EmptyState from '@/components/ui/EmptyState';
 
 type NavTab =
@@ -566,6 +567,17 @@ export default function CustomerDashboardPage() {
                           <span className="text-xl font-black text-navy-900">₹{job.finalAmount}</span>
                         </div>
                       </div>
+
+                      {job.jobRequest?.voiceNoteUrl && (
+                        <div className="pt-2 border-t border-slate-100">
+                          <p className="text-[11px] font-bold text-slate-700 mb-1">Voice Note Requirement:</p>
+                          <VoiceAudioPlayer
+                            src={job.jobRequest.voiceNoteUrl}
+                            duration={job.jobRequest.voiceNoteDuration}
+                            label="Your Voice Note"
+                          />
+                        </div>
+                      )}
 
                       <div className="text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                         <p className="flex items-center gap-1.5">

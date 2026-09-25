@@ -15,6 +15,7 @@ import { runCashfreeVerificationTests } from './cashfree-verification-tests';
 import { runResendEmailTests } from './resend-email-tests';
 import { runAdminPanelTests } from './admin-panel-tests';
 import { runLivePhotoTests } from './live-photo-tests';
+import { runVoiceNoteTests } from './voice-note-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -299,6 +300,8 @@ async function runAllTests() {
   const photoResults = await runLivePhotoTests();
   passed += photoResults.passed;
   failed += photoResults.failed;
+
+  await runVoiceNoteTests();
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

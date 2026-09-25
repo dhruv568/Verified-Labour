@@ -16,6 +16,7 @@ import {
   X,
   Phone,
 } from 'lucide-react';
+import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
 
 export default function CustomerJobTrackerPage({
   params,
@@ -355,10 +356,22 @@ export default function CustomerJobTrackerPage({
                 <p>
                   <strong className="text-slate-800">Service:</strong> {job.service.name}
                 </p>
-                <p>
-                  <strong className="text-slate-800">Requirement:</strong> {job.jobRequest.description}
-                </p>
-                <p className="flex items-start gap-1">
+                {job.jobRequest.description && (
+                  <p>
+                    <strong className="text-slate-800">Requirement:</strong> {job.jobRequest.description}
+                  </p>
+                )}
+                {job.jobRequest.voiceNoteUrl && (
+                  <div className="mt-2">
+                    <p className="text-[11px] font-bold text-slate-700 mb-1">Attached Voice Note:</p>
+                    <VoiceAudioPlayer
+                      src={job.jobRequest.voiceNoteUrl}
+                      duration={job.jobRequest.voiceNoteDuration}
+                      label="Customer Voice Requirement"
+                    />
+                  </div>
+                )}
+                <p className="flex items-start gap-1 pt-1">
                   <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
                   <span>{job.jobRequest.formattedAddress}</span>
                 </p>

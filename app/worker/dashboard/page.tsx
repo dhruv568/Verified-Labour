@@ -30,6 +30,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
+import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
 import EmptyState from '@/components/ui/EmptyState';
 
 type WorkerNavTab =
@@ -491,10 +492,22 @@ export default function WorkerDashboardPage() {
                       </div>
 
                       {/* Job Requirement Details */}
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
-                        <p className="text-slate-700">
-                          <strong className="text-slate-900">Customer Note:</strong> {job.jobRequest?.description}
-                        </p>
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                        {job.jobRequest?.description && (
+                          <p className="text-slate-700">
+                            <strong className="text-slate-900">Customer Note:</strong> {job.jobRequest?.description}
+                          </p>
+                        )}
+                        {job.jobRequest?.voiceNoteUrl && (
+                          <div className="pt-1">
+                            <p className="text-[11px] font-bold text-slate-800 mb-1">Customer Voice Note:</p>
+                            <VoiceAudioPlayer
+                              src={job.jobRequest.voiceNoteUrl}
+                              duration={job.jobRequest.voiceNoteDuration}
+                              label="Play Customer Voice Note"
+                            />
+                          </div>
+                        )}
                         <p className="flex items-center gap-1.5 text-slate-600">
                           <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                           <span>{job.jobRequest?.formattedAddress}</span>

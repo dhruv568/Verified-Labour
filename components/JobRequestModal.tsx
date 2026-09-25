@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { WorkerData } from './WorkerCard';
 import { LocationData } from '@/context/LocationContext';
+import VoiceNoteRecorder from './VoiceNoteRecorder';
 
 interface JobRequestModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export default function JobRequestModal({
   const [services, setServices] = useState<any[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [description, setDescription] = useState('');
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const [voiceNoteDuration, setVoiceNoteDuration] = useState<number>(0);
   const [address, setAddress] = useState(
     selectedLocation?.formattedAddress || selectedLocation?.displayName || ''
   );
@@ -81,6 +84,8 @@ export default function JobRequestModal({
           categoryId: worker.primaryCategory ? (worker.primaryCategory as any).id || (services[0]?.categoryId) : undefined,
           serviceId: selectedServiceId,
           description,
+          voiceNoteUrl,
+          voiceNoteDuration,
           formattedAddress: address,
           city: selectedLocation.city || '',
           postalCode: selectedLocation.postalCode,
@@ -295,16 +300,27 @@ export default function JobRequestModal({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Work Requirement Details
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700">
+                Work Requirement Details
+              </label>
+              <span className="text-[11px] text-slate-500 font-medium">
+                Text, Voice Note, or Both
+              </span>
+            </div>
             <textarea
               rows={2}
-              required
-              placeholder="Describe the issue or requirements (e.g. leaking kitchen tap pipe, need washer replaced)"
+              placeholder="Describe the issue or requirements in text (e.g. leaking kitchen tap pipe, need washer replaced)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+            />
+            <VoiceNoteRecorder
+              onVoiceNoteChange={(url, durSec) => {
+                setVoiceNoteUrl(url);
+                setVoiceNoteDuration(durSec);
+              }}
+              disabled={loading}
             />
           </div>
 
@@ -322,7 +338,7 @@ export default function JobRequestModal({
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !description.trim()}
+            disabled={loading || (!description.trim() && !voiceNoteUrl)}
             className="w-full min-h-[48px] py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base flex items-center justify-center"
           >
             {loading ? 'Sending Request to Worker...' : 'Confirm & Request Worker'}
