@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { syncWorkerVerificationStatus } from '@/lib/worker-verification';
+import { COMMON_TRADES } from '@/lib/common-trades';
 
 const onboardingUpdateSchema = z.object({
   step: z.number().int().min(1).max(10),
@@ -90,7 +91,35 @@ export async function POST(req: NextRequest) {
           updateData.bio = data.bio ? `${bioPrefix} | ${data.bio}` : bioPrefix;
         }
       } else {
-        updateData.primaryCategoryId = data.primaryCategoryId;
+        // Check if data.primaryCategoryId is a valid DB category ID
+        const existingCategory = await prisma.category.findUnique({
+          where: { id: data.primaryCategoryId },
+        });
+
+        if (existingCategory) {
+          updateData.primaryCategoryId = existingCategory.id;
+        } else {
+          // Look up in COMMON_TRADES or derive slug
+          const tradeObj = COMMON_TRADES.find(
+            (t) => t.id === data.primaryCategoryId || t.slug === data.primaryCategoryId
+          );
+          const categorySlug = tradeObj ? tradeObj.slug : data.primaryCategoryId.toLowerCase().replace(/\s+/g, '-');
+          const categoryName = tradeObj ? tradeObj.name : data.primaryCategoryId;
+          const categoryNameHi = tradeObj ? tradeObj.nameHi : undefined;
+
+          let catBySlug = await prisma.category.findUnique({ where: { slug: categorySlug } });
+          if (!catBySlug) {
+            catBySlug = await prisma.category.create({
+              data: {
+                name: categoryName,
+                slug: categorySlug,
+                nameHi: categoryNameHi,
+                description: `${categoryName} services and skilled labour`,
+              },
+            });
+          }
+          updateData.primaryCategoryId = catBySlug.id;
+        }
       }
     }
 

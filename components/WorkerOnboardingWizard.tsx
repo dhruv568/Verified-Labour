@@ -36,6 +36,7 @@ import Card from './ui/Card';
 import Badge from './ui/Badge';
 import SearchableSelect from './ui/SearchableSelect';
 import { INDIAN_STATES_AND_CITIES } from '@/lib/indian-locations';
+import { COMMON_TRADES } from '@/lib/common-trades';
 import WorkerLivePhotoCapture from './WorkerLivePhotoCapture';
 
 interface WorkerOnboardingWizardProps {
@@ -211,16 +212,41 @@ export default function WorkerOnboardingWizard({
 
   // Prepare searchable category options
   const categoryOptions = useMemo(() => {
-    const list = categories.map((c) => ({
-      value: c.id,
-      label: c.name,
-      subtext: c.nameHi || undefined,
-    }));
+    const list: Array<{ value: string; label: string; subtext?: string }> = [];
+
+    // 1. Include DB categories
+    categories.forEach((c) => {
+      list.push({
+        value: c.id,
+        label: c.name,
+        subtext: c.nameHi || undefined,
+      });
+    });
+
+    // 2. Include common worker trades if not already added
+    COMMON_TRADES.forEach((t) => {
+      const exists = list.some(
+        (existing) =>
+          existing.label.toLowerCase() === t.name.toLowerCase() ||
+          existing.value === t.id ||
+          existing.value === t.slug
+      );
+      if (!exists) {
+        list.push({
+          value: t.id,
+          label: t.name,
+          subtext: t.nameHi || undefined,
+        });
+      }
+    });
+
+    // 3. Keep Custom / Other option at the end
     list.push({
       value: 'custom_other',
-      label: 'Custom / Other',
+      label: 'Other / Custom Skill',
       subtext: 'Enter your custom trade or skill',
     });
+
     return list;
   }, [categories]);
 
@@ -1530,7 +1556,9 @@ export default function WorkerOnboardingWizard({
                     <strong className="text-slate-900">
                       {primaryCategoryId === 'custom_other'
                         ? `Custom: ${customTrade}`
-                        : categories.find((c) => c.id === primaryCategoryId)?.name || 'Skilled Professional'}
+                        : categories.find((c) => c.id === primaryCategoryId)?.name ||
+                          COMMON_TRADES.find((t) => t.id === primaryCategoryId || t.slug === primaryCategoryId)?.name ||
+                          'Skilled Professional'}
                     </strong>
                   </div>
                   <div>

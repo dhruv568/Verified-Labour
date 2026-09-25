@@ -14,6 +14,7 @@ import { runAuthFlowTests } from './auth-flow-tests';
 import { runCashfreeVerificationTests } from './cashfree-verification-tests';
 import { runResendEmailTests } from './resend-email-tests';
 import { runAdminPanelTests } from './admin-panel-tests';
+import { runLivePhotoTests } from './live-photo-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -294,6 +295,10 @@ async function runAllTests() {
   const adminResults = await runAdminPanelTests();
   passed += adminResults.passed;
   failed += adminResults.failed;
+
+  const photoResults = await runLivePhotoTests();
+  passed += photoResults.passed;
+  failed += photoResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

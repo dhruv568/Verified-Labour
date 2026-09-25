@@ -70,9 +70,10 @@ export default function CustomerDashboardPage() {
   const [workers, setWorkers] = useState<WorkerData[]>([]);
   const [loadingWorkers, setLoadingWorkers] = useState(false);
 
-  // Booking modal
+  // Booking modal & Worker Profile modal
   const [selectedWorkerForBooking, setSelectedWorkerForBooking] = useState<WorkerData | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [profileWorker, setProfileWorker] = useState<WorkerData | null>(null);
 
   // Greeting time
   const hour = new Date().getHours();
@@ -487,7 +488,7 @@ export default function CustomerDashboardPage() {
                         key={w.id}
                         worker={w}
                         onRequestBooking={handleStartBooking}
-                        onViewProfile={() => handleStartBooking(w)}
+                        onViewProfile={(worker) => setProfileWorker(worker)}
                       />
                     ))}
                   </div>
@@ -695,6 +696,14 @@ export default function CustomerDashboardPage() {
         onRequireAuth={() => {
           setBookingModalOpen(false);
         }}
+      />
+
+      {/* Worker Profile Modal */}
+      <WorkerProfileModal
+        isOpen={Boolean(profileWorker)}
+        onClose={() => setProfileWorker(null)}
+        worker={profileWorker}
+        onRequestBooking={handleStartBooking}
       />
     </div>
   );
