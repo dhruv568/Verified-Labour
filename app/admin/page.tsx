@@ -131,7 +131,6 @@ export default function AdminPage() {
   // Add Category Form State
   const [newCatName, setNewCatName] = useState('');
   const [newCatSlug, setNewCatSlug] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('Wrench');
 
   // 1. Initial Session Check
   const checkSession = async () => {
@@ -459,7 +458,6 @@ export default function AdminPage() {
         body: JSON.stringify({
           name: newCatName,
           slug: newCatSlug.trim().toLowerCase().replace(/\s+/g, '-') || newCatName.toLowerCase().replace(/\s+/g, '-'),
-          iconUrl: newCatIcon,
         }),
       });
       const data = await res.json();
@@ -1605,7 +1603,7 @@ export default function AdminPage() {
             <div className="space-y-6">
               <Card variant="default" padding="lg">
                 <h3 className="font-black text-slate-900 text-base mb-3">Add Service Category</h3>
-                <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input
                     type="text"
                     required
@@ -1621,17 +1619,6 @@ export default function AdminPage() {
                     onChange={(e) => setNewCatSlug(e.target.value)}
                     className="px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
                   />
-                  <select
-                    value={newCatIcon}
-                    onChange={(e) => setNewCatIcon(e.target.value)}
-                    className="px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none bg-white font-semibold"
-                  >
-                    <option value="Wrench">Wrench (Plumbing)</option>
-                    <option value="Zap">Zap (Electrical)</option>
-                    <option value="Hammer">Hammer (Carpentry/Construction)</option>
-                    <option value="Paintbrush">Paintbrush (Painting)</option>
-                    <option value="Sparkles">Sparkles (Cleaning)</option>
-                  </select>
                   <Button type="submit" variant="brand" size="md" icon={<Plus className="w-4 h-4" />}>
                     Add Category
                   </Button>
