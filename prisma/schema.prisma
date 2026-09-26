@@ -560,6 +560,9 @@ model Testimonial {
   id              String   @id @default(uuid())
   slot            Int      @unique
   imageUrl        String
+  imageZoom       Float    @default(1.0)
+  imageOffsetX    Float    @default(0.0)
+  imageOffsetY    Float    @default(0.0)
   customerName    String
   profession      String?
   location        String?

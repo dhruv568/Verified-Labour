@@ -10,6 +10,9 @@ export interface TestimonialData {
   rating?: number;
   isActive: boolean;
   imageUrl: string;
+  imageZoom?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,6 +28,9 @@ export const DEFAULT_TESTIMONIALS: TestimonialData[] = [
     rating: 5,
     isActive: true,
     imageUrl: '/images/testimonials/testimonial-1.jpg',
+    imageZoom: 1.0,
+    imageOffsetX: 0.0,
+    imageOffsetY: 0.0,
   },
   {
     slot: 2,
@@ -36,6 +42,9 @@ export const DEFAULT_TESTIMONIALS: TestimonialData[] = [
     rating: 5,
     isActive: true,
     imageUrl: '/images/testimonials/testimonial-2.jpg',
+    imageZoom: 1.0,
+    imageOffsetX: 0.0,
+    imageOffsetY: 0.0,
   },
 ];
 
@@ -59,6 +68,9 @@ export async function ensureDefaultTestimonials() {
             rating: def.rating ?? 5,
             isActive: def.isActive,
             imageUrl: def.imageUrl,
+            imageZoom: def.imageZoom ?? 1.0,
+            imageOffsetX: def.imageOffsetX ?? 0.0,
+            imageOffsetY: def.imageOffsetY ?? 0.0,
           },
         });
       }
@@ -116,6 +128,9 @@ export async function updateTestimonialSlot(
       rating: typeof data.rating === 'number' ? data.rating : undefined,
       isActive: data.isActive !== undefined ? data.isActive : undefined,
       imageUrl: data.imageUrl !== undefined ? data.imageUrl : undefined,
+      imageZoom: typeof data.imageZoom === 'number' ? data.imageZoom : undefined,
+      imageOffsetX: typeof data.imageOffsetX === 'number' ? data.imageOffsetX : undefined,
+      imageOffsetY: typeof data.imageOffsetY === 'number' ? data.imageOffsetY : undefined,
     },
     create: {
       slot,
@@ -126,6 +141,9 @@ export async function updateTestimonialSlot(
       rating: data.rating ?? 5,
       isActive: data.isActive ?? true,
       imageUrl: data.imageUrl || `/images/testimonials/testimonial-${slot}.jpg`,
+      imageZoom: data.imageZoom ?? 1.0,
+      imageOffsetX: data.imageOffsetX ?? 0.0,
+      imageOffsetY: data.imageOffsetY ?? 0.0,
     },
   });
 

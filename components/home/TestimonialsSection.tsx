@@ -14,6 +14,9 @@ export interface TestimonialItem {
   rating?: number | null;
   isActive: boolean;
   imageUrl: string;
+  imageZoom?: number | null;
+  imageOffsetX?: number | null;
+  imageOffsetY?: number | null;
 }
 
 export default function TestimonialsSection() {
@@ -95,6 +98,9 @@ export default function TestimonialsSection() {
           >
             {testimonials.map((card) => {
               const ratingCount = Math.min(Math.max(card.rating || 5, 1), 5);
+              const zoom = card.imageZoom ?? 1;
+              const offsetX = card.imageOffsetX ?? 0;
+              const offsetY = card.imageOffsetY ?? 0;
 
               return (
                 <div
@@ -108,7 +114,11 @@ export default function TestimonialsSection() {
                       alt={`Testimonial from ${card.customerName}`}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
-                      className="object-cover object-center group-hover:scale-103 transition-transform duration-500"
+                      className="object-cover transition-transform duration-300 pointer-events-none select-none"
+                      style={{
+                        transform: `scale(${zoom}) translate(${offsetX}%, ${offsetY}%)`,
+                        transformOrigin: 'center center',
+                      }}
                       priority={card.slot === 1}
                     />
 

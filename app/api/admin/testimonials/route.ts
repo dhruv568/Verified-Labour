@@ -37,7 +37,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { slot, customerName, profession, location, testimonialText, rating, isActive, imageUrl } = body;
+    const {
+      slot,
+      customerName,
+      profession,
+      location,
+      testimonialText,
+      rating,
+      isActive,
+      imageUrl,
+      imageZoom,
+      imageOffsetX,
+      imageOffsetY,
+    } = body;
 
     const slotNum = Number(slot);
     if (slotNum !== 1 && slotNum !== 2) {
@@ -62,6 +74,9 @@ export async function POST(req: NextRequest) {
       rating: rating !== undefined ? Number(rating) : 5,
       isActive: Boolean(isActive),
       imageUrl: imageUrl !== undefined ? String(imageUrl).trim() : undefined,
+      imageZoom: imageZoom !== undefined ? Number(imageZoom) : undefined,
+      imageOffsetX: imageOffsetX !== undefined ? Number(imageOffsetX) : undefined,
+      imageOffsetY: imageOffsetY !== undefined ? Number(imageOffsetY) : undefined,
     });
 
     // Record audit log

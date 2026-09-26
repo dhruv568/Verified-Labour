@@ -16,6 +16,7 @@ import { runResendEmailTests } from './resend-email-tests';
 import { runAdminPanelTests } from './admin-panel-tests';
 import { runLivePhotoTests } from './live-photo-tests';
 import { runVoiceNoteTests } from './voice-note-tests';
+import { runTestimonialTests } from './testimonial-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -302,6 +303,10 @@ async function runAllTests() {
   failed += photoResults.failed;
 
   await runVoiceNoteTests();
+
+  const testimonialResults = await runTestimonialTests();
+  passed += testimonialResults.passed;
+  failed += testimonialResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);
