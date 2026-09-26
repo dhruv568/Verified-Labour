@@ -58,8 +58,8 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   ]),
 
   // Contact Information
-  contact_email: 'verifiedlabour@gmail.com',
-  contact_phone: '+91 93698 99597',
+  contact_email: 'help@verifiedlabour.com',
+  contact_phone: '+91 9109019090',
   contact_address: 'Surat, Gujarat, India - 395007',
   contact_hours: 'Monday to Sunday: 8:00 AM - 9:00 PM',
 
@@ -71,7 +71,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   // Social Links
   social_facebook: 'https://facebook.com/verifiedlabour',
   social_instagram: 'https://instagram.com/verifiedlabour',
-  social_whatsapp: 'https://wa.me/919369899597',
+  social_whatsapp: 'https://wa.me/919109019090',
 
   // Announcement Banner
   announcement_enabled: 'false',

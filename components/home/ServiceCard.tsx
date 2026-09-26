@@ -65,11 +65,11 @@ export default function ServiceCard({
       <div
         className={`py-2 px-1.5 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[44px] ${pillColor}`}
       >
-        <span className="block font-bold text-xs sm:text-xs tracking-tight leading-snug line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
-          {title}
-        </span>
-        <span className="block font-semibold text-[11px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-devanagari line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-bold text-xs sm:text-xs tracking-tight leading-snug line-clamp-1 font-devanagari drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {hindiTitle}
+        </span>
+        <span className="block font-semibold text-[11px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-sans line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+          {title}
         </span>
       </div>
     </div>

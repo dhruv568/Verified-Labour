@@ -83,7 +83,7 @@ export default function WorkerCard({
               {worker.badges.isFullyVerified && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-50 text-brand-800 border border-brand-200">
                   <ShieldCheck className="w-3 h-3 text-brand-600" />
-                  VERIFIED
+                  सत्यापित / VERIFIED
                 </span>
               )}
             </div>
@@ -112,18 +112,18 @@ export default function WorkerCard({
         {/* Verification Checkpoint Pills (Cashfree Aadhaar, Bank, Skills) */}
         <div className="flex flex-wrap gap-1.5 mt-3.5 pt-3 border-t border-slate-100">
           {worker.badges.isIdentityVerified && (
-            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
-              <CheckCircle2 className="w-3 h-3 text-brand-600" /> Identity
+            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
+              <CheckCircle2 className="w-3 h-3 text-brand-600" /> पहचान / Identity
             </span>
           )}
           {worker.badges.isBankVerified && (
-            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
-              <CheckCircle2 className="w-3 h-3 text-brand-600" /> Bank Verified
+            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
+              <CheckCircle2 className="w-3 h-3 text-brand-600" /> बैंक सत्यापित / Bank Verified
             </span>
           )}
           {worker.badges.isSkillVerified && (
-            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
-              <Award className="w-3 h-3 text-brand-600" /> Skills Verified
+            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
+              <Award className="w-3 h-3 text-brand-600" /> कौशल / Skills Verified
             </span>
           )}
         </div>
@@ -149,7 +149,7 @@ export default function WorkerCard({
       <div className="mt-4 pt-3.5 sm:pt-4 border-t border-slate-100 flex flex-col min-[380px]:flex-row min-[380px]:items-center justify-between gap-3">
         <div className="flex items-baseline justify-between min-[380px]:block">
           <div>
-            <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block">Starting from</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block font-devanagari">शुरुआती / Starting</span>
             <span className="text-base sm:text-lg font-black text-navy-900">
               ₹{worker.hourlyRate || 300}
               <span className="text-xs font-normal text-slate-500"> / job</span>
@@ -161,16 +161,16 @@ export default function WorkerCard({
           {onViewProfile && (
             <button
               onClick={() => onViewProfile(worker)}
-              className="flex-1 min-[380px]:flex-initial min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-navy-900 hover:bg-slate-100 active:bg-slate-200 rounded-xl transition-colors border border-slate-200 min-[380px]:border-transparent"
+              className="flex-1 min-[380px]:flex-initial min-h-[44px] px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-navy-900 hover:bg-slate-100 active:bg-slate-200 rounded-xl transition-colors border border-slate-200 min-[380px]:border-transparent font-devanagari"
             >
-              Profile
+              प्रोफाइल / Profile
             </button>
           )}
           <button
             onClick={() => onRequestBooking(worker)}
-            className="flex-1 min-[380px]:flex-initial min-h-[44px] px-4 py-2 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center whitespace-nowrap"
+            className="flex-1 min-[380px]:flex-initial min-h-[44px] px-4 py-2 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center whitespace-nowrap font-devanagari"
           >
-            Request Worker
+            30s में बुक करें / Book Now
           </button>
         </div>
       </div>

@@ -129,13 +129,13 @@ function FindWorkerContent() {
               <span>{isHindi ? 'सत्यापित कामगार खोजें' : 'Verified Labour Search'}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-              {isHindi ? 'अपने पास सत्यापित कामगार और कुशल पेशेवर बुक करें' : 'Find & Book Verified Skilled Workers Near You'}
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight font-devanagari">
+              {isHindi ? 'अपने पास सत्यापित कामगार और कुशल पेशेवर बुक करें / Book Verified Workers' : 'Find & Book Verified Skilled Workers Near You / कामगार खोजें'}
             </h1>
 
-            <p className="text-xs sm:text-sm text-blue-100 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-blue-100 font-medium leading-relaxed font-devanagari">
               {isHindi
-                ? 'आधार और बैंक खाते द्वारा सत्यापित कारीगर — 30s में बुक करें'
+                ? 'आधार और बैंक खाते द्वारा सत्यापित कारीगर — 30s में बुक करें (100% Verified)'
                 : '100% Aadhaar identity & Bank verified professionals available in your locality'}
             </p>
           </div>
@@ -151,7 +151,7 @@ function FindWorkerContent() {
                 type="text"
                 placeholder={
                   isHindi
-                    ? 'इलेक्ट्रीशियन, प्लंबर, पेंटर, रसोइया, सफाईकर्मी खोजें...'
+                    ? 'इलेक्ट्रीशियन, प्लंबर, पेंटर, रसोइया, सफाईकर्मी खोजें... / Search workers...'
                     : 'Search electrician, plumber, painter, cook, cleaner...'
                 }
                 value={searchQuery}
@@ -165,7 +165,7 @@ function FindWorkerContent() {
 
             {/* Radius Selector */}
             <div className="md:col-span-4 flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-600 shrink-0">Radius:</span>
+              <span className="text-xs font-bold text-slate-600 shrink-0 font-devanagari">दायरा / Radius:</span>
               <div className="grid grid-cols-3 gap-1.5 w-full">
                 {[5, 15, 30].map((r) => (
                   <button
@@ -187,9 +187,9 @@ function FindWorkerContent() {
 
           {/* Category Quick Selector Pills */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 font-devanagari">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {isHindi ? 'श्रेणी अनुसार खोजें (Categories)' : 'Filter by Trade Category'}
+                {isHindi ? 'श्रेणी अनुसार खोजें / Categories' : 'Filter by Trade Category'}
               </span>
               {selectedCategory && (
                 <button
@@ -197,7 +197,7 @@ function FindWorkerContent() {
                   onClick={() => setSelectedCategory('')}
                   className="text-xs font-bold text-red-600 hover:underline"
                 >
-                  {isHindi ? 'फ़िल्टर हटाएं' : 'Clear Filter'}
+                  {isHindi ? 'फ़िल्टर हटाएं / Clear' : 'Clear Filter'}
                 </button>
               )}
             </div>
@@ -206,13 +206,13 @@ function FindWorkerContent() {
               <button
                 type="button"
                 onClick={() => setSelectedCategory('')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border font-devanagari ${
                   !selectedCategory
                     ? 'bg-[#082B66] text-white border-[#082B66] shadow-xs'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                {isHindi ? 'सभी सेवाएं (All)' : 'All Categories'}
+                {isHindi ? 'सभी सेवाएं / All' : 'All Categories'}
               </button>
               {categories.map((c) => (
                 <button

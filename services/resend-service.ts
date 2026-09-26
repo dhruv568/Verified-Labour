@@ -48,7 +48,7 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
   const { otp, email, name, appUrl: customAppUrl, verifyUrl: customVerifyUrl } = options;
   const appUrl = customAppUrl && !customAppUrl.includes('localhost') ? customAppUrl : getAppBaseUrl();
   const verifyUrl = customVerifyUrl || `${appUrl}/auth/verify-email?email=${encodeURIComponent(email)}&otp=${otp}`;
-  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
 
   const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -384,7 +384,7 @@ export async function sendStaffInvitationEmail(params: SendStaffInvitationParams
   const { email, name, roleName, permissionsList, inviteToken, expiresAt } = params;
   const appUrl = getAppBaseUrl();
   const inviteUrl = `${appUrl}/staff/invite/${inviteToken}`;
-  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
   const expiryFormatted = new Date(expiresAt).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -607,7 +607,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams) {
   const { email, name, role = 'CUSTOMER' } = params;
   const normalizedEmail = email.toLowerCase().trim();
   const appUrl = getAppBaseUrl();
-  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
 
   const roleTitle = role === 'WORKER' ? 'Verified Skilled Professional' : role === 'BUSINESS' ? 'Business Partner' : 'Valued Customer';
 

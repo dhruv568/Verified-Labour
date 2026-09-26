@@ -37,8 +37,8 @@ export default function LanguageSelector({
   }, [isOpen]);
 
   const languages: { code: Locale; name: string; nativeName: string }[] = [
+    { code: 'hi', name: 'हिन्दी', nativeName: 'Hindi' },
     { code: 'en', name: 'English', nativeName: 'English' },
-    { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
   ];
 
   const currentLang = languages.find((l) => l.code === locale) || languages[0];

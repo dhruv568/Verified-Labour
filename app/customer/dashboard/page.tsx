@@ -362,8 +362,9 @@ export default function CustomerDashboardPage() {
               size="md"
               onClick={() => setActiveNav('find_workers')}
               icon={<Plus className="w-4 h-4" />}
+              className="font-devanagari"
             >
-              Book a Worker
+              30s में बुक करें / Book Worker
             </Button>
           </div>
 
@@ -373,13 +374,13 @@ export default function CustomerDashboardPage() {
               {/* Search & Popular Services */}
               <Card variant="default" padding="md" className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">What service do you need?</h3>
+                  <h3 className="text-sm font-bold text-slate-900 font-devanagari">आपको किस सेवा की आवश्यकता है? / Select Service</h3>
                   <div className="flex gap-2 mt-2">
                     <div className="relative flex-1">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                       <input
                         type="text"
-                        placeholder="Search plumber, electrician, carpenter, cleaner..."
+                        placeholder="इलेक्ट्रीशियन, प्लंबर, पेंटर, सफाईकर्मी खोजें... / Search service..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => {
@@ -388,27 +389,27 @@ export default function CustomerDashboardPage() {
                         className="w-full pl-9 pr-3.5 py-2.5 text-base sm:text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none min-h-[44px]"
                       />
                     </div>
-                    <Button variant="primary" size="md" onClick={fetchNearbyWorkers} className="min-h-[44px]">
-                      Search
+                    <Button variant="primary" size="md" onClick={fetchNearbyWorkers} className="min-h-[44px] font-devanagari">
+                      खोजें / Search
                     </Button>
                   </div>
                 </div>
 
                 {/* Popular Services Quick Pills */}
                 <div>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                    Popular Services
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 font-devanagari">
+                    लोकप्रिय सेवाएं / Popular Services
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setSelectedCategory('')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border font-devanagari ${
                         !selectedCategory
                           ? 'bg-brand-700 text-white border-brand-700 shadow-xs'
                           : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                       }`}
                     >
-                      All Services
+                      सभी सेवाएं / All Services
                     </button>
                     {categories.slice(0, 7).map((c) => (
                       <button

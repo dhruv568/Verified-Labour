@@ -42,7 +42,7 @@ export async function runResendEmailTests() {
     });
 
     // 1. Logo & Tagline
-    assert(html.includes('logo.jpeg'), 'HTML must include logo reference');
+    assert(html.includes('logo.png'), 'HTML must include logo reference');
     assert(html.includes("India's Trusted Skilled Labour Marketplace"), 'HTML must include tagline');
 
     // 2. Heading & Message
@@ -68,8 +68,8 @@ export async function runResendEmailTests() {
     // 6. Footer Links & Branding
     assert(html.includes('Privacy Policy'), 'Footer must contain Privacy Policy link');
     assert(html.includes('Terms &amp; Conditions') || html.includes('Terms & Conditions'), 'Footer must contain Terms & Conditions link');
-    assert(html.includes('verifiedlabour@gmail.com'), 'Footer must contain support contact info');
-    assert(html.includes('© 2025 Verified Labour'), 'Footer must contain copyright notice');
+    assert(html.includes('help@verifiedlabour.com'), 'Footer must contain support contact info');
+    assert(html.includes('© 2026 Verified Labour'), 'Footer must contain copyright notice');
     assert(html.includes('Powered by'), 'Footer must contain Powered by line');
     assert(html.includes('https://myprofunnels.com/'), 'Footer must link to MyProFunnels');
     assert(html.includes('MyProFunnels ❤️'), 'Footer must render MyProFunnels ❤️ text');

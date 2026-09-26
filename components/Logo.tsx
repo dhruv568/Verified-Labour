@@ -35,7 +35,7 @@ export default function Logo({
   if (variant === 'icon') {
     return (
       <Image
-        src="/logo.jpeg"
+        src="/logo.png"
         alt={alt}
         width={512}
         height={512}
@@ -47,7 +47,7 @@ export default function Logo({
 
   return (
     <Image
-      src="/logo.jpeg"
+      src="/logo.png"
       alt={alt}
       width={1516}
       height={577}

@@ -2,13 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import TrustIndicators from './TrustIndicators';
 import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
-import { ShieldCheck, Users, Clock, CheckCircle2, Sparkles } from 'lucide-react';
-import { useContent } from '@/context/ContentContext';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface HeroProps {
   onSearchWorker?: (query?: string) => void;
@@ -19,11 +15,8 @@ interface HeroProps {
 export default function Hero({
   onSearchWorker,
   onSelectCategory,
-  onViewAllCategories,
 }: HeroProps) {
-  const { content } = useContent();
-  const { isHindi } = useLanguage();
-  // Shared Promotional Top-Right Handwritten Tag
+  // Top-Right Slogan matching reference image
   const renderPromotionalTag = () => (
     <div className="text-right select-none pointer-events-auto">
       <p className="text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight leading-snug">
@@ -50,282 +43,119 @@ export default function Hero({
     </div>
   );
 
-  // Shared Floating Yellow Callout Banner with 3D Red Question Mark
-  const renderYellowBanner = () => (
-    <div className="w-full max-w-md lg:max-w-lg bg-[#FFE600] rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-400/90 shadow-xl shadow-amber-900/10 flex items-center justify-between gap-3 sm:gap-4 transform -rotate-1 hover:rotate-0 transition-transform duration-200 pointer-events-auto">
-      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-        {/* 3D Glossy Red Question Mark Icon matching reference */}
-        <div className="relative shrink-0 flex items-center justify-center">
-          <svg
-            className="w-8 h-10 sm:w-9 sm:h-11 drop-shadow-[0_3px_5px_rgba(180,0,0,0.35)]"
-            viewBox="0 0 40 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="hero-qmark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FF4D4D" />
-                <stop offset="45%" stopColor="#E60000" />
-                <stop offset="100%" stopColor="#990000" />
-              </linearGradient>
-            </defs>
-            {/* 3D extruded bevel / shadow */}
-            <path
-              d="M20 7C14.5 7 10 11 10 16.5C10 18.4 11.6 20 13.5 20C15.4 20 17 18.4 17 16.5C17 14.8 18.3 13.5 20 13.5C21.7 13.5 23 14.8 23 16.5C23 18.2 21.6 19.5 20.1 20.8C17.3 23.2 16 25.5 16 29C16 30.7 17.3 32 19 32C20.7 32 22 30.7 22 29C22 27 22.8 25.8 24.5 24.2C27 22 30 19.5 30 15.5C30 10.8 25.5 7 20 7ZM19 37C17.3 37 16 38.3 16 40C16 41.7 17.3 43 19 43C20.7 43 22 41.7 22 40C22 38.3 20.7 37 19 37Z"
-              fill="#800000"
-              transform="translate(1.2, 1.8)"
-            />
-            {/* Main 3D Question Mark Body */}
-            <path
-              d="M20 7C14.5 7 10 11 10 16.5C10 18.4 11.6 20 13.5 20C15.4 20 17 18.4 17 16.5C17 14.8 18.3 13.5 20 13.5C21.7 13.5 23 14.8 23 16.5C23 18.2 21.6 19.5 20.1 20.8C17.3 23.2 16 25.5 16 29C16 30.7 17.3 32 19 32C20.7 32 22 30.7 22 29C22 27 22.8 25.8 24.5 24.2C27 22 30 19.5 30 15.5C30 10.8 25.5 7 20 7ZM19 37C17.3 37 16 38.3 16 40C16 41.7 17.3 43 19 43C20.7 43 22 41.7 22 40C22 38.3 20.7 37 19 37Z"
-              fill="url(#hero-qmark-grad)"
-              stroke="#FFFFFF"
-              strokeWidth="1.2"
-            />
-            {/* Glossy specular highlight */}
-            <ellipse cx="16" cy="11.5" rx="3.5" ry="1.8" fill="white" fillOpacity="0.65" transform="rotate(-30 16 11.5)" />
-          </svg>
-        </div>
-
-        {/* Banner text */}
-        <div className="min-w-0">
-          <p className="text-[10px] sm:text-xs font-black text-[#082B66] uppercase tracking-wider">
-            Let us Know...
-          </p>
-          <p className="text-xs sm:text-sm lg:text-[15px] font-black text-[#082B66] leading-tight">
-            Who is <span className="text-[#DC2626] underline decoration-[#DC2626] decoration-2">NOT</span> on{' '}
-            <span className="text-[#082B66]">Verified Labour</span>?
-          </p>
-        </div>
-      </div>
-
-      {/* View All Button */}
-      <Link
-        href="/who-is-not-verified"
-        className="px-3.5 py-2 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-[#1264D6] font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-xs hover:shadow transition-all shrink-0 active:scale-95 min-h-[38px] flex items-center justify-center cursor-pointer"
-      >
-        View All
-      </Link>
-    </div>
-  );
-
   return (
-    <section className="relative bg-white pt-0 pb-6 sm:pt-8 sm:pb-16 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden md:min-h-[580px] lg:min-h-[660px] xl:min-h-[720px] flex items-center">
-      {/* ================= DESKTOP & TABLET BACKGROUND BLENDED WORKER GROUP ================= */}
-      <div
-        className="hidden md:block absolute inset-y-0 right-0 w-[62%] lg:w-[74%] xl:w-[70%] 2xl:w-[66%] h-full pointer-events-none select-none z-0 overflow-hidden"
-        style={{
-          maskImage:
-            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 10%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0.42) 42%, rgba(0,0,0,0.85) 68%, #000 85%, #000 100%)',
-          WebkitMaskImage:
-            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.02) 10%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0.42) 42%, rgba(0,0,0,0.85) 68%, #000 85%, #000 100%)',
-        }}
-      >
+    <section className="relative bg-white pt-4 pb-6 sm:py-12 lg:py-16 xl:py-20 border-b border-slate-200 overflow-hidden min-h-[500px] lg:min-h-[580px] xl:min-h-[640px] flex items-center">
+      {/* ================= DESKTOP & TABLET RIGHT-SIDE WORKFORCE IMAGE WITH SOFT GRADIENT FADE ================= */}
+      <div className="hidden md:block absolute inset-y-0 right-0 w-[58%] lg:w-[65%] xl:w-[62%] h-full pointer-events-none select-none z-0 overflow-hidden">
         <div className="relative w-full h-full">
           <Image
             src="/images/home/hero-workers-group.jpg"
-            alt="Verified Labour - Professional Indian skilled workers group composition"
+            alt="Verified Labour Skilled Professionals"
             fill
             priority
-            className="object-cover object-[68%_25%] lg:object-[64%_22%] xl:object-[62%_20%] scale-100 md:scale-95 lg:scale-105 xl:scale-110 transform-gpu"
-            sizes="(max-width: 1024px) 70vw, 75vw"
+            className="object-cover object-[68%_18%] lg:object-[64%_18%] xl:object-[62%_18%] scale-105 transform-gpu"
+            sizes="(max-width: 1024px) 60vw, 65vw"
           />
+          {/* Soft White Left Fade Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 via-35% to-transparent" />
+          {/* Soft Top/Bottom Edge Blending */}
+          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/90 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" />
         </div>
       </div>
 
-      {/* Soft White Left Fade Overlay (Desktop) */}
-      <div className="hidden lg:block absolute inset-y-0 left-0 w-[44%] xl:w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent pointer-events-none z-10" />
-
-      {/* Soft Bottom Fade Overlay (Desktop) */}
-      <div className="hidden md:block absolute inset-x-0 bottom-0 h-16 lg:h-24 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-10" />
-
-      {/* Soft Top Fade Overlay (Desktop) */}
-      <div className="hidden md:block absolute inset-x-0 top-0 h-10 lg:h-14 bg-gradient-to-b from-white/80 via-white/20 to-transparent pointer-events-none z-10" />
-
-      {/* ================= DESKTOP / PC HERO CONTENT WRAPPER (md and above) ================= */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full z-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-10 items-center">
-          {/* LEFT COLUMN: Headline & Search */}
-          <div className="lg:col-span-7 xl:col-span-6 space-y-5 sm:space-y-6 z-20">
-            {/* Headline */}
+      {/* ================= DESKTOP CONTENT WRAPPER (md and above) ================= */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* LEFT COLUMN: Main Content & Booking Interface */}
+          <div className="lg:col-span-7 xl:col-span-7 space-y-5 sm:space-y-6">
+            {/* 1. HEADLINE (Hindi FIRST, English SECOND) */}
             <div className="space-y-1.5">
-              <h1 className="text-3xl sm:text-5xl xl:text-[54px] font-black text-[#082B66] tracking-tight leading-[1.14]">
-                {content.hero_title || "India's #1 Labour Hub"}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[52px] font-black text-[#082B66] tracking-tight leading-[1.16] font-devanagari">
+                आपके पास,<br />
+                आपकी जरूरत के समय<br />
+                <span className="text-[#1264D6]">भरोसेमंद लोग</span>
               </h1>
 
-              {/* Subtitle */}
-              <p className="text-lg sm:text-2xl font-bold text-[#1264D6] tracking-tight">
-                {content.hero_subtitle || 'Verified. Nearby. Reliable.'}
+              <p className="text-base sm:text-xl lg:text-2xl font-bold text-[#1264D6] tracking-tight font-sans">
+                Trusted People, When You Need Them
               </p>
             </div>
 
-            {/* Supporting description */}
-            <p className="text-sm sm:text-sm text-slate-600 leading-relaxed max-w-lg font-normal">
-              {content.hero_description ||
-                'From electricians to cooks, from house caretakers to office boys — find verified workers near you, just like Ola or Uber.'}
-            </p>
+            {/* 2. SUBHEADLINE / SUPPORTING STATEMENT */}
+            <div className="space-y-0.5 max-w-xl">
+              <p className="text-base sm:text-lg font-bold text-slate-700 font-devanagari">
+                भरोसेमंद, सत्यापित और आपके पास उपलब्ध कुशल लोग
+              </p>
+              <p className="text-xs sm:text-sm font-semibold text-slate-500 font-sans">
+                Verified, reliable and nearby skilled professionals.
+              </p>
+            </div>
 
-            {/* 3 Circular Trust Badges */}
+            {/* 3. TRUST HIGHLIGHTS */}
             <TrustIndicators />
 
-            {/* Location & Search Bar */}
+            {/* 4. LOCATION + FIND WORKER CTA */}
             <LocationSearch onSearch={onSearchWorker} />
 
-            {/* Popular Searches Pills */}
+            {/* 5. POPULAR SERVICES */}
             <PopularSearches onSelectCategory={onSelectCategory} />
           </div>
 
-          {/* RIGHT COLUMN: Desktop & Tablet Controls */}
-          <div className="hidden md:flex lg:col-span-5 xl:col-span-6 flex-col justify-between items-end min-h-[380px] lg:min-h-[520px] xl:min-h-[580px] relative z-20 pointer-events-none">
-            {/* Top Right Promotional Tag */}
+          {/* RIGHT COLUMN: Top Right Slogan */}
+          <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col justify-between items-end min-h-[400px] pointer-events-none">
             {renderPromotionalTag()}
-
-            {/* Bottom Floating Yellow Banner */}
-            {renderYellowBanner()}
           </div>
         </div>
       </div>
 
-      {/* ================= MOBILE HERO VIEW ONLY (< md / 320px – 430px) ================= */}
-      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-gradient-to-b from-blue-50/80 via-white to-slate-50/90 pb-4 pt-3.5 border-b border-slate-200/80 shadow-2xs">
-        {/* Soft Ambient Background Glows */}
-        <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute top-10 right-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="max-w-md mx-auto px-3.5 relative z-20 space-y-3">
-          {/* Top Tagline & Badge Header Bar */}
-          <div className="flex items-center justify-between gap-1.5 animate-fade-in-up">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-[#079447] rounded-full text-[11px] xs:text-xs font-black border border-emerald-200/90 font-devanagari shadow-2xs backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#079447] shrink-0 animate-pulse" />
-              <span className="truncate">काम के लिए भरोसेमंद लोग</span>
-            </div>
-
-            <div className="inline-flex items-center gap-1 bg-[#079447] text-white px-2.5 py-1 rounded-full text-[10px] xs:text-[11px] font-black shadow-2xs border border-emerald-600 font-devanagari shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5 fill-white text-[#079447]" />
-              <span>वेरिफाइड लेबर</span>
-            </div>
+      {/* ================= MOBILE HERO VIEW (< md) ================= */}
+      <div className="block md:hidden w-full relative z-20 overflow-hidden bg-white pb-2 pt-1">
+        <div className="max-w-md mx-auto px-4 relative z-20 space-y-4">
+          
+          {/* 1. HEADLINE (Hindi FIRST, English SECOND) */}
+          <div className="space-y-1 text-left">
+            <h1 className="text-2xl xs:text-3xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
+              आपके पास,<br />
+              आपकी जरूरत के समय<br />
+              <span className="text-[#1264D6]">भरोसेमंद लोग</span>
+            </h1>
+            <p className="text-sm font-bold text-[#1264D6] tracking-tight font-sans">
+              Trusted People, When You Need Them
+            </p>
           </div>
 
-          {/* MAIN HERO GRID: 2 Dedicated Non-Overlapping Columns (Left Text, Right Worker Image) */}
-          <div className="grid grid-cols-12 gap-2 xs:gap-3 items-center pt-0.5">
-            {/* LEFT COLUMN (7 of 12 cols = ~58% width): Dedicated Text Area */}
-            <div className="col-span-7 space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              <h1 className="text-[17px] xs:text-xl sm:text-2xl font-black text-[#082B66] leading-[1.22] font-devanagari tracking-tight">
-                {isHindi ? (
-                  <>
-                    आपके घर और व्यवसाय के लिए{' '}
-                    <span className="text-[#1264D6] inline-block">भरोसेमंद लोग</span>{' '}
-                    <span className="text-[#079447] inline-block">और कुशल कामगार</span>
-                  </>
-                ) : (
-                  <>
-                    Trusted Professionals for{' '}
-                    <span className="text-[#1264D6] inline-block">Home & Business</span>{' '}
-                    <span className="text-[#079447] inline-block">Needs</span>
-                  </>
-                )}
-              </h1>
-
-              <p className="text-[10px] xs:text-[11px] sm:text-xs font-extrabold text-slate-600 font-devanagari tracking-normal leading-tight">
-                {isHindi ? 'जाँच-परखे • अनुभवी • समय पर उपलब्ध' : 'Verified • Experienced • On-Demand'}
-              </p>
-
-              {/* Micro Aadhaar Verification Tag */}
-              <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 shadow-2xs">
-                <CheckCircle2 className="w-3 h-3 fill-[#079447] text-white shrink-0" />
-                <span className="text-[9px] xs:text-[10px] font-black text-[#082B66] font-devanagari">
-                  100% Aadhaar Verified & Trained
-                </span>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN (5 of 12 cols = ~42% width): Dedicated Worker Image & Verification Seal */}
-            <div className="col-span-5 relative flex flex-col items-center justify-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-              {/* Worker Image Container with Gentle Floating Motion & Crisp Framing */}
-              <div className="relative w-full aspect-[4/5] max-h-[195px] xs:max-h-[220px] rounded-2xl overflow-hidden border border-blue-100 bg-gradient-to-b from-blue-100/50 to-slate-100/80 shadow-xs animate-gentle-float">
-                <Image
-                  src="/images/home/worker-cta-man.jpg"
-                  alt="Verified Labour Professional Skilled Indian Worker"
-                  fill
-                  priority
-                  className="object-cover object-[50%_8%] scale-105"
-                  sizes="(max-width: 640px) 45vw, 30vw"
-                />
-
-                {/* Gradient Vignette at bottom of image for badge contrast */}
-                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy-950/40 to-transparent pointer-events-none" />
-              </div>
-
-              {/* Gold Verification Seal Badge overlayed at bottom edge of worker image (chest level, face fully unobstructed) */}
-              <div className="absolute -bottom-2.5 -left-2.5 xs:-left-3 z-10 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-                <div className="relative flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-[#082B66] px-2 py-1 rounded-xl shadow-md border border-amber-200/90 text-[9px] xs:text-[10px] font-black font-devanagari tracking-tight">
-                  <div className="w-4 h-4 rounded-full bg-[#082B66] text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
-                    <CheckCircle2 className="w-3 h-3 fill-amber-300 text-[#082B66]" />
-                  </div>
-                  <span className="leading-tight whitespace-nowrap">जांच-परखे कामगार</span>
-                </div>
-              </div>
-            </div>
+          {/* 2. SUBHEADLINE (Hindi FIRST, English SECOND) */}
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-slate-700 font-devanagari">
+              भरोसेमंद, सत्यापित और आपके पास उपलब्ध कुशल लोग
+            </p>
+            <p className="text-[11px] font-semibold text-slate-500 font-sans">
+              Verified, reliable and nearby skilled professionals.
+            </p>
           </div>
 
-          {/* 3 HTML/CSS Rounded Trust Feature Cards with Interactive Touch Feedback */}
-          <div className="grid grid-cols-3 gap-1.5 xs:gap-2 pt-1 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
-            {/* Card 1: Safe & Reliable */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-emerald-300 active:scale-95 transition-all duration-150 cursor-pointer group">
-              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-emerald-50 text-[#079447] flex items-center justify-center mb-1 shadow-2xs border border-emerald-100 group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
-              </div>
-              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                {isHindi ? 'सुरक्षित और भरोसेमंद' : 'Safe & Reliable'}
-              </span>
-              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
-                Safe & Reliable
-              </span>
-            </div>
+          {/* 3. TRUST HIGHLIGHTS */}
+          <TrustIndicators />
 
-            {/* Card 2: Skilled Workers */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-blue-300 active:scale-95 transition-all duration-150 cursor-pointer group">
-              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-blue-50 text-[#1264D6] flex items-center justify-center mb-1 shadow-2xs border border-blue-100 group-hover:scale-110 transition-transform">
-                <Users className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
-              </div>
-              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                {isHindi ? 'अनुभवी कामगार' : 'Skilled Workers'}
-              </span>
-              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
-                Skilled Workers
-              </span>
-            </div>
-
-            {/* Card 3: Available When Needed */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center text-center hover:shadow-xs hover:border-amber-300 active:scale-95 transition-all duration-150 cursor-pointer group">
-              <div className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1 shadow-2xs border border-amber-100 group-hover:scale-110 transition-transform">
-                <Clock className="w-4 h-4 xs:w-5 xs:h-5 stroke-[2.5]" />
-              </div>
-              <span className="text-[10px] xs:text-[11px] font-black text-[#082B66] font-devanagari leading-tight">
-                {isHindi ? 'जब ज़रूरत तब उपलब्ध' : 'On-Demand'}
-              </span>
-              <span className="text-[8px] xs:text-[9px] text-slate-500 font-semibold mt-0.5">
-                On-Demand
-              </span>
-            </div>
+          {/* 4. WORKFORCE IMAGE */}
+          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
+            <Image
+              src="/images/home/hero-workers-group.jpg"
+              alt="Verified Labour Skilled Indian Workers"
+              fill
+              priority
+              className="object-cover object-[55%_20%]"
+              sizes="(max-width: 640px) 100vw, 50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           </div>
 
-          {/* Location & Worker Search Bar */}
+          {/* 5 & 6. LOCATION SELECTOR + FIND WORKER CTA */}
           <LocationSearch onSearch={onSearchWorker} />
 
-          {/* Category Pills / Popular Searches */}
+          {/* 7. POPULAR SERVICES */}
           <PopularSearches onSelectCategory={onSelectCategory} />
-
-          {/* Mobile Yellow Callout Banner */}
-          <div className="pt-0.5 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-            {renderYellowBanner()}
-          </div>
-
-          {/* Mobile Promotional Tag */}
-          <div className="flex justify-end pt-0.5 pr-1 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
-            {renderPromotionalTag()}
-          </div>
         </div>
       </div>
     </section>

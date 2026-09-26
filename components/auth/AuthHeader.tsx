@@ -50,7 +50,7 @@ export default function AuthHeader({
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Login
+            <span>लॉगिन / Login</span>
           </button>
           <button
             type="button"
@@ -61,7 +61,7 @@ export default function AuthHeader({
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Register
+            <span>पंजीकरण / Register</span>
           </button>
         </div>
       )}
