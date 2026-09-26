@@ -7,8 +7,6 @@ import {
   Instagram,
   Mail,
   Phone,
-  MapPin,
-  ExternalLink,
   Home,
   Search,
   Briefcase,
@@ -23,9 +21,12 @@ import {
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useContent } from '@/context/ContentContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Footer() {
   const { content } = useContent();
+  const { isHindi, t } = useLanguage();
+
   return (
     <footer className="bg-white text-slate-600 pt-12 sm:pt-16 pb-8 border-t border-slate-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,44 +39,46 @@ export default function Footer() {
 
             <p className="text-xs text-slate-500 leading-relaxed font-normal">
               {content.footer_text ||
-                "India's trusted on-demand local skilled labour marketplace. Connecting customers and businesses with Aadhaar KYC verified & bank-validated craftsmen."}
+                (isHindi
+                  ? 'भारत का भरोसेमंद ऑन-डिमांड कुशल कामगार मार्केटप्लेस। ग्राहकों और व्यवसायों को सत्यापित कारीगरों से जोड़ता है।'
+                  : "India's trusted on-demand local skilled labour marketplace. Connecting customers and businesses with verified craftsmen.")}
             </p>
           </div>
 
           {/* Column 2: Quick Links */}
           <div>
             <h4 className="text-xs font-bold text-[#0F2A5F] uppercase tracking-wider mb-3 font-devanagari">
-              त्वरित लिंक / Quick Links
+              {isHindi ? 'त्वरित लिंक' : 'Quick Links'}
             </h4>
             <ul className="space-y-2 text-sm sm:text-xs font-semibold text-slate-600 font-devanagari">
               <li>
                 <Link href="/" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Home className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>होम / Home</span>
+                  <span>{t.home}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/workers" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>कामगार खोजें / Find a Worker</span>
+                  <span>{t.findWorker}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/worker/onboarding" className="inline-flex items-center gap-2 py-1 hover:text-[#0B9B5A] transition-colors group">
                   <Briefcase className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0B9B5A] transition-colors shrink-0" />
-                  <span>कामगार बनें / Become a Worker</span>
+                  <span>{t.becomeWorker}</span>
                 </Link>
               </li>
               <li>
                 <a href="/#how" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>यह कैसे काम करता है? / How It Works</span>
+                  <span>{t.howItWorks}</span>
                 </a>
               </li>
               <li>
                 <Link href="/business/bulk" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Building2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>थोक कामगार पोर्टल / Bulk Labour Portal</span>
+                  <span>{isHindi ? 'थोक कामगार पोर्टल' : 'Bulk Labour Portal'}</span>
                 </Link>
               </li>
             </ul>
@@ -84,43 +87,43 @@ export default function Footer() {
           {/* Column 3: Support & Legal */}
           <div>
             <h4 className="text-xs font-bold text-[#0F2A5F] uppercase tracking-wider mb-3 font-devanagari">
-              सहायता एवं कानूनी / Support & Legal
+              {isHindi ? 'सहायता एवं कानूनी' : 'Support & Legal'}
             </h4>
             <ul className="space-y-2 text-sm sm:text-xs font-semibold text-slate-600 font-devanagari">
               <li>
                 <Link href="/legal/terms" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>नियम व शर्तें / Terms & Conditions</span>
+                  <span>{isHindi ? 'नियम व शर्तें' : 'Terms & Conditions'}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/legal/privacy" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <ShieldCheck className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>गोपनीयता नीति / Privacy Policy</span>
+                  <span>{isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/legal/cancellation-refund" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <RotateCcw className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>रिफंड नीति / Refund Policy</span>
+                  <span>{isHindi ? 'रिफंड नीति' : 'Refund Policy'}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/legal/verification" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <BadgeCheck className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>आधार सत्यापन नीति / Verification Policy</span>
+                  <span>{isHindi ? 'आधार सत्यापन नीति' : 'Verification Policy'}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/legal/safety" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <LifeBuoy className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>शिकायत निवारण / Grievance Redressal</span>
+                  <span>{isHindi ? 'शिकायत निवारण' : 'Grievance Redressal'}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Headphones className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>संपर्क करें / Contact Us</span>
+                  <span>{t.contact}</span>
                 </Link>
               </li>
             </ul>
@@ -129,7 +132,7 @@ export default function Footer() {
           {/* Column 4: Follow Us */}
           <div>
             <h4 className="text-xs font-bold text-[#0F2A5F] uppercase tracking-wider mb-3.5 font-devanagari">
-              हमें फॉलो करें / Follow Us
+              {isHindi ? 'हमें फॉलो करें' : 'Follow Us'}
             </h4>
             <div className="flex items-center gap-3">
               <a
@@ -164,7 +167,7 @@ export default function Footer() {
             </div>
 
             <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1.5">
-              <p className="font-semibold text-slate-700">Support Desk:</p>
+              <p className="font-semibold text-slate-700">{isHindi ? 'सहायता केंद्र:' : 'Support Desk:'}</p>
               <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>{content.contact_email || 'help@verifiedlabour.com'}</span>
@@ -179,7 +182,7 @@ export default function Footer() {
           {/* Column 5: Download Our App */}
           <div>
             <h4 className="text-xs font-bold text-[#0F2A5F] uppercase tracking-wider mb-3.5 font-devanagari">
-              ऐप डाउनलोड करें / Download App
+              {isHindi ? 'ऐप डाउनलोड करें' : 'Download App'}
             </h4>
             <div className="flex flex-row sm:flex-col gap-2.5 flex-wrap">
               {/* Google Play Button */}
