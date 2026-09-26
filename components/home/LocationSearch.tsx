@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Loader2, Search, ArrowRight } from 'lucide-react';
 import { useLocation } from '@/context/LocationContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LocationSearchProps {
   onSearch?: (locationQuery: string) => void;
@@ -10,6 +11,7 @@ interface LocationSearchProps {
 
 export default function LocationSearch({ onSearch }: LocationSearchProps) {
   const { location, detectCurrentLocation, setManualLocation, isLoading } = useLocation();
+  const { isHindi } = useLanguage();
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -47,15 +49,19 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
           <MapPin className="w-5 h-5 text-[#1264D6] ml-1 mr-2.5 shrink-0" />
           <input
             type="text"
-            placeholder="📍 स्थान चुनें / Select location (e.g. Surat, Adajan)"
+            placeholder={
+              isHindi
+                ? '📍 स्थान चुनें (जैसे: सूरत, अदाजन, वेसू)'
+                : '📍 Select location (e.g. Surat, Adajan, Vesu)'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full py-2.5 pr-2 text-sm sm:text-base text-[#09265C] font-extrabold bg-transparent border-none outline-none placeholder:text-slate-400 placeholder:font-normal font-devanagari"
+            className="w-full py-2.5 pr-2 text-sm sm:text-base text-[#09265C] font-extrabold bg-transparent border-none outline-none placeholder:text-slate-400 placeholder:font-normal"
           />
           <button
             type="button"
             onClick={handleDetectGPS}
-            title="स्थान पहचानें / Detect location via GPS"
+            title={isHindi ? 'स्थान पहचानें' : 'Detect location via GPS'}
             className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-[#1264D6] transition-colors shrink-0 rounded-xl hover:bg-blue-50 active:scale-95 cursor-pointer ml-1"
           >
             {isLoading ? (
@@ -72,7 +78,7 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
           className="w-full sm:w-auto px-6 sm:px-7 py-3 sm:py-3.5 min-h-[48px] sm:min-h-[52px] bg-[#1264D6] hover:bg-blue-700 active:scale-98 text-white font-black text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer font-devanagari"
         >
           <Search className="w-4.5 h-4.5 stroke-[2.5]" />
-          <span>कामगार खोजें / Find a Worker</span>
+          <span>{isHindi ? 'कामगार खोजें' : 'Find Worker'}</span>
           <ArrowRight className="w-4.5 h-4.5 stroke-[2.5] ml-0.5" />
         </button>
       </div>

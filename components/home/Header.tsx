@@ -13,6 +13,7 @@ import {
 import LocationSelector from '@/components/LocationSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import Logo from '@/components/Logo';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface HeaderProps {
   onOpenAuth?: (
@@ -23,6 +24,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenAuth }: HeaderProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -74,44 +76,44 @@ export default function Header({ onOpenAuth }: HeaderProps) {
             <Logo variant="header" priority />
           </Link>
 
-          {/* Center Navigation Links (Hindi FIRST, English SECOND) */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs xl:text-sm font-bold text-slate-700 shrink-0">
+          {/* Center Navigation Links (Renders ONLY current active language from context) */}
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-bold text-slate-700 shrink-0">
             <Link
               href="/"
-              className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
+              className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
-              होम <span className="text-[11px] font-medium text-slate-500 font-sans">/ Home</span>
+              {t.home}
             </Link>
             <Link
               href="/workers"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
-              कामगार खोजें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Find Worker</span>
+              {t.findWorker}
             </Link>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
-              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap font-devanagari"
+              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap"
             >
-              कामगार बनें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Become Worker</span>
+              {t.becomeWorker}
             </button>
             <a
               href="/#how"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
-              यह कैसे काम करता है <span className="text-[11px] font-medium text-slate-500 font-sans">/ How It Works</span>
+              {t.howItWorks}
             </a>
             <a
               href="/#about"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
-              हमारे बारे में <span className="text-[11px] font-medium text-slate-500 font-sans">/ About</span>
+              {t.about}
             </a>
             <a
               href="/#contact"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
-              संपर्क करें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Contact</span>
+              {t.contact}
             </a>
           </nav>
 
@@ -173,7 +175,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                   onClick={() => onOpenAuth?.('login')}
                   className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  Login
+                  {t.login}
                 </button>
 
                 {/* Blue Sign Up Button */}
@@ -182,7 +184,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
                   className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  Sign Up
+                  {t.signUp}
                 </button>
               </div>
             )}
@@ -204,9 +206,6 @@ export default function Header({ onOpenAuth }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
             <div className="px-1">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                आपका स्थान / Your Location:
-              </span>
               <LocationSelector isMobile={true} />
             </div>
 
@@ -218,16 +217,16 @@ export default function Header({ onOpenAuth }: HeaderProps) {
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#082B66] hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#082B66] hover:bg-slate-50 rounded-xl transition-colors"
               >
-                होम <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Home</span>
+                {t.home}
               </Link>
               <Link
                 href="/workers"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                कामगार खोजें <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Find Worker</span>
+                {t.findWorker}
               </Link>
               <button
                 type="button"
@@ -235,33 +234,33 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                   setMobileMenuOpen(false);
                   onOpenAuth?.('register', 'WORKER');
                 }}
-                className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#079447] hover:bg-emerald-50 rounded-xl transition-colors font-devanagari"
+                className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#079447] hover:bg-emerald-50 rounded-xl transition-colors"
               >
-                <span>कामगार बनें <span className="text-xs font-normal text-emerald-700 font-sans">/ Become Worker</span></span>
+                <span>{t.becomeWorker}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  रोज़ कमाएं / Earn Daily
+                  {t.earnDaily}
                 </span>
               </button>
               <a
                 href="/#how"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                यह कैसे काम करता है <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ How It Works</span>
+                {t.howItWorks}
               </a>
               <a
                 href="/#about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                हमारे बारे में <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ About</span>
+                {t.about}
               </a>
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
-                संपर्क करें <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Contact</span>
+                {t.contact}
               </a>
             </nav>
 
@@ -273,7 +272,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center min-h-[48px] w-full px-4 py-3 bg-[#082B66] text-white font-bold rounded-xl text-sm shadow-xs"
                   >
-                    Go to Dashboard ({sessionUser.role})
+                    Dashboard ({sessionUser.role})
                   </Link>
                   <button
                     onClick={() => {
@@ -294,7 +293,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full text-sm shadow-xs active:scale-98 transition-all"
                   >
-                    Login
+                    {t.login}
                   </button>
                   <button
                     onClick={() => {
@@ -303,7 +302,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full text-sm shadow-xs active:scale-98 transition-all"
                   >
-                    Sign Up
+                    {t.signUp}
                   </button>
                 </div>
               )}

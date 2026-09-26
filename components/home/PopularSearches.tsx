@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Zap, Droplets, Utensils, Hammer, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface PopularSearchesProps {
   onSelectCategory?: (categorySlug: string) => void;
@@ -46,6 +47,8 @@ const POPULAR_SERVICES = [
 ];
 
 export default function PopularSearches({ onSelectCategory }: PopularSearchesProps) {
+  const { isHindi } = useLanguage();
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
@@ -65,10 +68,10 @@ export default function PopularSearches({ onSelectCategory }: PopularSearchesPro
               </div>
               <div className="min-w-0 flex-1">
                 <span className="block font-black text-slate-900 text-xs sm:text-sm font-devanagari truncate group-hover:text-[#1264D6] transition-colors">
-                  {item.hindi}
+                  {isHindi ? item.hindi : item.name}
                 </span>
                 <span className="block text-[10px] sm:text-[11px] font-medium text-slate-500 font-sans truncate">
-                  {item.name}
+                  {isHindi ? item.name : item.hindi}
                 </span>
               </div>
             </button>

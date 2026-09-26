@@ -3,6 +3,7 @@
 import React from 'react';
 import ServiceCard from './ServiceCard';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ServiceCategoriesProps {
   selectedCategorySlug?: string;
@@ -157,10 +158,12 @@ export default function ServiceCategories({
   onSelectCategory,
   onViewAll,
 }: ServiceCategoriesProps) {
+  const { isHindi } = useLanguage();
+
   return (
     <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Row: Centered Title & Hindi Subtitle */}
+        {/* Header Row: Centered Title */}
         <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
           {/* Trust Micro-badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
@@ -168,11 +171,10 @@ export default function ServiceCategories({
             <span>सत्यापित कामगार • 100% Aadhaar Verified</span>
           </div>
 
-          {/* Main Bilingual Heading */}
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline justify-center gap-2 sm:gap-3 text-center">
-            <span className="font-devanagari">अपनी ज़रूरत का काम चुनें</span>
-            <span className="text-lg sm:text-2xl text-slate-500 font-bold">
-              Choose a Service
+          {/* Main Heading */}
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight text-center">
+            <span className="font-devanagari font-black">
+              {isHindi ? 'कामगार चुनें' : 'Choose a Worker'}
             </span>
           </h2>
         </div>

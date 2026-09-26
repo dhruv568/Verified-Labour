@@ -7,34 +7,24 @@ import {
   Menu,
   X,
   Shield,
-  Briefcase,
   LogOut,
   ChevronDown,
 } from 'lucide-react';
-import { Locale, getTranslation } from '@/lib/translations';
 import LocationSelector from './LocationSelector';
 import LanguageSelector from './LanguageSelector';
 import Logo from '@/components/Logo';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface NavbarProps {
-  currentLocale?: Locale;
-  onLocaleChange?: (locale: Locale) => void;
   onOpenAuth?: (
     initialMode?: 'login' | 'register',
     role?: 'CUSTOMER' | 'WORKER' | 'BUSINESS'
   ) => void;
 }
 
-export default function Navbar({
-  currentLocale,
-  onLocaleChange,
-  onOpenAuth,
-}: NavbarProps) {
+export default function Navbar({ onOpenAuth }: NavbarProps) {
   const router = useRouter();
-  const { locale: contextLocale, t: contextT } = useLanguage();
-  const activeLocale = currentLocale || contextLocale || 'en';
-  const t = getTranslation(activeLocale) || contextT;
+  const { t } = useLanguage();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -86,7 +76,7 @@ export default function Navbar({
             <Logo variant="header" priority />
           </Link>
 
-          {/* Desktop Nav Links */}
+          {/* Desktop Nav Links (Renders ONLY active language) */}
           <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-semibold text-slate-700 shrink-0">
             <Link
               href="/"
@@ -129,10 +119,7 @@ export default function Navbar({
 
           {/* Right Action Area: Location + Language + Auth */}
           <div className="hidden md:flex items-center gap-2.5 xl:gap-3 shrink-0">
-            {/* Dynamic Location Selector with MapPin */}
             <LocationSelector />
-
-            {/* Language Selector */}
             <LanguageSelector />
 
             {sessionUser ? (
@@ -208,18 +195,18 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 font-devanagari"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  लॉगिन / Login
+                  {t.login}
                 </button>
 
                 {/* Sign Up Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 font-devanagari"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  साइन अप / Sign Up
+                  {t.signUp}
                 </button>
               </div>
             )}
@@ -244,20 +231,15 @@ export default function Navbar({
         {/* Mobile Dropdown Menu Drawer */}
         {mobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
-            {/* Location in Mobile Menu */}
-            <div className="px-1 font-devanagari">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                आपका सेवा स्थान / Service Location:
-              </span>
+            <div className="px-1">
               <LocationSelector isMobile={true} />
             </div>
 
-            {/* Language Selector in Mobile Menu */}
             <div className="px-1">
               <LanguageSelector isMobile={true} />
             </div>
 
-            <nav className="space-y-1 font-devanagari">
+            <nav className="space-y-1">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
@@ -308,7 +290,7 @@ export default function Navbar({
               </a>
             </nav>
 
-            <div className="pt-3 border-t border-slate-100 px-1 font-devanagari">
+            <div className="pt-3 border-t border-slate-100 px-1">
               {sessionUser ? (
                 <div className="space-y-2">
                   <Link
@@ -316,7 +298,7 @@ export default function Navbar({
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center min-h-[48px] w-full px-4 py-3 bg-[#0F2A5F] text-white font-bold rounded-xl shadow-xs text-sm"
                   >
-                    डैशबोर्ड पर जाएं / Go to Dashboard ({sessionUser.role})
+                    Dashboard ({sessionUser.role})
                   </Link>
 
                   {sessionUser.role === 'WORKER' && (
@@ -325,7 +307,7 @@ export default function Navbar({
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center min-h-[44px] w-full px-4 py-2.5 bg-emerald-50 text-[#0B9B5A] font-bold rounded-xl text-sm border border-emerald-200"
                     >
-                      <span>₹ मेरी कमाई एवं वॉलेट / My Earnings</span>
+                      <span>₹ My Earnings & Wallet</span>
                     </Link>
                   )}
 
@@ -336,7 +318,7 @@ export default function Navbar({
                     }}
                     className="flex items-center justify-center min-h-[44px] w-full px-4 py-2 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-xl"
                   >
-                    लॉग आउट / Log Out
+                    Log Out
                   </button>
                 </div>
               ) : (
@@ -348,7 +330,7 @@ export default function Navbar({
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
-                    लॉगिन / Login
+                    {t.login}
                   </button>
                   <button
                     onClick={() => {
@@ -357,7 +339,7 @@ export default function Navbar({
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
-                    साइन अप / Sign Up
+                    {t.signUp}
                   </button>
                 </div>
               )}

@@ -6,15 +6,15 @@ import { Locale, getTranslation, translations } from '@/lib/translations';
 interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: typeof translations.en;
+  t: typeof translations.hi;
   isHindi: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
-  locale: 'en',
+  locale: 'hi',
   setLocale: () => {},
-  t: translations.en,
-  isHindi: false,
+  t: translations.hi,
+  isHindi: true,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
