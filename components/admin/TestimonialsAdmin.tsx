@@ -423,9 +423,8 @@ export default function TestimonialsAdmin() {
     );
   }
 
-  // Display cards: render up to max(testimonialCount, available slots in DB)
-  const maxSlotInDb = testimonials.reduce((max, t) => Math.max(max, t.slot), 0);
-  const totalCardsToRender = Math.max(testimonialCount, maxSlotInDb, 1);
+  // Display cards: testimonialCount is single source of truth for rendered slots
+  const totalCardsToRender = Math.max(0, testimonialCount);
   const cardSlotsList = Array.from({ length: totalCardsToRender }, (_, i) => i + 1);
 
   return (
@@ -499,7 +498,13 @@ export default function TestimonialsAdmin() {
 
       {/* Grid of Testimonial Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {cardSlotsList.map((slotNum) => {
+        {cardSlotsList.length === 0 ? (
+          <div className="col-span-full p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-2">
+            <p className="text-sm font-bold text-slate-700">No testimonial cards selected to display.</p>
+            <p className="text-xs text-slate-500">Select 1 or more cards in the header dropdown above to enable testimonial slots on your website.</p>
+          </div>
+        ) : (
+          cardSlotsList.map((slotNum) => {
           const card = testimonials.find((t) => t.slot === slotNum) || {
             slot: slotNum,
             customerName: `Customer ${slotNum}`,
@@ -918,7 +923,8 @@ export default function TestimonialsAdmin() {
               </div>
             </Card>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );
