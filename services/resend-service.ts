@@ -160,7 +160,7 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
 
               <!-- SECURITY NOTICE -->
               <p style="font-size: 13px; line-height: 1.5; color: #64748B; text-align: center; margin: 0; padding-top: 16px; border-top: 1px solid #F1F5F9;">
-                If you did not request this verification code, you can safely ignore this email. Someone may have entered your email address by mistake.
+                If you did not request this verification code, you can safely ignore this email.
               </p>
 
             </td>
@@ -186,7 +186,7 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
               </div>
 
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">
-                Support Email: help@verifiedlabour.com | Helpline: +91 9109019090 / +91 93698 99597
+                Support Email: help@verifiedlabour.com | Helpline: +91 9109019090
               </div>
 
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">
@@ -234,7 +234,7 @@ Verified Labour
 India's Trusted Skilled Labour Marketplace
 Privacy Policy: ${appUrl}/legal/privacy
 Terms & Conditions: ${appUrl}/legal/terms
-Contact Support: help@verifiedlabour.com | +91 9109019090 / +91 93698 99597
+Contact Support: help@verifiedlabour.com | +91 9109019090
 © 2026 Verified Labour. All rights reserved.
 Powered by MyProFunnels ❤️ (https://myprofunnels.com/)`;
 
@@ -685,7 +685,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams) {
               </table>
 
               <p style="font-size: 13px; line-height: 1.5; color: #64748B; text-align: center; margin: 0; padding-top: 16px; border-top: 1px solid #F1F5F9;">
-                Need help? Reach out to our support team anytime at <a href="mailto:help@verifiedlabour.com" style="color: #08783b; font-weight: 600; text-decoration: none;">help@verifiedlabour.com</a> or call +91 9109019090 / +91 93698 99597.
+                Need help? Reach out to our support team anytime at <a href="mailto:help@verifiedlabour.com" style="color: #08783b; font-weight: 600; text-decoration: none;">help@verifiedlabour.com</a> or call +91 9109019090.
               </p>
             </td>
           </tr>
@@ -695,7 +695,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams) {
             <td style="padding: 28px 16px; text-align: center; color: #64748B; font-size: 12px; line-height: 1.6;">
               <div style="font-size: 14px; font-weight: 700; color: #0F2A5F; margin-bottom: 4px;">Verified Labour</div>
               <div style="font-size: 12px; color: #64748B; margin-bottom: 16px;">Skilled People. Stronger Communities. A Better India.</div>
-              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">Support Email: help@verifiedlabour.com | Helpline: +91 9109019090 / +91 93698 99597</div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">Support Email: help@verifiedlabour.com | Helpline: +91 9109019090</div>
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">© 2026 Verified Labour. All rights reserved.</div>
               <div style="font-size: 12px; font-weight: 600; color: #475569;">
                 Powered by <a href="https://myprofunnels.com/" target="_blank" rel="noopener noreferrer" style="color: #08783b; text-decoration: underline; font-weight: 700;">MyProFunnels ❤️</a>
@@ -717,7 +717,7 @@ Find verified, skilled professionals nearby and book services in 30 seconds.
 
 Visit: ${appUrl}
 
-Support: help@verifiedlabour.com | +91 9109019090 / +91 93698 99597
+Support: help@verifiedlabour.com | +91 9109019090
 © 2026 Verified Labour. All rights reserved.
 Powered by MyProFunnels ❤️ (https://myprofunnels.com/)`;
 
