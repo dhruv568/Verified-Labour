@@ -6,6 +6,7 @@ import Link from 'next/link';
 import LocationSearch from './LocationSearch';
 import TrustIndicators from './TrustIndicators';
 import PopularSearches from './PopularSearches';
+import MobileHero from './MobileHero';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Zap,
@@ -150,60 +151,13 @@ export default function MobileHomeView({
   const [showAllCategories, setShowAllCategories] = useState(false);
 
   return (
-    <div className="w-full bg-[#F4F6F9] pb-8 font-sans space-y-4">
-      {/* ================= 1. RESTORED PREVIOUS MOBILE HERO SECTION ================= */}
-      <section className="relative bg-white pt-4 pb-5 border-b border-slate-200/80 overflow-hidden shadow-2xs">
-        <div className="px-4 relative z-20 space-y-4">
-          {/* 1. HEADLINE (Single Language i18n based on active locale) */}
-          <div className="space-y-1 text-left">
-            <h1 className="text-2xl xs:text-3xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
-              {isHindi ? (
-                <>
-                  आपके पास,<br />
-                  आपकी जरूरत के समय<br />
-                  <span className="text-[#1264D6]">भरोसेमंद लोग</span>
-                </>
-              ) : (
-                <>
-                  Trusted People,<br />
-                  When You Need Them<br />
-                  <span className="text-[#1264D6]">Verified Professionals</span>
-                </>
-              )}
-            </h1>
-          </div>
+    <div className="w-full bg-[#F4F6F9] pb-8 font-sans space-y-3 sm:space-y-4">
+      {/* ================= 1. PURPOSE-BUILT MOBILE ADVERTISING HERO BANNER ================= */}
+      <MobileHero onSearchWorker={onSearchWorker} onSelectCategory={onSelectCategory} />
 
-          {/* 2. SUPPORTING TEXT (Single Language i18n based on active locale) */}
-          <div className="space-y-0.5">
-            <p className="text-xs font-bold text-slate-700 font-devanagari">
-              {isHindi
-                ? 'भरोसेमंद, सत्यापित और आपके पास उपलब्ध कुशल लोग'
-                : 'Verified, reliable and nearby skilled professionals.'}
-            </p>
-          </div>
-
-          {/* 3. TRUST HIGHLIGHTS */}
-          <TrustIndicators />
-
-          {/* 4. WORKFORCE IMAGE */}
-          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
-            <Image
-              src="/images/home/hero-workers-group.jpg"
-              alt="Verified Labour Skilled Indian Workers"
-              fill
-              priority
-              className="object-cover object-[55%_20%]"
-              sizes="(max-width: 640px) 100vw, 50vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* 5 & 6. LOCATION SELECTOR + FIND WORKER CTA */}
-          <LocationSearch onSearch={onSearchWorker} />
-
-          {/* 7. POPULAR SERVICES */}
-          <PopularSearches onSelectCategory={onSelectCategory} />
-        </div>
+      {/* ================= 2. FLOATING LOCATION & FIND WORKER SEARCH CARD ================= */}
+      <section className="px-3 sm:px-4">
+        <LocationSearch onSearch={onSearchWorker} />
       </section>
 
       {/* ================= 2. 2x4 SERVICE CATEGORY GRID (MATCHING REFERENCE) ================= */}
