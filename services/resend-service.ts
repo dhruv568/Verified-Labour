@@ -4,7 +4,32 @@ import activeOtps from '@/lib/otp-store';
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Verified Labour <noreply@verifiedlabour.com>';
-const DEFAULT_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+/**
+ * Resolves the public application base URL for production emails and authentication links.
+ * Always returns a clean HTTPS production URL (defaults to https://verifiedlabour.com).
+ * Guarantees that localhost, 127.0.0.1, or port numbers (:3000, :3001) are NEVER generated in email links.
+ */
+export function getAppBaseUrl(): string {
+  const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+    return 'https://verifiedlabour.com';
+  }
+
+  let cleanUrl = envUrl.trim().replace(/\/+$/, '');
+
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    cleanUrl = `https://${cleanUrl}`;
+  } else if (cleanUrl.startsWith('http://')) {
+    cleanUrl = cleanUrl.replace('http://', 'https://');
+  }
+
+  if (cleanUrl.includes('verifiedlabour.com')) {
+    cleanUrl = cleanUrl.replace(/:[0-9]+$/, '');
+  }
+
+  return cleanUrl;
+}
 
 export interface RenderOtpEmailOptions {
   otp: string;
@@ -21,7 +46,7 @@ export interface RenderOtpEmailOptions {
  */
 export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: string; text: string } {
   const { otp, email, name, appUrl: customAppUrl, verifyUrl: customVerifyUrl } = options;
-  const appUrl = customAppUrl || DEFAULT_APP_URL;
+  const appUrl = customAppUrl && !customAppUrl.includes('localhost') ? customAppUrl : getAppBaseUrl();
   const verifyUrl = customVerifyUrl || `${appUrl}/auth/verify-email?email=${encodeURIComponent(email)}&otp=${otp}`;
   const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
 
@@ -357,7 +382,7 @@ export interface SendStaffInvitationParams {
  */
 export async function sendStaffInvitationEmail(params: SendStaffInvitationParams) {
   const { email, name, roleName, permissionsList, inviteToken, expiresAt } = params;
-  const appUrl = DEFAULT_APP_URL;
+  const appUrl = getAppBaseUrl();
   const inviteUrl = `${appUrl}/staff/invite/${inviteToken}`;
   const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
   const expiryFormatted = new Date(expiresAt).toLocaleDateString('en-US', {
@@ -530,7 +555,7 @@ export interface SendStaffPasswordResetParams {
  */
 export async function sendStaffPasswordResetEmail(params: SendStaffPasswordResetParams) {
   const { email, name, resetToken } = params;
-  const appUrl = DEFAULT_APP_URL;
+  const appUrl = getAppBaseUrl();
   const resetUrl = `${appUrl}/staff/reset-password/${resetToken}`;
 
   const html = `<!DOCTYPE html>
