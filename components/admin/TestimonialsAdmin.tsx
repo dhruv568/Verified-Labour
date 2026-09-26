@@ -469,8 +469,8 @@ export default function TestimonialsAdmin() {
               variant="outline"
               size="sm"
               onClick={fetchAdminTestimonials}
-              icon={<RefreshCw className="w-3.5 h-3.5" />}
-              className="text-white border-navy-800 hover:bg-navy-900"
+              icon={<RefreshCw className="w-3.5 h-3.5 text-navy-950 shrink-0" />}
+              className="bg-white text-navy-950 border-slate-300 hover:bg-slate-100 hover:text-navy-950 font-bold shadow-2xs shrink-0 flex items-center justify-center"
               title="Refresh Testimonials"
             >
               Refresh
