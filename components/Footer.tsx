@@ -69,7 +69,7 @@ export default function Footer() {
               <li>
                 <a href="/#how" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>यह कैसे काम करता है / How It Works</span>
+                  <span>यह कैसे काम करता है? / How It Works</span>
                 </a>
               </li>
               <li>
