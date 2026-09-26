@@ -1,7 +1,6 @@
-'use client';
-
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Search,
   ClipboardList,
@@ -14,9 +13,14 @@ import {
   Zap,
   Navigation,
   Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
-export default function HowItWorks() {
+interface HowItWorksProps {
+  onFindWorker?: () => void;
+}
+
+export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
   const steps = [
     {
       num: 1,
@@ -224,7 +228,6 @@ export default function HowItWorks() {
                       <path d="M 210 0 L 210 320" fill="none" stroke="#E2E8F0" strokeWidth="4" />
 
                       {/* Active Navigation Route Path (Connecting User to Worker) */}
-                      {/* Start: (55, 230) -> End: (195, 85) */}
                       <path
                         d="M 55 230 L 120 230 L 120 170 L 195 170 L 195 85"
                         fill="none"
@@ -253,13 +256,11 @@ export default function HowItWorks() {
                     {/* DESTINATION (WORKER LOCATION MARKER PIN) */}
                     <div className="absolute right-[62px] top-[60px] z-10 flex flex-col items-center animate-bounce duration-1000">
                       <div className="relative">
-                        {/* Premium Verified Labour Destination Marker */}
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#079447] to-[#059669] text-white p-0.5 shadow-lg border-2 border-white flex items-center justify-center">
                           <div className="w-full h-full rounded-full bg-white text-[#079447] flex items-center justify-center font-black text-xs">
                             <Zap className="w-5 h-5 fill-[#079447] stroke-[2]" />
                           </div>
                         </div>
-                        {/* Green Verification Check Badge overlay */}
                         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#079447] text-white border border-white flex items-center justify-center">
                           <CheckCircle2 className="w-3 h-3 fill-white text-[#079447]" />
                         </div>
@@ -267,11 +268,9 @@ export default function HowItWorks() {
                     </div>
                   </div>
 
-                  {/* FLOATING WORKER INFORMATION CARD (Rakesh - Electrician) */}
+                  {/* FLOATING WORKER INFORMATION CARD */}
                   <div className="relative z-10 m-2.5 bg-white/98 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-slate-200/90 space-y-2">
-                    {/* Worker Header Info */}
                     <div className="flex items-center gap-2.5">
-                      {/* Worker Profile Avatar with Green Ring */}
                       <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border-2 border-[#079447] shadow-xs">
                         <Image
                           src="/images/home/worker-rakesh-avatar.jpg"
@@ -294,7 +293,6 @@ export default function HowItWorks() {
                             </span>
                           </div>
                           
-                          {/* Rating */}
                           <div className="flex items-center gap-0.5 text-[10px] font-extrabold text-slate-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 shrink-0">
                             <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                             <span>5.0</span>
@@ -308,7 +306,6 @@ export default function HowItWorks() {
                       </div>
                     </div>
 
-                    {/* ETA Pill Badge */}
                     <div className="bg-emerald-50/90 text-[#079447] px-2.5 py-1.5 rounded-xl border border-emerald-200/80 flex items-center justify-between text-[11px] font-black font-devanagari">
                       <div className="flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 fill-[#079447] stroke-none animate-pulse" />
@@ -319,7 +316,6 @@ export default function HowItWorks() {
                       </span>
                     </div>
 
-                    {/* Quick Call & Message Buttons */}
                     <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                       <div className="py-1.5 px-2 bg-[#1264D6] text-white rounded-xl font-bold text-[10px] flex items-center justify-center gap-1 shadow-2xs font-devanagari">
                         <Phone className="w-3 h-3 fill-white stroke-none" />
@@ -333,19 +329,68 @@ export default function HowItWorks() {
                     </div>
                   </div>
 
-                  {/* Phone Home Bar Indicator */}
                   <div className="w-24 h-1 bg-slate-400/60 rounded-full mx-auto my-1 relative z-20" />
                 </div>
               </div>
 
-              {/* Realistic Soft Shadow Underneath Phone */}
               <div className="w-48 sm:w-56 h-4 bg-slate-900/15 rounded-full blur-xl mx-auto mt-3" />
             </div>
 
           </div>
 
         </div>
+
+        {/* ================= POST HOW IT WORKS CTA SECTION ================= */}
+        <div className="mt-12 sm:mt-16 pt-10 border-t border-slate-200/80">
+          <div className="max-w-3xl mx-auto bg-white rounded-3xl p-6 sm:p-10 border border-blue-100 shadow-md text-center space-y-4 relative overflow-hidden group hover:border-blue-200 transition-all">
+            {/* Background Decorative Accents */}
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-50/70 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-emerald-50/70 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Main Message (Hindi FIRST, English SECOND) */}
+            <div className="space-y-1 relative z-10">
+              <h3 className="text-2xl sm:text-3xl font-black text-[#082B66] font-devanagari tracking-tight">
+                30 सेकंड में बुक करें
+              </h3>
+              <p className="text-xs sm:text-sm font-bold text-[#1264D6] uppercase tracking-wider font-sans">
+                Book in 30 Seconds
+              </p>
+            </div>
+
+            {/* Supporting Text (Hindi FIRST, English SECOND) */}
+            <div className="space-y-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto relative z-10">
+              <p className="font-devanagari font-semibold text-slate-800">
+                भरोसेमंद और सत्यापित कामगार कुछ ही चरणों में पाएं।
+              </p>
+              <p className="text-slate-500 text-[11px] sm:text-xs">
+                Find a verified and reliable professional in just a few simple steps.
+              </p>
+            </div>
+
+            {/* Prominent Primary CTA Button */}
+            <div className="pt-2 relative z-10">
+              <Link
+                href="/workers"
+                onClick={(e) => {
+                  if (onFindWorker) {
+                    e.preventDefault();
+                    onFindWorker();
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 bg-gradient-to-r from-[#079447] via-[#059669] to-[#047857] hover:from-[#067f3c] hover:to-[#03694a] text-white font-black text-sm sm:text-base rounded-full shadow-lg shadow-emerald-900/20 active:scale-95 transition-all font-devanagari group/btn border border-emerald-400/30 min-h-[48px]"
+              >
+                <span>अभी कामगार बुक करें</span>
+                <span className="text-xs font-sans text-emerald-100 font-bold hidden xs:inline">
+                  / Book a Worker Now
+                </span>
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] group-hover/btn:translate-x-1 transition-transform ml-1" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   );
 }
+
