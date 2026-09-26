@@ -2,26 +2,37 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CustomerCTAProps {
   onFindWorker?: () => void;
 }
 
 export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
-  const benefits = [
-    'Verified & Trusted Workers',
-    'On-Demand & Nearby',
-    'Safe & Hassle-Free',
-    'Wide Range of Services',
-  ];
+  const { isHindi } = useLanguage();
+
+  const benefits = isHindi
+    ? [
+        'सत्यापित और भरोसेमंद कामगार',
+        'ऑन-डिमांड और आपके पास',
+        'सुरक्षित और परेशानी मुक्त',
+        'सेवाओं की विस्तृत श्रृंखला',
+      ]
+    : [
+        'Verified & Trusted Workers',
+        'On-Demand & Nearby',
+        'Safe & Hassle-Free',
+        'Wide Range of Services',
+      ];
 
   return (
     <div className="bg-[#1264D6] rounded-3xl p-5 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[380px] sm:min-h-[420px] lg:min-h-[440px]">
       {/* Decorative Background Glow */}
       <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none z-0" />
 
-      {/* ================= BLENDED CUSTOMER IMAGE (LOW OPACITY LEFT -> FULL OPACITY RIGHT) ================= */}
+      {/* ================= BLENDED CUSTOMER IMAGE ================= */}
       <div
         className="absolute bottom-0 right-0 top-0 w-[55%] sm:w-[50%] md:w-[48%] lg:w-[50%] xl:w-[48%] pointer-events-none select-none z-0 overflow-hidden"
         style={{
@@ -42,7 +53,7 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
         </div>
       </div>
 
-      {/* Soft Solid Blue Gradient Overlays - Keeps text area solid while revealing image clearly on right */}
+      {/* Soft Solid Blue Gradient Overlays */}
       <div className="absolute inset-y-0 left-0 w-[68%] sm:w-[56%] bg-gradient-to-r from-[#1264D6] via-[#1264D6] via-55% to-transparent pointer-events-none z-10" />
       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#1264D6] via-[#1264D6]/40 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#1264D6] via-[#1264D6]/30 to-transparent pointer-events-none z-10" />
@@ -51,24 +62,24 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
       <div className="relative z-20 max-w-[65%] sm:max-w-[54%] lg:max-w-[55%] space-y-3 sm:space-y-3.5">
         {/* Headings */}
         <div className="space-y-1">
-          <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
-            Need a Worker?
+          <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight font-devanagari">
+            {isHindi ? 'क्या आपको कामगार चाहिए?' : 'Need a Worker?'}
           </h3>
           <p className="text-sm sm:text-base font-bold text-amber-300 font-devanagari tracking-wide">
-            अपने पास सही कामगार खोजें
+            {isHindi ? 'अपने पास सही कामगार खोजें' : 'Find Skilled Professionals Near You'}
           </p>
         </div>
 
         {/* Subtitle */}
-        <p className="text-xs sm:text-sm font-semibold text-blue-100 leading-snug">
-          Book a Verified Professional Now
+        <p className="text-xs sm:text-sm font-semibold text-blue-100 leading-snug font-devanagari">
+          {isHindi ? 'सत्यापित पेशेवर अभी बुक करें' : 'Book a Verified Professional Now'}
           <span className="block text-[11px] sm:text-xs text-blue-200/90 font-medium font-devanagari mt-0.5">
-            100% सत्यापित कारीगर • मिनटों में सेवा
+            {isHindi ? '100% सत्यापित कारीगर • मिनटों में सेवा' : '100% Verified Craftsmen • Instant Service'}
           </span>
         </p>
 
         {/* Benefits Checklist */}
-        <ul className="space-y-2 pt-1 text-xs sm:text-[13px] font-semibold text-white">
+        <ul className="space-y-2 pt-1 text-xs sm:text-[13px] font-semibold text-white font-devanagari">
           {benefits.map((b) => (
             <li key={b} className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-amber-300 fill-amber-300 text-[#1264D6] shrink-0" />
@@ -78,16 +89,20 @@ export default function CustomerCTA({ onFindWorker }: CustomerCTAProps) {
         </ul>
       </div>
 
-      {/* Button on bottom */}
-      <div className="pt-5 sm:pt-6 relative z-20">
-        <button
-          type="button"
-          onClick={onFindWorker}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] bg-white hover:bg-slate-50 text-[#1264D6] font-black text-sm rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all shrink-0 active:scale-98"
+      {/* Functional CTA Link / Button */}
+      <div className="pt-5 sm:pt-6 relative z-20 pointer-events-auto">
+        <Link
+          href="/workers"
+          onClick={(e) => {
+            if (onFindWorker) {
+              onFindWorker();
+            }
+          }}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] bg-white hover:bg-slate-50 text-[#1264D6] font-black text-sm rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all shrink-0 active:scale-98 cursor-pointer font-devanagari"
         >
-          <span>Find a Worker</span>
+          <span>{isHindi ? 'कामगार खोजें' : 'Find a Worker'}</span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-        </button>
+        </Link>
       </div>
     </div>
   );
