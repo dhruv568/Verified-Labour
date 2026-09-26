@@ -25,10 +25,10 @@ export async function runAdminPanelTests(): Promise<{ passed: number; failed: nu
   }
 
   // 1. Initial Admin User Setup & Hashed Password Check
-  await testAsync('ensureInitialAdminUser creates verifiedlabour@gmail.com with strong bcrypt hash', async () => {
+  await testAsync('ensureInitialAdminUser creates help@verifiedlabour.com with strong bcrypt hash', async () => {
     const admin = await ensureInitialAdminUser();
     assert(admin, 'Admin user should be returned');
-    assert.strictEqual(admin.email, 'verifiedlabour@gmail.com');
+    assert.strictEqual(admin.email, 'help@verifiedlabour.com');
     assert.strictEqual(admin.role, 'ADMIN');
     assert.strictEqual(admin.status, 'ACTIVE');
     assert(admin.passwordHash, 'Admin must have a password hash');
@@ -40,7 +40,7 @@ export async function runAdminPanelTests(): Promise<{ passed: number; failed: nu
 
   // 2. Admin Login & Email OTP Requirement
   await testAsync('Admin login requires email OTP verification on every login', async () => {
-    const email = 'verifiedlabour@gmail.com';
+    const email = 'help@verifiedlabour.com';
     const otpResult = await sendEmailOtp({ email, name: 'Admin' });
     assert(otpResult.success, 'OTP generation must succeed');
     assert(otpResult.otp && otpResult.otp.length === 6, 'Generated OTP must be 6 digits');
@@ -84,7 +84,7 @@ export async function runAdminPanelTests(): Promise<{ passed: number; failed: nu
 
   // 5. Admin Password Change Flow
   await testAsync('Admin can update password securely from Pass@123 to a new hash', async () => {
-    const admin = await prisma.user.findFirst({ where: { email: 'verifiedlabour@gmail.com' } });
+    const admin = await prisma.user.findFirst({ where: { email: 'help@verifiedlabour.com' } });
     assert(admin, 'Admin must exist');
 
     const newPass = 'NewSecretPass@2026';

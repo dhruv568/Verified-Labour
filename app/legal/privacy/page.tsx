@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
             <p>
               For privacy inquiries, contact our Data Protection Officer at:
               <br />
-              <strong>Email:</strong> help@verifiedlabour.com • <strong>Phone:</strong> +91 9109019090
+              <strong>Email:</strong> <a href="mailto:help@verifiedlabour.com" className="text-[#1264D6] hover:underline font-bold">help@verifiedlabour.com</a> • <strong>Phone:</strong> <a href="tel:+919109019090" className="text-slate-900 hover:underline font-bold">+91 9109019090</a>
             </p>
           </section>
         </div>

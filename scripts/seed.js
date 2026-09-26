@@ -290,11 +290,11 @@ async function main() {
   // 3. Admin User
   const adminPasswordHash = await bcrypt.hash('Pass@123', 10);
   const adminUser = await prisma.user.upsert({
-    where: { email: 'verifiedlabour@gmail.com' },
+    where: { email: 'help@verifiedlabour.com' },
     update: { role: 'ADMIN', status: 'ACTIVE', passwordHash: adminPasswordHash, isPhoneVerified: true, isEmailVerified: true },
     create: {
       phone: '+910000000000',
-      email: 'verifiedlabour@gmail.com',
+      email: 'help@verifiedlabour.com',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       status: 'ACTIVE',
@@ -308,7 +308,7 @@ async function main() {
       },
     },
   });
-  console.log('✔ Admin user seeded (verifiedlabour@gmail.com / Pass@123).');
+  console.log('✔ Admin user seeded (help@verifiedlabour.com / Pass@123).');
 
   // 4. Test Customer User
   const customerPasswordHash = await bcrypt.hash('Customer@123', 10);

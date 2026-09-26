@@ -24,7 +24,7 @@ export default function SafetyGuidelinesPage() {
             <h2 className="text-lg font-bold text-slate-900">2. Emergency Contact & Reporting</h2>
             <p>
               In the event of an emergency or severe misconduct, immediately dial 112 (National Emergency Number)
-              and report the incident to our 24/7 trust team at <span className="font-bold text-slate-900">help@verifiedlabour.com</span>.
+              and report the incident to our 24/7 trust team at <a href="mailto:help@verifiedlabour.com" className="font-bold text-[#1264D6] hover:underline">help@verifiedlabour.com</a>.
             </p>
           </section>
         </div>

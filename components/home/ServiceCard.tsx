@@ -13,6 +13,7 @@ export interface ServiceCardProps {
   isSelected?: boolean;
   onClick?: () => void;
   priority?: boolean;
+  objectPosition?: string;
 }
 
 export default function ServiceCard({
@@ -25,6 +26,7 @@ export default function ServiceCard({
   isSelected,
   onClick,
   priority = false,
+  objectPosition = 'center top',
 }: ServiceCardProps) {
   return (
     <div
@@ -51,7 +53,8 @@ export default function ServiceCard({
           fill
           sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 12vw"
           priority={priority}
-          className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          style={{ objectPosition }}
         />
 
         {badge && (

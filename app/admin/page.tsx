@@ -70,7 +70,7 @@ export default function AdminPage() {
 
   // Login Form States (Step 1: Credentials, Step 2: OTP)
   const [loginStep, setLoginStep] = useState<'CREDENTIALS' | 'OTP'>('CREDENTIALS');
-  const [loginEmail, setLoginEmail] = useState('verifiedlabour@gmail.com');
+  const [loginEmail, setLoginEmail] = useState('help@verifiedlabour.com');
   const [loginPassword, setLoginPassword] = useState('Pass@123');
   const [loginOtp, setLoginOtp] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -542,7 +542,7 @@ export default function AdminPage() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none"
-                    placeholder="verifiedlabour@gmail.com"
+                    placeholder="help@verifiedlabour.com"
                   />
                 </div>
 

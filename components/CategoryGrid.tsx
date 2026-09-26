@@ -63,6 +63,27 @@ const CATEGORY_IMAGE_MAP: Record<string, string> = {
   construction: '/images/services/others.jpg',
 };
 
+const CATEGORY_POSITION_MAP: Record<string, string> = {
+  electrical: 'center 2%',
+  'computer-hardware': 'center 4%',
+  'computer-software': 'center 4%',
+  confectioner: 'center 4%',
+  mechanic: 'center 5%',
+  'gas-cylinder': 'center 4%',
+  watchman: 'center 2%',
+  'house-care-taker': 'center 5%',
+  'office-boy': 'center 5%',
+  cook: 'center 0%',
+  plumbing: 'center 4%',
+  painting: 'center 4%',
+  carpenter: 'center 5%',
+  cleaning: 'center 6%',
+  driver: 'center 2%',
+  gardener: 'center 5%',
+  'loading-moving': 'center 5%',
+  construction: 'center 4%',
+};
+
 // Visual style definitions matching the Indian marketplace reference cards
 interface CategoryVisual {
   pillColor: string;
@@ -268,7 +289,8 @@ export default function CategoryGrid({
                   alt={`${cat.name} - Verified Labour`}
                   fill
                   sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 15vw"
-                  className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  style={{ objectPosition: CATEGORY_POSITION_MAP[cat.slug] || 'center top' }}
                 />
               </div>
             ) : (

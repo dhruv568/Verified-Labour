@@ -21,6 +21,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/electrician.jpg',
     pillColor: 'bg-[#1264D6]',
     priority: true,
+    objectPosition: 'center 2%',
   },
   {
     title: 'Computer Hardware',
@@ -29,6 +30,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/computer-hardware.jpg',
     pillColor: 'bg-[#079447]',
     priority: true,
+    objectPosition: 'center 4%',
   },
   {
     title: 'Computer Software',
@@ -37,6 +39,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/computer-software.jpg',
     pillColor: 'bg-[#F25C05]',
     priority: true,
+    objectPosition: 'center 4%',
   },
   {
     title: 'Confectioner',
@@ -45,6 +48,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/confectioner.jpg',
     pillColor: 'bg-[#C026D3]',
     priority: true,
+    objectPosition: 'center 4%',
   },
   {
     title: 'Car / 2 Wheeler Mechanic',
@@ -53,6 +57,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/mechanic.jpg',
     pillColor: 'bg-[#3730A3]',
     priority: true,
+    objectPosition: 'center 5%',
   },
   {
     title: 'Gas Cylinder Wala',
@@ -61,6 +66,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/gas-cylinder.jpg',
     pillColor: 'bg-[#7C3AED]',
     priority: true,
+    objectPosition: 'center 4%',
   },
   {
     title: 'Watchman',
@@ -69,6 +75,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/watchman.jpg',
     pillColor: 'bg-[#1E40AF]',
     priority: true,
+    objectPosition: 'center 2%',
   },
   {
     title: 'House Care Taker',
@@ -77,6 +84,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/house-care-taker.jpg',
     pillColor: 'bg-[#0D9488]',
     priority: true,
+    objectPosition: 'center 5%',
   },
   {
     title: 'Office Boy',
@@ -85,6 +93,7 @@ const CATEGORY_ITEMS = [
     image: '/images/services/office-boy.jpg',
     pillColor: 'bg-[#A16207]',
     priority: true,
+    objectPosition: 'center 5%',
   },
 
   // --- ROW 2 (9 items) ---
@@ -94,6 +103,7 @@ const CATEGORY_ITEMS = [
     slug: 'cook',
     image: '/images/services/cook.jpg',
     pillColor: 'bg-[#059669]',
+    objectPosition: 'center 0%',
   },
   {
     title: 'Plumber',
@@ -101,6 +111,7 @@ const CATEGORY_ITEMS = [
     slug: 'plumbing',
     image: '/images/services/plumber.jpg',
     pillColor: 'bg-[#D97706]',
+    objectPosition: 'center 4%',
   },
   {
     title: 'Painter',
@@ -108,6 +119,7 @@ const CATEGORY_ITEMS = [
     slug: 'painting',
     image: '/images/services/painter.jpg',
     pillColor: 'bg-[#6D28D9]',
+    objectPosition: 'center 4%',
   },
   {
     title: 'Carpenter',
@@ -115,6 +127,7 @@ const CATEGORY_ITEMS = [
     slug: 'carpenter',
     image: '/images/services/carpenter.jpg',
     pillColor: 'bg-[#DC2626]',
+    objectPosition: 'center 5%',
   },
   {
     title: 'Maid / House Cleaning',
@@ -122,6 +135,7 @@ const CATEGORY_ITEMS = [
     slug: 'cleaning',
     image: '/images/services/cleaning.jpg',
     pillColor: 'bg-[#0891B2]',
+    objectPosition: 'center 6%',
   },
   {
     title: 'Driver',
@@ -129,6 +143,7 @@ const CATEGORY_ITEMS = [
     slug: 'driver',
     image: '/images/services/driver.jpg',
     pillColor: 'bg-[#EA580C]',
+    objectPosition: 'center 2%',
   },
   {
     title: 'Gardener',
@@ -136,6 +151,7 @@ const CATEGORY_ITEMS = [
     slug: 'gardener',
     image: '/images/services/gardener.jpg',
     pillColor: 'bg-[#16A34A]',
+    objectPosition: 'center 5%',
   },
   {
     title: 'Delivery Helper',
@@ -143,6 +159,7 @@ const CATEGORY_ITEMS = [
     slug: 'loading-moving',
     image: '/images/services/delivery.jpg',
     pillColor: 'bg-[#059669]',
+    objectPosition: 'center 5%',
   },
   {
     title: 'Others',
@@ -150,6 +167,7 @@ const CATEGORY_ITEMS = [
     slug: 'construction',
     image: '/images/services/others.jpg',
     pillColor: 'bg-[#0F766E]',
+    objectPosition: 'center 4%',
   },
 ];
 
@@ -192,6 +210,7 @@ export default function ServiceCategories({
               isSelected={selectedCategorySlug === item.slug}
               onClick={() => onSelectCategory?.(item.slug)}
               priority={item.priority}
+              objectPosition={item.objectPosition}
             />
           ))}
         </div>

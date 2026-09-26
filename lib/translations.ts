@@ -60,7 +60,7 @@ export const translations = {
     followUs: 'हमें फॉलो करें',
     quickLinks: 'त्वरित लिंक',
     supportLegal: 'सहायता एवं कानूनी',
-    supportDesk: 'सहायता केंद्र:',
+    supportDesk: 'सहायता डेस्क:',
     allRightsReserved: 'सर्वाधिकार सुरक्षित।',
     taglineBottom: 'कुशल लोग। मजबूत समुदाय। एक बेहतर भारत।',
     emptyNearbyWorkers: 'वर्तमान में इस क्षेत्र में कोई सत्यापित कामगार उपलब्ध नहीं है।',

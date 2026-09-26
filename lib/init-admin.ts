@@ -2,7 +2,7 @@ import prisma from './db';
 import { hashPassword } from './auth';
 
 export async function ensureInitialAdminUser() {
-  const adminEmail = 'verifiedlabour@gmail.com';
+  const adminEmail = 'help@verifiedlabour.com';
   try {
     const existing = await prisma.user.findFirst({
       where: {

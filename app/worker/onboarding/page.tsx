@@ -142,7 +142,9 @@ export default function WorkerOnboardingPage() {
                 </p>
                 <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 font-bold border-t border-slate-100">
                   <span>Support Line:</span>
-                  <span className="text-[#1264D6]">info@verifiedlabour.com</span>
+                  <a href="mailto:help@verifiedlabour.com" className="text-[#1264D6] hover:underline break-all">
+                    help@verifiedlabour.com
+                  </a>
                 </div>
               </div>
             </div>

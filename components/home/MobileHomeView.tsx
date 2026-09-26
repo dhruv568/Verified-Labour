@@ -6,6 +6,7 @@ import Link from 'next/link';
 import LocationSearch from './LocationSearch';
 import TrustIndicators from './TrustIndicators';
 import PopularSearches from './PopularSearches';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Zap,
   Wrench,
@@ -56,6 +57,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/electrician.jpg',
     icon: Zap,
     iconBg: 'bg-[#1264D6]',
+    objectPosition: 'center 2%',
   },
   {
     title: 'Plumber',
@@ -64,6 +66,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/plumber.jpg',
     icon: Wrench,
     iconBg: 'bg-[#1264D6]',
+    objectPosition: 'center 4%',
   },
   {
     title: 'Carpenter',
@@ -72,6 +75,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/carpenter.jpg',
     icon: Hammer,
     iconBg: 'bg-[#9A3412]',
+    objectPosition: 'center 5%',
   },
   {
     title: 'Painter',
@@ -80,6 +84,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/painter.jpg',
     icon: Paintbrush,
     iconBg: 'bg-[#DB2777]',
+    objectPosition: 'center 4%',
   },
   {
     title: 'House Helper',
@@ -88,6 +93,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/cleaning.jpg',
     icon: Sparkles,
     iconBg: 'bg-[#8B5CF6]',
+    objectPosition: 'center 6%',
   },
   {
     title: 'Cook',
@@ -96,6 +102,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/cook.jpg',
     icon: Utensils,
     iconBg: 'bg-[#F97316]',
+    objectPosition: 'center 0%',
   },
   {
     title: 'Driver',
@@ -104,6 +111,7 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/driver.jpg',
     icon: Car,
     iconBg: 'bg-[#079447]',
+    objectPosition: 'center 2%',
   },
   {
     title: 'Gardener',
@@ -112,21 +120,22 @@ const FEATURED_CATEGORIES = [
     image: '/images/services/gardener.jpg',
     icon: Leaf,
     iconBg: 'bg-[#16A34A]',
+    objectPosition: 'center 5%',
   },
 ];
 
 // Additional 10 categories for "View All" expander
 const MORE_CATEGORIES = [
-  { title: 'Computer Hardware', hindiTitle: 'कंप्यूटर हार्डवेयर', slug: 'computer-hardware', image: '/images/services/computer-hardware.jpg' },
-  { title: 'Computer Software', hindiTitle: 'कंप्यूटर सॉफ्टवेयर', slug: 'computer-software', image: '/images/services/computer-software.jpg' },
-  { title: 'Confectioner', hindiTitle: 'हलवाई / कन्फेक्शनर', slug: 'confectioner', image: '/images/services/confectioner.jpg' },
-  { title: 'Mechanic', hindiTitle: 'मैकेनिक', slug: 'mechanic', image: '/images/services/mechanic.jpg' },
-  { title: 'Gas Cylinder Wala', hindiTitle: 'गैस सिलेंडर वाला', slug: 'gas-cylinder', image: '/images/services/gas-cylinder.jpg' },
-  { title: 'Watchman', hindiTitle: 'सुरक्षा गार्ड / चौकीदार', slug: 'watchman', image: '/images/services/watchman.jpg' },
-  { title: 'House Care Taker', hindiTitle: 'घर की देखभाल', slug: 'house-care-taker', image: '/images/services/house-care-taker.jpg' },
-  { title: 'Office Boy', hindiTitle: 'ऑफिस बॉय', slug: 'office-boy', image: '/images/services/office-boy.jpg' },
-  { title: 'Delivery Helper', hindiTitle: 'डिलीवरी सहायक', slug: 'loading-moving', image: '/images/services/delivery.jpg' },
-  { title: 'Other Services', hindiTitle: 'अन्य सेवाएं', slug: 'construction', image: '/images/services/others.jpg' },
+  { title: 'Computer Hardware', hindiTitle: 'कंप्यूटर हार्डवेयर', slug: 'computer-hardware', image: '/images/services/computer-hardware.jpg', objectPosition: 'center 4%' },
+  { title: 'Computer Software', hindiTitle: 'कंप्यूटर सॉफ्टवेयर', slug: 'computer-software', image: '/images/services/computer-software.jpg', objectPosition: 'center 4%' },
+  { title: 'Confectioner', hindiTitle: 'हलवाई / कन्फेक्शनर', slug: 'confectioner', image: '/images/services/confectioner.jpg', objectPosition: 'center 4%' },
+  { title: 'Mechanic', hindiTitle: 'मैकेनिक', slug: 'mechanic', image: '/images/services/mechanic.jpg', objectPosition: 'center 5%' },
+  { title: 'Gas Cylinder Wala', hindiTitle: 'गैस सिलेंडर वाला', slug: 'gas-cylinder', image: '/images/services/gas-cylinder.jpg', objectPosition: 'center 4%' },
+  { title: 'Watchman', hindiTitle: 'सुरक्षा गार्ड / चौकीदार', slug: 'watchman', image: '/images/services/watchman.jpg', objectPosition: 'center 2%' },
+  { title: 'House Care Taker', hindiTitle: 'घर की देखभाल', slug: 'house-care-taker', image: '/images/services/house-care-taker.jpg', objectPosition: 'center 5%' },
+  { title: 'Office Boy', hindiTitle: 'ऑफिस बॉय', slug: 'office-boy', image: '/images/services/office-boy.jpg', objectPosition: 'center 5%' },
+  { title: 'Delivery Helper', hindiTitle: 'डिलीवरी सहायक', slug: 'loading-moving', image: '/images/services/delivery.jpg', objectPosition: 'center 5%' },
+  { title: 'Other Services', hindiTitle: 'अन्य सेवाएं', slug: 'construction', image: '/images/services/others.jpg', objectPosition: 'center 4%' },
 ];
 
 export default function MobileHomeView({
@@ -136,33 +145,40 @@ export default function MobileHomeView({
   onOpenAuth,
   platformStats,
 }: MobileHomeViewProps) {
+  const { isHindi } = useLanguage();
   const [activeSegment, setActiveSegment] = useState<'home' | 'office' | 'business'>('home');
   const [showAllCategories, setShowAllCategories] = useState(false);
 
   return (
     <div className="w-full bg-[#F4F6F9] pb-8 font-sans space-y-4">
-      {/* ================= 1. REDESIGNED MOBILE HERO SECTION ================= */}
+      {/* ================= 1. RESTORED PREVIOUS MOBILE HERO SECTION ================= */}
       <section className="relative bg-white pt-4 pb-5 border-b border-slate-200/80 overflow-hidden shadow-2xs">
         <div className="px-4 relative z-20 space-y-4">
-          {/* 1. HEADLINE (Hindi FIRST, English SECOND) */}
+          {/* 1. HEADLINE (Single Language i18n based on active locale) */}
           <div className="space-y-1 text-left">
             <h1 className="text-2xl xs:text-3xl font-black text-[#082B66] leading-[1.2] font-devanagari tracking-tight">
-              आपके पास,<br />
-              आपकी जरूरत के समय<br />
-              <span className="text-[#1264D6]">भरोसेमंद लोग</span>
+              {isHindi ? (
+                <>
+                  आपके पास,<br />
+                  आपकी जरूरत के समय<br />
+                  <span className="text-[#1264D6]">भरोसेमंद लोग</span>
+                </>
+              ) : (
+                <>
+                  Trusted People,<br />
+                  When You Need Them<br />
+                  <span className="text-[#1264D6]">Verified Professionals</span>
+                </>
+              )}
             </h1>
-            <p className="text-sm font-bold text-[#1264D6] tracking-tight font-sans">
-              Trusted People, When You Need Them
-            </p>
           </div>
 
-          {/* 2. SUPPORTING TEXT (Hindi FIRST, English SECOND) */}
+          {/* 2. SUPPORTING TEXT (Single Language i18n based on active locale) */}
           <div className="space-y-0.5">
             <p className="text-xs font-bold text-slate-700 font-devanagari">
-              भरोसेमंद, सत्यापित और आपके पास उपलब्ध कुशल लोग
-            </p>
-            <p className="text-[11px] font-semibold text-slate-500 font-sans">
-              Verified, reliable and nearby skilled professionals.
+              {isHindi
+                ? 'भरोसेमंद, सत्यापित और आपके पास उपलब्ध कुशल लोग'
+                : 'Verified, reliable and nearby skilled professionals.'}
             </p>
           </div>
 
@@ -237,13 +253,14 @@ export default function MobileHomeView({
                 }`}
               >
                 {/* Upper Image Box with Icon Badge */}
-                <div className="relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
+                <div className="relative w-full aspect-[4/4.5] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
                   <Image
                     src={item.image}
                     alt={`${item.title} (${item.hindiTitle})`}
                     fill
                     sizes="45vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    style={{ objectPosition: item.objectPosition || 'center top' }}
                   />
 
                   {/* Circular Icon Overlay Badge matching Reference */}
@@ -282,7 +299,7 @@ export default function MobileHomeView({
                   className="bg-white rounded-xl p-2 border border-slate-200 flex items-center gap-2 cursor-pointer hover:bg-slate-50 active:scale-98 shadow-2xs"
                 >
                   <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-slate-100">
-                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    <Image src={item.image} alt={item.title} fill className="object-cover" style={{ objectPosition: item.objectPosition || 'center top' }} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold text-[#082B66] truncate font-devanagari">

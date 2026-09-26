@@ -167,14 +167,24 @@ export default function Footer() {
             </div>
 
             <div className="mt-4 pt-3 text-xs text-slate-500 space-y-1.5">
-              <p className="font-semibold text-slate-700">{isHindi ? 'सहायता केंद्र:' : 'Support Desk:'}</p>
+              <p className="font-semibold text-slate-700">{isHindi ? 'सहायता डेस्क:' : 'Support Desk:'}</p>
               <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{content.contact_email || 'help@verifiedlabour.com'}</span>
+                <a
+                  href={`mailto:${content.contact_email || 'help@verifiedlabour.com'}`}
+                  className="hover:text-[#1464D2] transition-colors break-all"
+                >
+                  {content.contact_email || 'help@verifiedlabour.com'}
+                </a>
               </p>
               <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{content.contact_phone || '+91 9109019090'}</span>
+                <a
+                  href={`tel:${(content.contact_phone || '+91 9109019090').replace(/\s+/g, '')}`}
+                  className="hover:text-[#1464D2] transition-colors"
+                >
+                  {content.contact_phone || '+91 9109019090'}
+                </a>
               </p>
             </div>
           </div>
