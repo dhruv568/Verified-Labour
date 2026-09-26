@@ -421,7 +421,7 @@ export default function AuthModal({
               ? 'Sign In with Mobile OTP'
               : 'Login to Verified Labour'
           }
-          subtitle="Aadhaar & Bank Verified Skilled Labour Marketplace"
+          subtitle="Verified. Nearby. Reliable."
           onClose={onClose}
           tab={tab === 'register' ? 'register' : 'login'}
           onTabChange={(newTab) => {

@@ -76,6 +76,14 @@ export default function CustomerDashboardPage() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [profileWorker, setProfileWorker] = useState<WorkerData | null>(null);
 
+  // Profile edit & deletion states
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteNoticeShown, setDeleteNoticeShown] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+
   // Greeting time
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -95,6 +103,9 @@ export default function CustomerDashboardPage() {
             return;
           }
           setSession(data.user);
+          setEditName(data.user.customerProfile?.fullName || '');
+          setEditEmail(data.user.email || '');
+          setDeleteNoticeShown(data.user.status === 'DELETION_PENDING');
         } else {
           router.replace('/logout?reason=unauthorized');
         }
@@ -661,28 +672,220 @@ export default function CustomerDashboardPage() {
           )}
 
           {/* TAB 4: PROFILE & SETTINGS */}
+          {/* TAB 4: PROFILE & SETTINGS */}
           {(activeNav === 'profile' || activeNav === 'settings') && (
-            <Card variant="default" padding="lg" className="space-y-4 max-w-lg">
-              <h3 className="text-base font-black text-slate-900">Account Details</h3>
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="text-slate-400 font-bold block">Full Name</span>
-                  <span className="text-slate-800 font-semibold">{customerName}</span>
+            <div className="space-y-6 max-w-lg">
+              <Card variant="default" padding="lg" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-base font-black text-slate-900">Account Profile</h3>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditProfileOpen(true)}
+                      className="px-3.5 py-1.5 bg-[#1264D6] hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs"
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalOpen(true)}
+                      className="px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-xl transition-all"
+                    >
+                      Delete Account
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">Mobile Phone</span>
-                  <span className="text-slate-800 font-mono font-semibold">{session?.phone}</span>
+
+                {deleteNoticeShown && (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                      <span>Deletion Request Pending</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800">
+                      Your profile deletion request has been received. Your profile will be deleted within 15 days.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3.5 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-bold block">Full Name</span>
+                    <span className="text-slate-900 font-black text-sm">{customerName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block">Mobile Phone (Verified)</span>
+                    <span className="text-slate-800 font-mono font-semibold">{session?.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block">Email Address</span>
+                    <span className="text-slate-800 font-medium">{session?.email || 'Not provided'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block">Account Status</span>
+                    <StatusBadge status={deleteNoticeShown ? 'DELETION_PENDING' : 'ACTIVE'} size="sm" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block">Current Location</span>
+                    <span className="text-slate-800">{location.displayName || 'Not Set'}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">Account Status</span>
-                  <Badge variant="brand" size="sm">ACTIVE</Badge>
+              </Card>
+
+              {/* Edit Profile Modal */}
+              {editProfileOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h3 className="text-base font-black text-slate-900">Edit Profile</h3>
+                      <button
+                        type="button"
+                        onClick={() => setEditProfileOpen(false)}
+                        className="text-slate-400 hover:text-slate-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        setUpdatingProfile(true);
+                        try {
+                          const res = await fetch('/api/user/profile', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fullName: editName, email: editEmail }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            alert(data.error || 'Failed to update profile');
+                            return;
+                          }
+                          alert('Profile updated successfully!');
+                          setEditProfileOpen(false);
+                          window.location.reload();
+                        } catch (err: any) {
+                          alert('Error updating profile: ' + err.message);
+                        } finally {
+                          setUpdatingProfile(false);
+                        }
+                      }}
+                      className="space-y-3.5 text-xs"
+                    >
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Full Legal Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 outline-none focus:border-[#1264D6] min-h-[44px]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 outline-none focus:border-[#1264D6] min-h-[44px]"
+                        />
+                      </div>
+
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-500">
+                        🔒 Phone number and security verifications are protected and require explicit verification to change.
+                      </div>
+
+                      <div className="flex gap-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditProfileOpen(false)}
+                          className="flex-1 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-xl active:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={updatingProfile}
+                          className="flex-1 py-2.5 bg-[#1264D6] hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs disabled:opacity-50"
+                        >
+                          {updatingProfile ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-400 font-bold block">Current Location</span>
-                  <span className="text-slate-800">{location.displayName || 'Not Set'}</span>
+              )}
+
+              {/* Delete Account Modal */}
+              {deleteModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h3 className="text-base font-black text-red-600 flex items-center gap-1.5">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                        <span>Delete your profile?</span>
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalOpen(false)}
+                        className="text-slate-400 hover:text-slate-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+                      <p className="font-semibold text-slate-800">
+                        Are you sure you want to request account deletion?
+                      </p>
+                      <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 font-medium space-y-1">
+                        <p className="font-bold text-amber-950">15-Day Scheduled Deletion:</p>
+                        <p>
+                          Your profile deletion request has been received. Your profile will be deleted within 15 days.
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        During this 15-day period, active job history, audit records, and payments are preserved according to legal data retention policies. You can cancel this deletion request anytime before completion.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalOpen(false)}
+                        className="flex-1 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-xl active:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/user/delete-account', {
+                              method: 'POST',
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              setDeleteNoticeShown(true);
+                              alert('Your profile deletion request has been received. Your profile will be deleted within 15 days.');
+                              setDeleteModalOpen(false);
+                            }
+                          } catch (err: any) {
+                            alert('Failed to request deletion: ' + err.message);
+                          }
+                        }}
+                        className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-xs"
+                      >
+                        Confirm Deletion
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              )}
+            </div>
           )}
 
           {/* TAB 5: NOTIFICATIONS & REVIEWS */}

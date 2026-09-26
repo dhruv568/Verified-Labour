@@ -182,15 +182,15 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
                 <span style="color: #CBD5E1;">•</span>
                 <a href="${appUrl}/legal/terms" target="_blank" style="color: #1464D2; text-decoration: none; font-weight: 600; margin: 0 8px;">Terms & Conditions</a>
                 <span style="color: #CBD5E1;">•</span>
-                <a href="mailto:verifiedlabour@gmail.com" style="color: #1464D2; text-decoration: none; font-weight: 600; margin: 0 8px;">Contact Support</a>
+                <a href="mailto:help@verifiedlabour.com" style="color: #1464D2; text-decoration: none; font-weight: 600; margin: 0 8px;">Contact Support</a>
               </div>
 
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">
-                Support Email: verifiedlabour@gmail.com | Helpline: +91 93698 99597
+                Support Email: help@verifiedlabour.com | Helpline: +91 9109019090 / +91 93698 99597
               </div>
 
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">
-                © 2025 Verified Labour. All rights reserved.
+                © 2026 Verified Labour. All rights reserved.
               </div>
 
               <div style="font-size: 12px; font-weight: 600; color: #475569;">
@@ -234,8 +234,8 @@ Verified Labour
 India's Trusted Skilled Labour Marketplace
 Privacy Policy: ${appUrl}/legal/privacy
 Terms & Conditions: ${appUrl}/legal/terms
-Contact Support: verifiedlabour@gmail.com | +91 93698 99597
-© 2025 Verified Labour. All rights reserved.
+Contact Support: help@verifiedlabour.com | +91 9109019090 / +91 93698 99597
+© 2026 Verified Labour. All rights reserved.
 Powered by MyProFunnels ❤️ (https://myprofunnels.com/)`;
 
   return { html, text };
@@ -495,7 +495,7 @@ export async function sendStaffInvitationEmail(params: SendStaffInvitationParams
                 Verified, Skilled & Nearby Professionals
               </div>
               <div style="font-size: 11px; color: #94A3B8;">
-                Website: <a href="${appUrl}" style="color: #08783b; text-decoration: none; font-weight: 700;">verifiedlabour.com</a> | Support: <a href="mailto:verifiedlabour@gmail.com" style="color: #08783b; text-decoration: none; font-weight: 700;">verifiedlabour@gmail.com</a>
+                Website: <a href="${appUrl}" style="color: #08783b; text-decoration: none; font-weight: 700;">verifiedlabour.com</a> | Support: <a href="mailto:help@verifiedlabour.com" style="color: #08783b; text-decoration: none; font-weight: 700;">help@verifiedlabour.com</a>
               </div>
             </td>
           </tr>
@@ -523,7 +523,7 @@ ${inviteUrl}
 Invitation Expiry: ${expiryFormatted}
 
 Security Notice: Restrictive staff portal link. Do not share.
-Support Contact: verifiedlabour@gmail.com`;
+Support Contact: help@verifiedlabour.com`;
 
   if (resend) {
     try {
@@ -592,5 +592,151 @@ export async function sendStaffPasswordResetEmail(params: SendStaffPasswordReset
   }
 
   return { resetUrl };
+}
+
+export interface SendWelcomeEmailParams {
+  email: string;
+  name?: string;
+  role?: 'CUSTOMER' | 'WORKER' | 'BUSINESS';
+}
+
+/**
+ * Sends a welcome email to newly registered users ("Thank you for joining Verified Labour").
+ */
+export async function sendWelcomeEmail(params: SendWelcomeEmailParams) {
+  const { email, name, role = 'CUSTOMER' } = params;
+  const normalizedEmail = email.toLowerCase().trim();
+  const appUrl = getAppBaseUrl();
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
+
+  const roleTitle = role === 'WORKER' ? 'Verified Skilled Professional' : role === 'BUSINESS' ? 'Business Partner' : 'Valued Customer';
+
+  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank you for joining Verified Labour</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F7F9FC; }
+    @media screen and (max-width: 600px) {
+      .email-container { width: 100% !important; padding: 12px !important; }
+      .content-card { padding: 24px 16px !important; border-radius: 12px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F7F9FC; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F9FC; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container" style="max-width: 600px; margin: 0 auto;">
+          <!-- HEADER -->
+          <tr>
+            <td align="center" style="padding-bottom: 24px; text-align: center;">
+              <a href="${appUrl}" target="_blank" style="text-decoration: none; display: inline-block;">
+                <img src="${logoUrl}" alt="Verified Labour" width="180" style="display: block; width: 180px; max-width: 180px; height: auto; border: 0;" />
+              </a>
+              <div style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px;">
+                Verified. Nearby. Reliable.
+              </div>
+            </td>
+          </tr>
+
+          <!-- MAIN CARD -->
+          <tr>
+            <td class="content-card" style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 12px rgba(15, 42, 95, 0.04);">
+              <div style="text-align: center; margin-bottom: 16px;">
+                <span style="display: inline-block; background-color: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 1px;">
+                  Welcome to Verified Labour
+                </span>
+              </div>
+
+              <h1 style="font-size: 24px; font-weight: 800; color: #0F2A5F; text-align: center; margin: 0 0 16px 0; letter-spacing: -0.5px;">
+                Thank you for joining Verified Labour!
+              </h1>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #475569; text-align: center; margin: 0 0 24px 0;">
+                ${name ? `Hello <strong>${name}</strong>,<br/><br/>` : ''}
+                We are thrilled to welcome you as a <strong>${roleTitle}</strong> on India's premier skilled labour marketplace.
+              </p>
+
+              <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div style="font-size: 14px; font-weight: 700; color: #0F2A5F; margin-bottom: 8px;">What you can do with Verified Labour:</div>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
+                  <li>Find Aadhaar & Bank verified skilled workers nearby.</li>
+                  <li>Book services instantly in 30 seconds.</li>
+                  <li>Direct communication & transparent direct pricing.</li>
+                </ul>
+              </div>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 24px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${appUrl}" target="_blank" style="font-family: 'Inter', Arial, sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; text-decoration: none; display: inline-block; padding: 14px 36px; border-radius: 10px; background-color: #08783b; border: 1px solid #08783b; box-shadow: 0 2px 4px rgba(8, 120, 59, 0.2);">
+                      Explore Services Now
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size: 13px; line-height: 1.5; color: #64748B; text-align: center; margin: 0; padding-top: 16px; border-top: 1px solid #F1F5F9;">
+                Need help? Reach out to our support team anytime at <a href="mailto:help@verifiedlabour.com" style="color: #08783b; font-weight: 600; text-decoration: none;">help@verifiedlabour.com</a> or call +91 9109019090 / +91 93698 99597.
+              </p>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding: 28px 16px; text-align: center; color: #64748B; font-size: 12px; line-height: 1.6;">
+              <div style="font-size: 14px; font-weight: 700; color: #0F2A5F; margin-bottom: 4px;">Verified Labour</div>
+              <div style="font-size: 12px; color: #64748B; margin-bottom: 16px;">Skilled People. Stronger Communities. A Better India.</div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">Support Email: help@verifiedlabour.com | Helpline: +91 9109019090 / +91 93698 99597</div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">© 2026 Verified Labour. All rights reserved.</div>
+              <div style="font-size: 12px; font-weight: 600; color: #475569;">
+                Powered by <a href="https://myprofunnels.com/" target="_blank" rel="noopener noreferrer" style="color: #08783b; text-decoration: underline; font-weight: 700;">MyProFunnels ❤️</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Thank you for joining Verified Labour!
+
+${name ? `Hello ${name},\n` : ''}Welcome to Verified Labour as a ${roleTitle}!
+
+Find verified, skilled professionals nearby and book services in 30 seconds.
+
+Visit: ${appUrl}
+
+Support: help@verifiedlabour.com | +91 9109019090 / +91 93698 99597
+© 2026 Verified Labour. All rights reserved.
+Powered by MyProFunnels ❤️ (https://myprofunnels.com/)`;
+
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: normalizedEmail,
+        subject: 'Thank you for joining Verified Labour',
+        html,
+        text,
+      });
+    } catch (err) {
+      console.error('Failed to send welcome email:', err);
+    }
+  } else {
+    console.log(`[Mock Email] Welcome Email sent to ${normalizedEmail}`);
+  }
+
+  return { html, text };
 }
 

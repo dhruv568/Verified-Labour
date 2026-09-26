@@ -12,6 +12,8 @@ export function StatusBadge({ status, className = '', size = 'md' }: StatusBadge
   const normalized = status.toUpperCase();
 
   switch (normalized) {
+    case 'ACTIVE':
+    case 'APPROVED':
     case 'COMPLETED':
     case 'PAID':
     case 'REVIEWED':
@@ -54,6 +56,7 @@ export function StatusBadge({ status, className = '', size = 'md' }: StatusBadge
         </Badge>
       );
 
+    case 'BLOCKED':
     case 'CANCELLED_BY_CUSTOMER':
     case 'CANCELLED_BY_WORKER':
     case 'REJECTED':

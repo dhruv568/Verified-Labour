@@ -94,12 +94,12 @@ export default function Navbar({
             >
               {t.home}
             </Link>
-            <a
-              href="/#workers"
+            <Link
+              href="/workers"
               className="hover:text-[#1464D2] transition-colors whitespace-nowrap"
             >
               {t.findWorker}
-            </a>
+            </Link>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
@@ -265,13 +265,13 @@ export default function Navbar({
               >
                 {t.home}
               </Link>
-              <a
-                href="/#workers"
+              <Link
+                href="/workers"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 {t.findWorker}
-              </a>
+              </Link>
               <button
                 type="button"
                 onClick={() => {

@@ -48,7 +48,7 @@ export default function HowItWorks() {
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Get the help you need in just a few simple steps • कुछ ही आसान चरणों में सेवा पाएं
+            <span className="font-devanagari font-bold text-emerald-700">30s में बुक करें</span> • Book in 30s
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function HowItWorks() {
                         </p>
                         <div className="flex items-center gap-1 text-[9px] text-slate-500">
                           <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                          <span>4.8 (120 jobs)</span>
+                          <span>5 (120 jobs)</span>
                         </div>
                       </div>
                     </div>

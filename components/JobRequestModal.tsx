@@ -35,7 +35,7 @@ export default function JobRequestModal({
   );
   const [preferredDate, setPreferredDate] = useState(new Date().toISOString().split('T')[0]);
   const [preferredTime, setPreferredTime] = useState('10:00 AM');
-  const [urgency, setUrgency] = useState<'IMMEDIATE' | 'TODAY' | 'SCHEDULED'>('TODAY');
+  const [urgency, setUrgency] = useState<'IMMEDIATE' | 'TODAY' | 'SCHEDULED'>('IMMEDIATE');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -309,41 +309,44 @@ export default function JobRequestModal({
           {/* Urgency */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Urgency
+              आवश्यकता / Urgency
             </label>
             <div className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setUrgency('TODAY')}
-                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex items-center justify-center ${
-                  urgency === 'TODAY'
-                    ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                Today
-              </button>
-              <button
-                type="button"
                 onClick={() => setUrgency('IMMEDIATE')}
-                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex items-center justify-center ${
+                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                   urgency === 'IMMEDIATE'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                Immediate / Urgent
+                <span>तुरंत</span>
+                <span className="text-[10px] font-normal opacity-80">Urgent</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUrgency('TODAY')}
+                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                  urgency === 'TODAY'
+                    ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <span>आज</span>
+                <span className="text-[10px] font-normal opacity-80">Today</span>
               </button>
               <button
                 type="button"
                 onClick={() => setUrgency('SCHEDULED')}
-                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex items-center justify-center ${
+                className={`min-h-[44px] py-2 px-2 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                   urgency === 'SCHEDULED'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                Schedule Later
+                <span>बाद में शेड्यूल करें</span>
+                <span className="text-[10px] font-normal opacity-80">Schedule Later</span>
               </button>
             </div>
           </div>

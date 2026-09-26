@@ -55,10 +55,10 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="/#workers" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                <Link href="/workers" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
                   <span>Find a Worker</span>
-                </a>
+                </Link>
               </li>
               <li>
                 <Link href="/worker/onboarding" className="inline-flex items-center gap-2 py-1 hover:text-[#0B9B5A] transition-colors group">
@@ -118,10 +118,10 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="/#contact" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                <Link href="/contact" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <Headphones className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
-                  <span>Contact</span>
-                </a>
+                  <span>Contact Us</span>
+                </Link>
               </li>
             </ul>
           </div>
@@ -151,7 +151,7 @@ export default function Footer() {
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href={content.social_whatsapp || "https://wa.me/919369899597"}
+                href={content.social_whatsapp || "https://wa.me/919109019090"}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
@@ -167,11 +167,11 @@ export default function Footer() {
               <p className="font-semibold text-slate-700">Support Desk:</p>
               <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{content.contact_email || 'verifiedlabour@gmail.com'}</span>
+                <span>{content.contact_email || 'help@verifiedlabour.com'}</span>
               </p>
               <p className="text-xs sm:text-[11px] flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{content.contact_phone || '+91 93698 99597'}</span>
+                <span>{content.contact_phone || '+91 9109019090 / +91 93698 99597'}</span>
               </p>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function Footer() {
 
         {/* Bottom Bar matching Reference */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3 font-medium text-center sm:text-left">
-          <p>© 2025 Verified Labour. All rights reserved.</p>
+          <p>© 2026 Verified Labour. All rights reserved.</p>
           <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-tight">
               Parent Company

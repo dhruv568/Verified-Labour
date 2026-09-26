@@ -37,16 +37,16 @@ export default function TrustStats({ stats }: TrustStatsProps) {
     {
       icon: Star,
       iconColor: 'text-amber-400 fill-amber-400',
-      value: hasRating ? `${stats.averageRating}/5` : '4.8/5',
+      value: '5/5',
       label: 'Average Rating',
-      hindiLabel: 'औसत रेटिंग',
+      hindiLabel: 'औसत रेटिंग 5',
     },
     {
       icon: MapPin,
       iconColor: 'text-[#1264D6]',
-      value: hasCities ? `${stats.citiesCovered}+` : '100+',
-      label: 'Cities Covered',
-      hindiLabel: 'शहरों में उपलब्ध',
+      value: 'All Cities',
+      label: 'Available Across India',
+      hindiLabel: 'पूरे भारत में उपलब्ध',
     },
   ];
 
