@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { getSessionUser } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 
 const jobActionSchema = z.object({
   jobId: z.string(),
@@ -12,13 +12,8 @@ const jobActionSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'jobs.view');
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -68,14 +63,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json();
     const parsed = jobActionSchema.safeParse(body);
 
@@ -87,6 +74,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { jobId, action, newStatus, reason } = parsed.data;
+
+    let requiredPerm = 'bookings.manage';
+    if (action === 'CANCEL') requiredPerm = 'bookings.cancel';
+
+    const auth = await requirePermission(req, requiredPerm);
+    if (auth.error) return auth.error;
 
     const job = await prisma.job.findUnique({
       where: { id: jobId },
@@ -121,13 +114,13 @@ export async function POST(req: NextRequest) {
           jobId,
           fromStatus: job.status,
           toStatus: targetStatus,
-          changedByUserId: sessionUser.id,
+          changedByUserId: auth.user.id,
           note: reason || `Admin action: ${action}`,
         },
       }),
       prisma.auditLog.create({
         data: {
-          adminId: sessionUser.adminUser?.id || null,
+          adminId: auth.user.adminUser?.id || null,
           action: `JOB_${action}`,
           targetType: 'JOB',
           targetId: jobId,

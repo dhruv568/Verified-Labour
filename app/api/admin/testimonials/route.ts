@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/auth';
 import { getTestimonials, updateTestimonialSlot } from '@/lib/testimonials';
 import prisma from '@/lib/db';
+import { requirePermission } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'testimonials.view');
+    if (auth.error) return auth.error;
 
     const testimonials = await getTestimonials(false);
     return NextResponse.json({
@@ -31,13 +26,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'testimonials.edit');
+    if (auth.error) return auth.error;
 
     const body = await req.json();
     const {
@@ -85,17 +75,15 @@ export async function POST(req: NextRequest) {
     });
 
     // Record audit log
-    if (sessionUser.adminUser?.id) {
-      await prisma.auditLog.create({
-        data: {
-          adminId: sessionUser.adminUser.id,
-          action: 'UPDATE_TESTIMONIAL_CARD',
-          targetType: 'TESTIMONIAL',
-          targetId: `slot_${slotNum}`,
-          newState: JSON.stringify(updatedSlot),
-        },
-      }).catch(console.error);
-    }
+    await prisma.auditLog.create({
+      data: {
+        adminId: auth.user.adminUser?.id || null,
+        action: 'UPDATE_TESTIMONIAL_CARD',
+        targetType: 'TESTIMONIAL',
+        targetId: `slot_${slotNum}`,
+        newState: JSON.stringify(updatedSlot),
+      },
+    }).catch(console.error);
 
     const allTestimonials = await getTestimonials(false);
 

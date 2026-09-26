@@ -48,6 +48,8 @@ import TestimonialsAdmin from '@/components/admin/TestimonialsAdmin';
 
 type AdminTab =
   | 'dashboard'
+  | 'staff'
+  | 'roles'
   | 'users'
   | 'workers'
   | 'bookings'
@@ -137,13 +139,27 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/auth/me');
       const data = await res.json();
-      if (data.authenticated && data.user && data.user.role === 'ADMIN') {
+      if (data.authenticated && data.user && !data.user.isDisabled) {
         setSession(data.user);
+        // Default tab selection if dashboard.view is missing
+        const userPerms = data.user.permissions || [];
+        const isSuper = data.user.isSuperAdmin || (data.user.role === 'ADMIN' && !data.user.staffAssignment);
+        if (!isSuper && !userPerms.includes('dashboard.view') && !userPerms.includes('*')) {
+          if (userPerms.includes('staff.view')) setActiveTab('staff');
+          else if (userPerms.includes('roles.view')) setActiveTab('roles');
+          else if (userPerms.includes('users.view')) setActiveTab('users');
+          else if (userPerms.includes('workers.view')) setActiveTab('workers');
+          else if (userPerms.includes('jobs.view')) setActiveTab('bookings');
+          else if (userPerms.includes('payments.view')) setActiveTab('payments');
+          else if (userPerms.includes('content.manage')) setActiveTab('content');
+          else if (userPerms.includes('testimonials.view')) setActiveTab('testimonials');
+          else if (userPerms.includes('categories.view')) setActiveTab('categories');
+          else if (userPerms.includes('audit.view')) setActiveTab('audit');
+          else if (userPerms.includes('settings.view')) setActiveTab('settings');
+        }
       } else {
         setSession(null);
       }
-    } catch {
-      setSession(null);
     } finally {
       setLoadingSession(false);
     }
@@ -643,19 +659,29 @@ export default function AdminPage() {
     return j.status === jobStatusFilter;
   });
 
-  const navItems = [
-    { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: <Layers className="w-4 h-4" /> },
-    { id: 'users' as AdminTab, label: 'Users', icon: <Users className="w-4 h-4" />, count: users.length },
-    { id: 'workers' as AdminTab, label: 'Workers & Verification', icon: <Briefcase className="w-4 h-4" />, count: workers.length },
-    { id: 'bookings' as AdminTab, label: 'Jobs & Bookings', icon: <Clock className="w-4 h-4" />, count: jobs.length },
-    { id: 'payments' as AdminTab, label: 'Payments & Revenue', icon: <CreditCard className="w-4 h-4" />, count: payments.length },
-    { id: 'content' as AdminTab, label: 'Website Content', icon: <Globe className="w-4 h-4" /> },
-    { id: 'testimonials' as AdminTab, label: 'Testimonials (2 Cards)', icon: <Star className="w-4 h-4 text-amber-500" /> },
-    { id: 'categories' as AdminTab, label: 'Service Categories', icon: <Building className="w-4 h-4" />, count: categories.length },
-    { id: 'disputes' as AdminTab, label: 'Disputes Console', icon: <Scale className="w-4 h-4" />, count: disputes.length },
-    { id: 'audit' as AdminTab, label: 'System Audit Logs', icon: <FileText className="w-4 h-4" />, count: auditLogs.length },
-    { id: 'settings' as AdminTab, label: 'Settings & Security', icon: <Settings className="w-4 h-4" /> },
+  const userPerms: string[] = session?.permissions || [];
+  const isSuperAdmin = Boolean(session?.isSuperAdmin || (session?.role === 'ADMIN' && !session?.staffAssignment));
+
+  const allNavItems = [
+    { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: <Layers className="w-4 h-4" />, perm: 'dashboard.view' },
+    { id: 'staff' as AdminTab, label: 'Staff Management', icon: <Users className="w-4 h-4" />, perm: 'staff.view', action: () => router.push('/admin/staff') },
+    { id: 'roles' as AdminTab, label: 'Role Management', icon: <ShieldCheck className="w-4 h-4 text-brand-400" />, perm: 'roles.view', action: () => router.push('/admin/roles') },
+    { id: 'users' as AdminTab, label: 'Users', icon: <Users className="w-4 h-4" />, count: users.length, perm: 'users.view' },
+    { id: 'workers' as AdminTab, label: 'Workers & Verification', icon: <Briefcase className="w-4 h-4" />, count: workers.length, perm: 'workers.view' },
+    { id: 'bookings' as AdminTab, label: 'Jobs & Bookings', icon: <Clock className="w-4 h-4" />, count: jobs.length, perm: 'jobs.view' },
+    { id: 'payments' as AdminTab, label: 'Payments & Revenue', icon: <CreditCard className="w-4 h-4" />, count: payments.length, perm: 'payments.view' },
+    { id: 'content' as AdminTab, label: 'Website Content', icon: <Globe className="w-4 h-4" />, perm: 'content.manage' },
+    { id: 'testimonials' as AdminTab, label: 'Testimonials (2 Cards)', icon: <Star className="w-4 h-4 text-amber-500" />, perm: 'testimonials.view' },
+    { id: 'categories' as AdminTab, label: 'Service Categories', icon: <Building className="w-4 h-4" />, count: categories.length, perm: 'categories.view' },
+    { id: 'disputes' as AdminTab, label: 'Disputes Console', icon: <Scale className="w-4 h-4" />, count: disputes.length, perm: 'bookings.manage' },
+    { id: 'audit' as AdminTab, label: 'System Audit Logs', icon: <FileText className="w-4 h-4" />, count: auditLogs.length, perm: 'audit.view' },
+    { id: 'settings' as AdminTab, label: 'Settings & Security', icon: <Settings className="w-4 h-4" />, perm: 'settings.view' },
   ];
+
+  const navItems = allNavItems.filter((item) => {
+    if (isSuperAdmin) return true;
+    return userPerms.includes(item.perm) || userPerms.includes('*');
+  });
 
   // ================= 2. AUTHENTICATED ADMIN DASHBOARD VIEW =================
   return (
@@ -675,7 +701,9 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex flex-col text-right">
               <span className="text-xs font-bold text-white">{session.email}</span>
-              <span className="text-[10px] font-mono text-emerald-400 font-semibold">ROLE: SUPERADMIN</span>
+              <span className="text-[10px] font-mono text-emerald-400 font-semibold">
+                ROLE: {(session.roleName || (isSuperAdmin ? 'SUPERADMIN' : 'STAFF')).toUpperCase()}
+              </span>
             </div>
 
             <Button
@@ -742,7 +770,11 @@ export default function AdminPage() {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveTab(item.id);
+                    if (item.action) {
+                      item.action();
+                    } else {
+                      setActiveTab(item.id);
+                    }
                     setMobileSidebarOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${

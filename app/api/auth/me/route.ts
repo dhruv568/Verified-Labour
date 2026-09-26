@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser, clearAuthCookie } from '@/lib/auth';
+import { getUserPermissions } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
   try {
@@ -7,6 +8,8 @@ export async function GET(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ authenticated: false, user: null });
     }
+
+    const permData = await getUserPermissions(user.id);
 
     return NextResponse.json({
       authenticated: true,
@@ -17,10 +20,15 @@ export async function GET(req: NextRequest) {
         role: user.role,
         status: user.status,
         isPhoneVerified: user.isPhoneVerified,
+        isSuperAdmin: permData.isSuperAdmin,
+        roleName: permData.roleName,
+        permissions: permData.permissions,
+        isDisabled: permData.isDisabled,
         customerProfile: user.customerProfile,
         workerProfile: user.workerProfile,
         businessProfile: user.businessProfile,
         adminUser: user.adminUser,
+        staffAssignment: user.staffAssignment,
       },
     });
   } catch (err: any) {

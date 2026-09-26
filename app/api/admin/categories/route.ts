@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { getSessionUser } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 
 const categorySchema = z.object({
   id: z.string().optional(),
@@ -16,10 +16,8 @@ const categorySchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requirePermission(req, 'categories.view');
+    if (auth.error) return auth.error;
 
     const categories = await prisma.category.findMany({
       orderBy: { sortOrder: 'asc' },
@@ -37,11 +35,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
-    }
-
     const body = await req.json();
     const parsed = categorySchema.safeParse(body);
 
@@ -50,6 +43,9 @@ export async function POST(req: NextRequest) {
     }
 
     const { id, name, nameHi, slug, description, iconUrl, sortOrder, isActive } = parsed.data;
+
+    const auth = await requirePermission(req, id ? 'categories.edit' : 'categories.create');
+    if (auth.error) return auth.error;
 
     let category;
     if (id) {
@@ -66,7 +62,7 @@ export async function POST(req: NextRequest) {
     // Audit log
     await prisma.auditLog.create({
       data: {
-        adminId: sessionUser.adminUser?.id || null,
+        adminId: auth.user.adminUser?.id || null,
         action: id ? 'CATEGORY_UPDATE' : 'CATEGORY_CREATE',
         targetType: 'CATEGORY',
         targetId: category.id,

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -19,6 +19,7 @@ model User {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   adminUser        AdminUser?
+  staffAssignment  StaffAssignment?
   businessProfile  BusinessProfile?
   customerProfile  CustomerProfile?
   disputesRaised   Dispute[]
@@ -572,3 +573,76 @@ model Testimonial {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model Role {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  description      String?
+  isSystem         Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  staffAssignments StaffAssignment[]
+  rolePermissions  RolePermission[]
+  invitations      StaffInvitation[]
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  key             String           @unique
+  category        String
+  label           String
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model StaffAssignment {
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  roleId           String
+  status           String    @default("ACTIVE")
+  assignedAt       DateTime  @default(now())
+  assignedByUserId String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role             Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+}
+
+model StaffInvitation {
+  id          String    @id @default(uuid())
+  email       String
+  fullName    String
+  roleId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  status      String    @default("PENDING")
+  createdById String?
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+

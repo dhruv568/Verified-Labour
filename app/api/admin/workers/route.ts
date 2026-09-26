@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { getSessionUser } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 
 const workerActionSchema = z.object({
   workerId: z.string(),
@@ -11,10 +11,8 @@ const workerActionSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 403 });
-    }
+    const auth = await requirePermission(req, 'workers.view');
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -67,11 +65,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 403 });
-    }
-
     const body = await req.json();
     const parsed = workerActionSchema.safeParse(body);
 
@@ -83,6 +76,15 @@ export async function POST(req: NextRequest) {
     }
 
     const { workerId, action, reason } = parsed.data;
+
+    // Check specific permission for action
+    let requiredPerm = 'workers.edit';
+    if (action === 'APPROVE') requiredPerm = 'workers.verify';
+    else if (action === 'REJECT') requiredPerm = 'workers.reject';
+    else if (action === 'SUSPEND') requiredPerm = 'workers.disable';
+
+    const auth = await requirePermission(req, requiredPerm);
+    if (auth.error) return auth.error;
 
     const worker = await prisma.workerProfile.findUnique({
       where: { id: workerId },
@@ -97,8 +99,6 @@ export async function POST(req: NextRequest) {
     let newStatus = previousStatus;
 
     if (action === 'APPROVE') {
-      // Prompt Rule 27: Identity verification must originate from verification provider result!
-      // Admin cannot approve a worker if Cashfree verification has failed.
       const hasAadhaar = worker.aadhaarVerif?.status === 'VERIFIED';
       const hasBank = worker.bankVerif?.status === 'VERIFIED';
 
@@ -123,7 +123,6 @@ export async function POST(req: NextRequest) {
       newStatus = 'PENDING_REVIEW';
     }
 
-    // Update worker status and record audit log in a transaction
     await prisma.$transaction([
       prisma.workerProfile.update({
         where: { id: workerId },
@@ -139,12 +138,12 @@ export async function POST(req: NextRequest) {
         : []),
       prisma.auditLog.create({
         data: {
-          adminId: sessionUser.adminUser?.id || null,
+          adminId: auth.user.adminUser?.id || null,
           action: `WORKER_${action}`,
           targetType: 'WORKER_PROFILE',
           targetId: workerId,
           previousState: JSON.stringify({ status: previousStatus }),
-          newState: JSON.stringify({ status: newStatus, reason: reason || 'Admin review decision' }),
+          newState: JSON.stringify({ status: newStatus, reason: reason || 'Admin decision' }),
           ipAddress: req.headers.get('x-forwarded-for') || '127.0.0.1',
           userAgent: req.headers.get('user-agent') || 'Browser',
         },

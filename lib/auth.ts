@@ -121,6 +121,11 @@ export async function getSessionUser(req?: NextRequest) {
       },
       businessProfile: true,
       adminUser: true,
+      staffAssignment: {
+        include: {
+          role: true,
+        },
+      },
     },
   });
 

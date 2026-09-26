@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { getSessionUser } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'payments.view');
+    if (auth.error) return auth.error;
 
     const transactions = await prisma.transaction.findMany({
       include: {

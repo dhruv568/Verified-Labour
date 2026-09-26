@@ -342,3 +342,230 @@ export function verifyEmailOtpCode(email: string, otpInput: string): { success: 
     };
   }
 }
+
+export interface SendStaffInvitationParams {
+  email: string;
+  name: string;
+  roleName: string;
+  permissionsList: string[];
+  inviteToken: string;
+  expiresAt: Date;
+}
+
+/**
+ * Sends a premium Verified Labour staff invitation email.
+ */
+export async function sendStaffInvitationEmail(params: SendStaffInvitationParams) {
+  const { email, name, roleName, permissionsList, inviteToken, expiresAt } = params;
+  const appUrl = DEFAULT_APP_URL;
+  const inviteUrl = `${appUrl}/staff/invite/${inviteToken}`;
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.jpeg';
+  const expiryFormatted = new Date(expiresAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const permissionsListHtml = permissionsList.length > 0
+    ? permissionsList.map((p) => `<li style="margin-bottom: 6px; font-weight: 600; color: #1E293B;">• ${p}</li>`).join('')
+    : '<li style="font-weight: 600; color: #1E293B;">• Standard Staff Access</li>';
+
+  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You've been invited to Verified Labour Admin</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F8FAFC; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto;">
+          
+          <!-- HEADER -->
+          <tr>
+            <td align="center" style="padding-bottom: 24px;">
+              <a href="${appUrl}" target="_blank">
+                <img src="${logoUrl}" alt="Verified Labour" width="180" style="display: block; width: 180px; height: auto; border: 0;" />
+              </a>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 8px;">
+                Verified Labour Staff Admin Portal
+              </div>
+            </td>
+          </tr>
+
+          <!-- CARD -->
+          <tr>
+            <td style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 12px rgba(15, 42, 95, 0.05);">
+              
+              <div style="text-align: center; margin-bottom: 20px;">
+                <span style="display: inline-block; background-color: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 1px;">
+                  Staff Portal Invitation
+                </span>
+              </div>
+
+              <h1 style="font-size: 22px; font-weight: 800; color: #0F2A5F; text-align: center; margin: 0 0 16px 0;">
+                You've been invited to Verified Labour Admin
+              </h1>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+                Hello <strong>${name}</strong>,<br/><br/>
+                You have been invited to join the <strong>Verified Labour Admin Panel</strong> team.
+              </p>
+
+              <!-- ASSIGNED ROLE BADGE -->
+              <div style="background-color: #F1F5F9; border-left: 4px solid #08783b; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;">
+                <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.8px;">Assigned Staff Role</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0F2A5F; margin-top: 4px;">${roleName}</div>
+              </div>
+
+              <div style="font-size: 14px; font-weight: 700; color: #0F2A5F; margin-bottom: 10px;">
+                Your assigned access includes:
+              </div>
+
+              <ul style="padding-left: 16px; margin: 0 0 28px 0; font-size: 14px; line-height: 1.6; color: #334155; list-style-type: none;">
+                ${permissionsListHtml}
+              </ul>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${inviteUrl}" target="_blank" style="font-family: 'Inter', Arial, sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; text-decoration: none; display: inline-block; padding: 14px 40px; border-radius: 10px; background-color: #08783b; border: 1px solid #08783b; box-shadow: 0 4px 10px rgba(8, 120, 59, 0.25);">
+                      Accept Invitation
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- EXPIRY NOTICE -->
+              <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 12px 16px; text-align: center; font-size: 12px; color: #B45309; font-weight: 600; margin-bottom: 20px;">
+                ⏰ Invitation Expiry: Valid until ${expiryFormatted}
+              </div>
+
+              <p style="font-size: 12px; line-height: 1.5; color: #64748B; text-align: center; margin: 0; padding-top: 16px; border-top: 1px solid #F1F5F9;">
+                <strong>Security Notice:</strong> This invitation was specifically generated for ${email}. Never forward this email to anyone.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding: 28px 16px; text-align: center; color: #64748B; font-size: 12px; line-height: 1.6;">
+              <div style="font-size: 13px; font-weight: 700; color: #0F2A5F; margin-bottom: 4px;">
+                Verified Labour
+              </div>
+              <div style="font-size: 11px; color: #64748B; margin-bottom: 12px;">
+                Verified, Skilled & Nearby Professionals
+              </div>
+              <div style="font-size: 11px; color: #94A3B8;">
+                Website: <a href="${appUrl}" style="color: #08783b; text-decoration: none; font-weight: 700;">verifiedlabour.com</a> | Support: <a href="mailto:verifiedlabour@gmail.com" style="color: #08783b; text-decoration: none; font-weight: 700;">verifiedlabour@gmail.com</a>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `VERIFIED LABOUR ADMIN INVITATION
+
+Hello ${name},
+
+You have been invited to join the Verified Labour Admin Panel as:
+${roleName}
+
+Assigned Access Includes:
+${permissionsList.map((p) => `- ${p}`).join('\n')}
+
+Accept your invitation and set up your secure staff account here:
+${inviteUrl}
+
+Invitation Expiry: ${expiryFormatted}
+
+Security Notice: Restrictive staff portal link. Do not share.
+Support Contact: verifiedlabour@gmail.com`;
+
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: email,
+        subject: "You've been invited to Verified Labour Admin",
+        html,
+        text,
+      });
+    } catch (err) {
+      console.error('Failed to send staff invitation email:', err);
+    }
+  } else {
+    console.log(`[Mock Email] Staff Invitation sent to ${email}. Token: ${inviteToken}`);
+  }
+
+  return { inviteUrl, html, text };
+}
+
+export interface SendStaffPasswordResetParams {
+  email: string;
+  name: string;
+  resetToken: string;
+}
+
+/**
+ * Sends password reset email for staff.
+ */
+export async function sendStaffPasswordResetEmail(params: SendStaffPasswordResetParams) {
+  const { email, name, resetToken } = params;
+  const appUrl = DEFAULT_APP_URL;
+  const resetUrl = `${appUrl}/staff/reset-password/${resetToken}`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #f8fafc; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <h2 style="color: #0f2a5f;">Password Reset - Verified Labour Staff</h2>
+    <p>Hello ${name},</p>
+    <p>We received a request to reset your password for the Verified Labour Staff Portal.</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${resetUrl}" style="background: #08783b; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
+    </div>
+    <p style="font-size: 12px; color: #64748b;">This link will expire in 1 hour. If you did not request a password reset, please ignore this email.</p>
+  </div>
+</body>
+</html>`;
+
+  const text = `Reset Your Password - Verified Labour Staff\n\nHello ${name},\nUse this link to reset your password:\n${resetUrl}\n\nLink expires in 1 hour.`;
+
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: email,
+        subject: 'Reset Password — Verified Labour Staff Portal',
+        html,
+        text,
+      });
+    } catch (err) {
+      console.error('Failed to send password reset email:', err);
+    }
+  } else {
+    console.log(`[Mock Email] Password Reset sent to ${email}. Token: ${resetToken}`);
+  }
+
+  return { resetUrl };
+}
+

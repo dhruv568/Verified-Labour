@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { getSessionUser } from '@/lib/auth';
+import { requirePermission } from '@/lib/rbac';
 
 const userActionSchema = z.object({
   userId: z.string(),
@@ -11,13 +11,8 @@ const userActionSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'users.view');
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
@@ -95,13 +90,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'users.disable');
+    if (auth.error) return auth.error;
 
     const body = await req.json();
     const parsed = userActionSchema.safeParse(body);
@@ -123,7 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
-    if (targetUser.role === 'ADMIN' && targetUser.id !== sessionUser.id) {
+    if (targetUser.role === 'ADMIN' && targetUser.id !== auth.user.id) {
       return NextResponse.json(
         { success: false, error: 'Superadmin accounts cannot be modified via standard users endpoint.' },
         { status: 403 }
@@ -142,7 +132,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.auditLog.create({
         data: {
-          adminId: sessionUser.adminUser?.id || null,
+          adminId: auth.user.adminUser?.id || null,
           action: `USER_${action}`,
           targetType: 'USER',
           targetId: userId,

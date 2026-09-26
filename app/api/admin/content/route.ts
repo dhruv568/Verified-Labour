@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/auth';
 import { getSiteContent, updateSiteContent } from '@/lib/site-config';
+import { requirePermission } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'content.manage');
+    if (auth.error) return auth.error;
 
     const content = await getSiteContent();
     return NextResponse.json({
@@ -27,13 +22,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requirePermission(req, 'content.manage');
+    if (auth.error) return auth.error;
 
     const body = await req.json();
     if (!body || typeof body !== 'object') {
@@ -43,7 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const success = await updateSiteContent(body, sessionUser.adminUser?.id);
+    const success = await updateSiteContent(body, auth.user.adminUser?.id);
     if (!success) {
       return NextResponse.json(
         { success: false, error: 'Failed to update website content in database' },
