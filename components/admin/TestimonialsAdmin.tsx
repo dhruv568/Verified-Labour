@@ -472,6 +472,13 @@ export default function TestimonialsAdmin() {
                       transformOrigin: 'center center',
                     }}
                     unoptimized={true}
+                    onError={() => {
+                      // Fallback to default image if uploaded file is missing or broken
+                      const fallback = `/images/testimonials/testimonial-${slotNum}.jpg`;
+                      if (currentPreview !== fallback) {
+                        handleFieldChange(slotNum, 'imageUrl', fallback);
+                      }
+                    }}
                   />
 
                   {isUploading && (
@@ -490,11 +497,19 @@ export default function TestimonialsAdmin() {
                   </div>
 
                   {/* Upload Overlay Button */}
-                  <div className="absolute bottom-3 right-3 z-10">
-                    <label className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-navy-950 rounded-xl font-bold text-xs shadow-md cursor-pointer hover:bg-white active:scale-95 transition-all flex items-center gap-1.5 border border-white/80">
+                  <div
+                    className="absolute bottom-3 right-3 z-10"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                  >
+                    <label
+                      htmlFor={`testimonial-file-input-${slotNum}`}
+                      className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-navy-950 rounded-xl font-bold text-xs shadow-md cursor-pointer hover:bg-white active:scale-95 transition-all flex items-center gap-1.5 border border-white/80"
+                    >
                       <Upload className="w-3.5 h-3.5 text-brand-600" />
                       <span>Replace Image</span>
                       <input
+                        id={`testimonial-file-input-${slotNum}`}
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         className="hidden"

@@ -80,6 +80,9 @@ export async function ensureDefaultTestimonials() {
   }
 }
 
+import fs from 'fs';
+import path from 'path';
+
 /**
  * Fetch testimonials. If onlyActive is true, returns only active cards.
  */
@@ -90,15 +93,33 @@ export async function getTestimonials(onlyActive: boolean = true): Promise<Testi
       orderBy: { slot: 'asc' },
     });
 
-    if (records.length === 0) {
+    // Validate that uploaded image files actually exist on disk; otherwise heal DB record to default image
+    const validatedRecords = await Promise.all(
+      records.map(async (rec) => {
+        if (rec.imageUrl && rec.imageUrl.startsWith('/uploads/')) {
+          const diskPath = path.join(process.cwd(), 'public', rec.imageUrl);
+          if (!fs.existsSync(diskPath)) {
+            const defaultUrl = `/images/testimonials/testimonial-${rec.slot}.jpg`;
+            await prisma.testimonial.update({
+              where: { slot: rec.slot },
+              data: { imageUrl: defaultUrl },
+            }).catch(console.error);
+            return { ...rec, imageUrl: defaultUrl };
+          }
+        }
+        return rec;
+      })
+    );
+
+    if (validatedRecords.length === 0) {
       return DEFAULT_TESTIMONIALS.filter((t) => !onlyActive || t.isActive);
     }
 
     if (onlyActive) {
-      return records.filter((t) => t.isActive);
+      return validatedRecords.filter((t) => t.isActive);
     }
 
-    return records;
+    return validatedRecords;
   } catch (err) {
     console.error('Error in getTestimonials:', err);
     return DEFAULT_TESTIMONIALS.filter((t) => !onlyActive || t.isActive);
