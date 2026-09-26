@@ -15,12 +15,14 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface HowItWorksProps {
   onFindWorker?: () => void;
 }
 
 export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
+  const { isHindi } = useLanguage();
   const steps = [
     {
       num: 1,
@@ -62,11 +64,8 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
             <span>सरल और पारदर्शी प्रक्रिया</span>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
-            <span className="font-devanagari">यह कैसे काम करता है?</span>
-            <span className="text-lg sm:text-2xl text-slate-500 font-bold">
-              How It Works
-            </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-[#082B66] tracking-tight font-devanagari text-left">
+            {isHindi ? 'यह कैसे काम करता है?' : 'How It Works'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             <span className="font-devanagari font-bold text-[#079447]">30s में बुक करें</span> • Book in 30s

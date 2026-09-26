@@ -17,7 +17,7 @@ export const translations = {
     home: 'होम',
     findWorker: 'कामगार खोजें',
     becomeWorker: 'कामगार बनें',
-    howItWorks: 'यह कैसे काम करता है',
+    howItWorks: 'यह कैसे काम करता है?',
     about: 'हमारे बारे में',
     contact: 'संपर्क करें',
     login: 'लॉगिन',

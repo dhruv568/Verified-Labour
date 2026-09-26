@@ -160,7 +160,7 @@ export default function AboutPage() {
         {/* 4. HOW IT WORKS (SIMPLE FLOW) */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xs space-y-6">
           <h2 className="text-xl sm:text-2xl font-black text-[#082B66] font-devanagari">
-            {isHindi ? 'यह कैसे काम करता है / How It Works' : 'How It Works'}
+            {isHindi ? 'यह कैसे काम करता है? / How It Works' : 'How It Works'}
           </h2>
 
           <div className="grid grid-cols-1 min-[460px]:grid-cols-2 md:grid-cols-4 gap-4">
