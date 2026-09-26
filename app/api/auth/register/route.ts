@@ -17,8 +17,7 @@ const registerSchema = z.object({
     .string({ required_error: 'Full name is required' })
     .trim()
     .min(2, 'Name must be at least 2 characters')
-    .max(80, 'Name must not exceed 80 characters')
-    .regex(/^[a-zA-Z\s.'-]+$/, 'Name should only contain letters, spaces, dots, and hyphens'),
+    .max(80, 'Name must not exceed 80 characters'),
   email: z
     .string({ required_error: 'Email address is required' })
     .trim()
@@ -34,6 +33,8 @@ const registerSchema = z.object({
     .regex(/[A-Za-z]/, 'Password must contain at least one letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   role: z.enum(['CUSTOMER', 'WORKER', 'BUSINESS']).default('CUSTOMER'),
+  skill: z.string().optional(),
+  customSkill: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, phone: rawPhone, password, role } = parsed.data;
+    const { name, email, phone: rawPhone, password, role, skill, customSkill } = parsed.data;
     const normalizedPhone = normalizePhone(rawPhone);
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -95,10 +96,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Hash password securely using bcrypt
+    // 3. Resolve category ID for worker skill if provided
+    let primaryCategoryId: string | undefined = undefined;
+    if (role === 'WORKER' && skill) {
+      // Look up category in existing Category table
+      const category = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { slug: skill },
+            { id: skill },
+          ],
+        },
+      });
+      if (category) {
+        primaryCategoryId = category.id;
+      } else {
+        // Fallback search by slug or name
+        const fallbackCat = await prisma.category.findFirst({
+          where: { isActive: true },
+        });
+        if (fallbackCat) {
+          primaryCategoryId = fallbackCat.id;
+        }
+      }
+    }
+
+    // 4. Hash password securely using bcrypt
     const passwordHash = await hashPassword(password);
 
-    // 4. Create User as PENDING_VERIFICATION with isEmailVerified = false
+    // 5. Create User as PENDING_VERIFICATION
     const user = await prisma.user.create({
       data: {
         phone: normalizedPhone,
@@ -123,6 +149,19 @@ export async function POST(req: NextRequest) {
               status: 'ONBOARDING',
               isAvailable: true,
               serviceRadiusKm: 15.0,
+              primaryCategoryId,
+              bio: customSkill ? `Specialized Skill: ${customSkill}` : undefined,
+              ...(primaryCategoryId && {
+                skills: {
+                  create: [
+                    {
+                      categoryId: primaryCategoryId,
+                      yearsExperience: 1,
+                      isVerified: false,
+                    },
+                  ],
+                },
+              }),
             },
           },
         }),
