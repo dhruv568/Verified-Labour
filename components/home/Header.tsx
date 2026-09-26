@@ -7,14 +7,12 @@ import {
   Menu,
   X,
   Shield,
-  Briefcase,
   LogOut,
   ChevronDown,
 } from 'lucide-react';
 import LocationSelector from '@/components/LocationSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import Logo from '@/components/Logo';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface HeaderProps {
   onOpenAuth?: (
@@ -25,7 +23,6 @@ interface HeaderProps {
 
 export default function Header({ onOpenAuth }: HeaderProps) {
   const router = useRouter();
-  const { t } = useLanguage();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -71,59 +68,56 @@ export default function Header({ onOpenAuth }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-22 gap-4 lg:gap-6 xl:gap-8">
-          {/* Left: Verified Labour Logo */}
+        <div className="flex items-center justify-between h-20 lg:h-22 gap-4 lg:gap-6">
+          {/* Left: Transparent Verified Labour Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
             <Logo variant="header" priority />
           </Link>
 
-          {/* Center Navigation Links matching Screenshot */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-semibold text-slate-700 shrink-0">
+          {/* Center Navigation Links (Hindi FIRST, English SECOND) */}
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs xl:text-sm font-bold text-slate-700 shrink-0">
             <Link
               href="/"
-              className="text-[#082B66] font-bold hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
             >
-              {t.home}
+              होम <span className="text-[11px] font-medium text-slate-500 font-sans">/ Home</span>
             </Link>
             <Link
               href="/workers"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
             >
-              {t.findWorker}
+              कामगार खोजें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Find Worker</span>
             </Link>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
-              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap"
+              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap font-devanagari"
             >
-              {t.becomeWorker}
+              कामगार बनें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Become Worker</span>
             </button>
             <a
               href="/#how"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
             >
-              {t.howItWorks}
+              यह कैसे काम करता है <span className="text-[11px] font-medium text-slate-500 font-sans">/ How It Works</span>
             </a>
             <a
               href="/#about"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
             >
-              {t.about}
+              हमारे बारे में <span className="text-[11px] font-medium text-slate-500 font-sans">/ About</span>
             </a>
             <a
               href="/#contact"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap font-devanagari"
             >
-              {t.contact}
+              संपर्क करें <span className="text-[11px] font-medium text-slate-500 font-sans">/ Contact</span>
             </a>
           </nav>
 
-          {/* Right Area: Dynamic Location Selector + Language Selector + Green Login + Blue Sign Up */}
-          <div className="hidden md:flex items-center gap-2.5 xl:gap-3 shrink-0">
-            {/* Dynamic Location Selector with MapPin */}
+          {/* Right Tools: Location Selector + Language Selector + Green Login + Blue Sign Up */}
+          <div className="hidden md:flex items-center gap-2 xl:gap-3 shrink-0">
             <LocationSelector />
-
-            {/* Language Selector */}
             <LanguageSelector />
 
             {sessionUser ? (
@@ -177,7 +171,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 >
                   Login
                 </button>
@@ -186,7 +180,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 >
                   Sign Up
                 </button>
@@ -209,15 +203,13 @@ export default function Header({ onOpenAuth }: HeaderProps) {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
-            {/* Location Selector on Mobile */}
             <div className="px-1">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                Your Service Location:
+                आपका स्थान / Your Location:
               </span>
               <LocationSelector isMobile={true} />
             </div>
 
-            {/* Language Selector on Mobile */}
             <div className="px-1">
               <LanguageSelector isMobile={true} />
             </div>
@@ -226,16 +218,16 @@ export default function Header({ onOpenAuth }: HeaderProps) {
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#082B66] hover:bg-slate-50 rounded-xl transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#082B66] hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
               >
-                {t.home}
+                होम <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Home</span>
               </Link>
               <Link
                 href="/workers"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
               >
-                {t.findWorker}
+                कामगार खोजें <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Find Worker</span>
               </Link>
               <button
                 type="button"
@@ -243,33 +235,33 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                   setMobileMenuOpen(false);
                   onOpenAuth?.('register', 'WORKER');
                 }}
-                className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#079447] hover:bg-emerald-50 rounded-xl transition-colors"
+                className="w-full text-left flex items-center justify-between min-h-[44px] px-3.5 py-2.5 text-base font-bold text-[#079447] hover:bg-emerald-50 rounded-xl transition-colors font-devanagari"
               >
-                <span>{t.becomeWorker}</span>
+                <span>कामगार बनें <span className="text-xs font-normal text-emerald-700 font-sans">/ Become Worker</span></span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  {t.earnDaily}
+                  रोज़ कमाएं / Earn Daily
                 </span>
               </button>
               <a
                 href="/#how"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
               >
-                {t.howItWorks}
+                यह कैसे काम करता है <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ How It Works</span>
               </a>
               <a
                 href="/#about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
               >
-                {t.about}
+                हमारे बारे में <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ About</span>
               </a>
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors font-devanagari"
               >
-                {t.contact}
+                संपर्क करें <span className="text-xs font-normal text-slate-500 font-sans ml-1.5">/ Contact</span>
               </a>
             </nav>
 
