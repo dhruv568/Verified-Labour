@@ -1452,11 +1452,61 @@ export default function AdminPage() {
                           About Section Body Content
                         </label>
                         <textarea
-                          rows={4}
+                          rows={3}
                           value={contentForm.about_content || ''}
                           onChange={(e) => setContentForm({ ...contentForm, about_content: e.target.value })}
                           className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Our Purpose Statement (about_purpose)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={contentForm.about_purpose || ''}
+                          onChange={(e) => setContentForm({ ...contentForm, about_purpose: e.target.value })}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Our Vision Statement (about_vision)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={contentForm.about_vision || ''}
+                          onChange={(e) => setContentForm({ ...contentForm, about_vision: e.target.value })}
+                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            CTA Button Text (about_cta_text)
+                          </label>
+                          <input
+                            type="text"
+                            value={contentForm.about_cta_text || ''}
+                            onChange={(e) => setContentForm({ ...contentForm, about_cta_text: e.target.value })}
+                            className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            CTA Button Link (about_cta_link)
+                          </label>
+                          <input
+                            type="text"
+                            value={contentForm.about_cta_link || ''}
+                            onChange={(e) => setContentForm({ ...contentForm, about_cta_link: e.target.value })}
+                            className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
