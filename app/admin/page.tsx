@@ -45,6 +45,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Logo from '@/components/Logo';
 import TestimonialsAdmin from '@/components/admin/TestimonialsAdmin';
+import StaffAdmin from '@/components/admin/StaffAdmin';
+import RolesAdmin from '@/components/admin/RolesAdmin';
 
 type AdminTab =
   | 'dashboard'
@@ -164,6 +166,41 @@ export default function AdminPage() {
       setLoadingSession(false);
     }
   };
+
+  const VALID_TABS: AdminTab[] = [
+    'dashboard', 'staff', 'roles', 'users', 'workers', 'bookings',
+    'payments', 'content', 'testimonials', 'categories', 'disputes',
+    'audit', 'settings'
+  ];
+
+  const handleTabChange = (tabId: AdminTab) => {
+    setActiveTab(tabId);
+    const url = tabId === 'dashboard' ? '/admin' : `/admin?section=${tabId}`;
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ tab: tabId }, '', url);
+    }
+    setMobileSidebarOpen(false);
+  };
+
+  useEffect(() => {
+    const syncTabFromUrl = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const section = (params.get('section') || params.get('tab')) as AdminTab | null;
+      if (section && VALID_TABS.includes(section)) {
+        setActiveTab(section);
+      }
+    };
+
+    syncTabFromUrl();
+
+    const handlePopState = () => {
+      syncTabFromUrl();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     checkSession();
@@ -664,8 +701,8 @@ export default function AdminPage() {
 
   const allNavItems = [
     { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: <Layers className="w-4 h-4" />, perm: 'dashboard.view' },
-    { id: 'staff' as AdminTab, label: 'Staff Management', icon: <Users className="w-4 h-4" />, perm: 'staff.view', action: () => router.push('/admin/staff') },
-    { id: 'roles' as AdminTab, label: 'Role Management', icon: <ShieldCheck className="w-4 h-4 text-brand-400" />, perm: 'roles.view', action: () => router.push('/admin/roles') },
+    { id: 'staff' as AdminTab, label: 'Staff Management', icon: <Users className="w-4 h-4" />, perm: 'staff.view' },
+    { id: 'roles' as AdminTab, label: 'Role Management', icon: <ShieldCheck className="w-4 h-4 text-brand-400" />, perm: 'roles.view' },
     { id: 'users' as AdminTab, label: 'Users', icon: <Users className="w-4 h-4" />, count: users.length, perm: 'users.view' },
     { id: 'workers' as AdminTab, label: 'Workers & Verification', icon: <Briefcase className="w-4 h-4" />, count: workers.length, perm: 'workers.view' },
     { id: 'bookings' as AdminTab, label: 'Jobs & Bookings', icon: <Clock className="w-4 h-4" />, count: jobs.length, perm: 'jobs.view' },
@@ -688,7 +725,7 @@ export default function AdminPage() {
     <div className="min-h-screen flex flex-col bg-slate-100 text-slate-800">
       {/* Top Header */}
       <header className="bg-navy-950 text-white border-b border-navy-900 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white px-2.5 py-1 rounded-xl">
               <Logo variant="header" />
@@ -719,7 +756,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6">
+      <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6">
         {/* Action Message Banner */}
         {actionMessage && (
           <div
@@ -769,14 +806,7 @@ export default function AdminPage() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    if (item.action) {
-                      item.action();
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                    setMobileSidebarOpen(false);
-                  }}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-navy-950 text-white shadow-xs'
@@ -806,27 +836,44 @@ export default function AdminPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 space-y-6 min-w-0">
-          {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 capitalize">
-                {activeTab.replace('_', ' ')} Management
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Complete administration, KYC review, live site content management, and cryptographic audit logs.
-              </p>
-            </div>
+          {/* TAB: STAFF MANAGEMENT */}
+          {activeTab === 'staff' && (
+            <StaffAdmin
+              onSwitchToRoles={() => handleTabChange('roles')}
+              initialStaffId={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('staffId') : null}
+            />
+          )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchAdminData}
-              isLoading={loadingData}
-              icon={<RefreshCw className="w-3.5 h-3.5" />}
-            >
-              Refresh Data
-            </Button>
-          </div>
+          {/* TAB: ROLE MANAGEMENT */}
+          {activeTab === 'roles' && (
+            <RolesAdmin
+              initialRoleId={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('roleId') : null}
+            />
+          )}
+
+          {/* Header Action Bar for standard tabs */}
+          {activeTab !== 'staff' && activeTab !== 'roles' && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 capitalize">
+                  {activeTab.replace('_', ' ')} Management
+                </h1>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Complete administration, KYC review, live site content management, and cryptographic audit logs.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchAdminData}
+                isLoading={loadingData}
+                icon={<RefreshCw className="w-3.5 h-3.5" />}
+              >
+                Refresh Data
+              </Button>
+            </div>
+          )}
 
           {/* TAB 1: DASHBOARD ANALYTICS OVERVIEW */}
           {activeTab === 'dashboard' && metrics && (
@@ -897,8 +944,8 @@ export default function AdminPage() {
 
           {/* TAB 2: USERS MANAGEMENT */}
           {activeTab === 'users' && (
-            <Card variant="default" padding="none" className="overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <Card variant="default" padding="none" className="overflow-hidden w-full max-w-full">
+              <div className="p-4 sm:p-5 border-b border-slate-200 bg-white flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-black text-slate-900 text-base">User Accounts Management</h3>
                   <p className="text-xs text-slate-500 mt-0.5">View customers, workers, and businesses. Search and change statuses.</p>
@@ -910,12 +957,12 @@ export default function AdminPage() {
                     placeholder="Search name, phone, email..."
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
-                    className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 outline-none w-48 sm:w-60"
+                    className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 outline-none w-full sm:w-56"
                   />
                   <select
                     value={userRoleFilter}
                     onChange={(e) => setUserRoleFilter(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 outline-none bg-white font-semibold"
+                    className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 outline-none bg-white font-semibold flex-1 sm:flex-none"
                   >
                     <option value="ALL">All Roles</option>
                     <option value="CUSTOMER">Customers</option>
@@ -926,7 +973,7 @@ export default function AdminPage() {
                   <select
                     value={userStatusFilter}
                     onChange={(e) => setUserStatusFilter(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 outline-none bg-white font-semibold"
+                    className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 outline-none bg-white font-semibold flex-1 sm:flex-none"
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="ACTIVE">Active</option>
@@ -936,16 +983,16 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto w-full max-w-full">
+                <table className="w-full text-left text-xs table-auto">
                   <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200">
                     <tr>
-                      <th className="py-3 px-5">Name & Email</th>
-                      <th className="py-3 px-5">Phone</th>
-                      <th className="py-3 px-5">Role</th>
-                      <th className="py-3 px-5">Verifications</th>
-                      <th className="py-3 px-5">Account Status</th>
-                      <th className="py-3 px-5 text-right">Actions</th>
+                      <th className="py-3 px-3.5 sm:px-4">Name & Email</th>
+                      <th className="py-3 px-3.5 sm:px-4">Phone</th>
+                      <th className="py-3 px-3.5 sm:px-4">Role</th>
+                      <th className="py-3 px-3.5 sm:px-4">Verifications</th>
+                      <th className="py-3 px-3.5 sm:px-4">Account Status</th>
+                      <th className="py-3 px-3.5 sm:px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -958,52 +1005,60 @@ export default function AdminPage() {
                     ) : (
                       filteredUsers.map((u) => (
                         <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3.5 px-5 font-bold text-slate-900">
-                            {u.name}
-                            <span className="block text-[11px] font-mono font-normal text-slate-400">{u.email}</span>
+                          <td className="py-3 px-3.5 sm:px-4 font-bold text-slate-900 min-w-[160px] max-w-[240px]">
+                            <div className="truncate" title={u.name}>
+                              {u.name}
+                            </div>
+                            <span className="block text-[11px] font-mono font-normal text-slate-400 truncate" title={u.email}>
+                              {u.email}
+                            </span>
                           </td>
-                          <td className="py-3.5 px-5 font-mono text-slate-700">{u.phone}</td>
-                          <td className="py-3.5 px-5">
+                          <td className="py-3 px-3.5 sm:px-4 font-mono text-slate-700 whitespace-nowrap">{u.phone}</td>
+                          <td className="py-3 px-3.5 sm:px-4 whitespace-nowrap">
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md font-bold text-[10px]">
                               {u.role}
                             </span>
                           </td>
-                          <td className="py-3.5 px-5 space-y-0.5">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded block w-fit ${u.isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                              Email: {u.isEmailVerified ? 'Verified' : 'Pending'}
-                            </span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded block w-fit ${u.isPhoneVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                              Phone: {u.isPhoneVerified ? 'Verified' : 'Pending'}
-                            </span>
+                          <td className="py-3 px-3.5 sm:px-4 whitespace-nowrap">
+                            <div className="space-y-0.5">
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded block w-fit ${u.isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                Email: {u.isEmailVerified ? 'Verified' : 'Pending'}
+                              </span>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded block w-fit ${u.isPhoneVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                Phone: {u.isPhoneVerified ? 'Verified' : 'Pending'}
+                              </span>
+                            </div>
                           </td>
-                          <td className="py-3.5 px-5">
+                          <td className="py-3 px-3.5 sm:px-4 whitespace-nowrap">
                             <StatusBadge status={u.status} size="sm" />
                           </td>
-                          <td className="py-3.5 px-5 text-right space-x-1 whitespace-nowrap">
-                            {u.status !== 'ACTIVE' && (
-                              <button
-                                onClick={() => handleUserAction(u.id, u.name, 'ACTIVATE')}
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px]"
-                              >
-                                Activate
-                              </button>
-                            )}
-                            {u.status !== 'SUSPENDED' && (
-                              <button
-                                onClick={() => handleUserAction(u.id, u.name, 'SUSPEND')}
-                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px]"
-                              >
-                                Suspend
-                              </button>
-                            )}
-                            {u.status !== 'BLOCKED' && (
-                              <button
-                                onClick={() => handleUserAction(u.id, u.name, 'BLOCK')}
-                                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-[11px]"
-                              >
-                                Block
-                              </button>
-                            )}
+                          <td className="py-3 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap sm:flex-nowrap">
+                              {u.status !== 'ACTIVE' && (
+                                <button
+                                  onClick={() => handleUserAction(u.id, u.name, 'ACTIVATE')}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px] transition-colors shrink-0"
+                                >
+                                  Activate
+                                </button>
+                              )}
+                              {u.status !== 'SUSPENDED' && (
+                                <button
+                                  onClick={() => handleUserAction(u.id, u.name, 'SUSPEND')}
+                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px] transition-colors shrink-0"
+                                >
+                                  Suspend
+                                </button>
+                              )}
+                              {u.status !== 'BLOCKED' && (
+                                <button
+                                  onClick={() => handleUserAction(u.id, u.name, 'BLOCK')}
+                                  className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-[11px] transition-colors shrink-0"
+                                >
+                                  Block
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
