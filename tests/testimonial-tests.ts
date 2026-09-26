@@ -30,8 +30,9 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
     assert(slot2, 'Slot 2 must exist');
   });
 
-  // 2. Test updating Slot 1 with Zoom and Framing controls via upsert
-  await testAsync('updateTestimonialSlot updates Slot 1 with custom zoom & offsets via upsert', async () => {
+  // 2. Test updating Slot 1 with custom image URL, Zoom, and Framing controls via upsert
+  await testAsync('updateTestimonialSlot updates Slot 1 image URL & zoom/offsets in DB', async () => {
+    const newImage1 = `/uploads/testimonials/testimonial-slot-1-test-${Date.now()}.jpg`;
     const updated1 = await updateTestimonialSlot(1, {
       customerName: 'Priya Sharma (Updated)',
       profession: 'Interior Designer',
@@ -39,6 +40,7 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
       testimonialText: 'Fast and verified electrician service!',
       rating: 5,
       isActive: true,
+      imageUrl: newImage1,
       imageZoom: 1.35,
       imageOffsetX: 12.5,
       imageOffsetY: -8.0,
@@ -46,13 +48,20 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
 
     assert.strictEqual(updated1.slot, 1);
     assert.strictEqual(updated1.customerName, 'Priya Sharma (Updated)');
+    assert.strictEqual(updated1.imageUrl, newImage1);
     assert.strictEqual(updated1.imageZoom, 1.35);
     assert.strictEqual(updated1.imageOffsetX, 12.5);
     assert.strictEqual(updated1.imageOffsetY, -8.0);
+
+    // Verify DB fetch returns newly persisted image URL
+    const freshList = await getTestimonials(false);
+    const dbCard1 = freshList.find((t) => t.slot === 1);
+    assert.strictEqual(dbCard1?.imageUrl, newImage1);
   });
 
-  // 3. Test updating Slot 2 with Zoom and Framing controls via upsert
-  await testAsync('updateTestimonialSlot updates Slot 2 with custom zoom & offsets via upsert', async () => {
+  // 3. Test updating Slot 2 independently without affecting Slot 1
+  await testAsync('updateTestimonialSlot updates Slot 2 image URL independently without affecting Slot 1', async () => {
+    const newImage2 = `/uploads/testimonials/testimonial-slot-2-test-${Date.now()}.jpg`;
     const updated2 = await updateTestimonialSlot(2, {
       customerName: 'Rajesh Kumar (Updated)',
       profession: 'Operations Manager',
@@ -60,6 +69,7 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
       testimonialText: 'Excellent service quality!',
       rating: 5,
       isActive: true,
+      imageUrl: newImage2,
       imageZoom: 1.5,
       imageOffsetX: -10.0,
       imageOffsetY: 15.0,
@@ -67,17 +77,24 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
 
     assert.strictEqual(updated2.slot, 2);
     assert.strictEqual(updated2.customerName, 'Rajesh Kumar (Updated)');
-    assert.strictEqual(updated2.imageZoom, 1.5);
-    assert.strictEqual(updated2.imageOffsetX, -10.0);
-    assert.strictEqual(updated2.imageOffsetY, 15.0);
+    assert.strictEqual(updated2.imageUrl, newImage2);
+
+    // Verify Slot 1 image URL was untouched
+    const freshList = await getTestimonials(false);
+    const dbCard1 = freshList.find((t) => t.slot === 1);
+    const dbCard2 = freshList.find((t) => t.slot === 2);
+    assert(dbCard1?.imageUrl.includes('slot-1'), 'Slot 1 image URL must remain independent');
+    assert.strictEqual(dbCard2?.imageUrl, newImage2);
   });
 
-  // 4. Verify public fetch returns updated slot data with zoom/offsets
-  await testAsync('getTestimonials(true) returns active cards with saved zoom and positioning settings', async () => {
+  // 4. Verify public fetch returns updated slot data with custom image URLs and zoom/offsets
+  await testAsync('getTestimonials(true) returns active cards with saved new image URLs and framing settings', async () => {
     const activeTestimonials = await getTestimonials(true);
     assert.strictEqual(activeTestimonials.length, 2);
     const card1 = activeTestimonials.find((t) => t.slot === 1);
     const card2 = activeTestimonials.find((t) => t.slot === 2);
+    assert(card1?.imageUrl.startsWith('/uploads/testimonials/'), 'Card 1 must return uploaded image URL');
+    assert(card2?.imageUrl.startsWith('/uploads/testimonials/'), 'Card 2 must return uploaded image URL');
     assert.strictEqual(card1?.imageZoom, 1.35);
     assert.strictEqual(card2?.imageZoom, 1.5);
   });

@@ -3,6 +3,9 @@ import { getSessionUser } from '@/lib/auth';
 import { getTestimonials, updateTestimonialSlot } from '@/lib/testimonials';
 import prisma from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const sessionUser = await getSessionUser(req);
@@ -66,6 +69,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const validImageUrl = typeof imageUrl === 'string' && imageUrl.trim().length > 0 ? imageUrl.trim() : undefined;
+
     const updatedSlot = await updateTestimonialSlot(slotNum, {
       customerName: customerName.trim(),
       profession: profession !== undefined ? String(profession).trim() : null,
@@ -73,7 +78,7 @@ export async function POST(req: NextRequest) {
       testimonialText: testimonialText !== undefined ? String(testimonialText).trim() : null,
       rating: rating !== undefined ? Number(rating) : 5,
       isActive: Boolean(isActive),
-      imageUrl: imageUrl !== undefined ? String(imageUrl).trim() : undefined,
+      imageUrl: validImageUrl,
       imageZoom: imageZoom !== undefined ? Number(imageZoom) : undefined,
       imageOffsetX: imageOffsetX !== undefined ? Number(imageOffsetX) : undefined,
       imageOffsetY: imageOffsetY !== undefined ? Number(imageOffsetY) : undefined,

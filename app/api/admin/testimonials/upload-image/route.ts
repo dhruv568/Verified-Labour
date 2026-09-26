@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
+import prisma from '@/lib/db';
+import { updateTestimonialSlot } from '@/lib/testimonials';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB limit
@@ -49,6 +54,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Safely remove previous custom uploaded image file for this slot if it exists
+    const existingRecord = await prisma.testimonial.findUnique({ where: { slot } });
+    if (existingRecord?.imageUrl && existingRecord.imageUrl.startsWith('/uploads/testimonials/')) {
+      const oldFilePath = path.join(process.cwd(), 'public', existingRecord.imageUrl);
+      try {
+        await unlink(oldFilePath);
+      } catch {
+        // Silently ignore if file doesn't exist
+      }
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -63,10 +79,14 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = `/uploads/testimonials/${fileName}`;
 
+    // Immediately persist new image URL to database
+    const updatedTestimonial = await updateTestimonialSlot(slot, { imageUrl: publicUrl });
+
     return NextResponse.json({
       success: true,
-      message: 'Testimonial image uploaded successfully',
+      message: 'Testimonial image uploaded and persisted successfully',
       imageUrl: publicUrl,
+      testimonial: updatedTestimonial,
     });
   } catch (err: any) {
     return NextResponse.json(

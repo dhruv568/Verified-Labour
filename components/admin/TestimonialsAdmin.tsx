@@ -51,10 +51,14 @@ export default function TestimonialsAdmin() {
   const fetchAdminTestimonials = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/testimonials');
+      const res = await fetch(`/api/admin/testimonials?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.testimonials)) {
-        // Enforce exactly 2 slots
+        // Clear local blob previews so persisted database image URLs are displayed directly
+        setImagePreviews({});
         const slots: TestimonialSlotData[] = [1, 2].map((slotNum) => {
           const found = data.testimonials.find((t: any) => t.slot === slotNum);
           return {
@@ -65,7 +69,9 @@ export default function TestimonialsAdmin() {
             testimonialText: found?.testimonialText || '',
             rating: typeof found?.rating === 'number' ? found.rating : 5,
             isActive: found?.isActive !== undefined ? Boolean(found.isActive) : true,
-            imageUrl: found?.imageUrl || `/images/testimonials/testimonial-${slotNum}.jpg`,
+            imageUrl: (found?.imageUrl && found.imageUrl.trim().length > 0)
+              ? found.imageUrl
+              : `/images/testimonials/testimonial-${slotNum}.jpg`,
             imageZoom: typeof found?.imageZoom === 'number' ? found.imageZoom : 1.0,
             imageOffsetX: typeof found?.imageOffsetX === 'number' ? found.imageOffsetX : 0.0,
             imageOffsetY: typeof found?.imageOffsetY === 'number' ? found.imageOffsetY : 0.0,
@@ -153,11 +159,19 @@ export default function TestimonialsAdmin() {
         return;
       }
 
+      // Update state with uploaded image URL and clean up blob preview
       handleFieldChange(slot, 'imageUrl', data.imageUrl);
+      setImagePreviews((prev) => {
+        const next = { ...prev };
+        delete next[slot];
+        return next;
+      });
+      URL.revokeObjectURL(previewUrl);
+
       setFeedback({
         slot,
         type: 'success',
-        message: 'Image uploaded successfully! Adjust zoom and positioning below.',
+        message: 'Image uploaded and saved to database! Adjust zoom and positioning below if needed.',
       });
     } catch (err: any) {
       setFeedback({
@@ -208,7 +222,14 @@ export default function TestimonialsAdmin() {
         type: 'success',
         message: `Card ${slot} saved! Changes are live on the website with your custom framing.`,
       });
-      fetchAdminTestimonials();
+
+      // Clear local preview blobs and refetch fresh database state
+      setImagePreviews((prev) => {
+        const next = { ...prev };
+        delete next[slot];
+        return next;
+      });
+      await fetchAdminTestimonials();
     } catch (err: any) {
       setFeedback({
         slot,

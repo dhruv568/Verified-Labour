@@ -25,7 +25,10 @@ export default function TestimonialsSection() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/testimonials')
+    fetch(`/api/testimonials?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && Array.isArray(data.testimonials)) {
