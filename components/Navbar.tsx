@@ -203,23 +203,23 @@ export default function Navbar({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {/* Login Button (Green style inspired by reference) */}
+              <div className="flex items-center gap-2 font-devanagari">
+                {/* Login Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 font-devanagari"
                 >
-                  Login
+                  लॉगिन / Login
                 </button>
 
-                {/* Sign Up Button (Royal Blue style inspired by reference) */}
+                {/* Sign Up Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0"
+                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 font-devanagari"
                 >
-                  Sign Up
+                  साइन अप / Sign Up
                 </button>
               </div>
             )}
@@ -245,9 +245,9 @@ export default function Navbar({
         {mobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
             {/* Location in Mobile Menu */}
-            <div className="px-1">
+            <div className="px-1 font-devanagari">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                Your Service Location:
+                आपका सेवा स्थान / Service Location:
               </span>
               <LocationSelector isMobile={true} />
             </div>
@@ -257,7 +257,7 @@ export default function Navbar({
               <LanguageSelector isMobile={true} />
             </div>
 
-            <nav className="space-y-1">
+            <nav className="space-y-1 font-devanagari">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
@@ -308,7 +308,7 @@ export default function Navbar({
               </a>
             </nav>
 
-            <div className="pt-3 border-t border-slate-100 px-1">
+            <div className="pt-3 border-t border-slate-100 px-1 font-devanagari">
               {sessionUser ? (
                 <div className="space-y-2">
                   <Link
@@ -316,7 +316,7 @@ export default function Navbar({
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center min-h-[48px] w-full px-4 py-3 bg-[#0F2A5F] text-white font-bold rounded-xl shadow-xs text-sm"
                   >
-                    Go to Dashboard ({sessionUser.role})
+                    डैशबोर्ड पर जाएं / Go to Dashboard ({sessionUser.role})
                   </Link>
 
                   {sessionUser.role === 'WORKER' && (
@@ -325,7 +325,7 @@ export default function Navbar({
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center min-h-[44px] w-full px-4 py-2.5 bg-emerald-50 text-[#0B9B5A] font-bold rounded-xl text-sm border border-emerald-200"
                     >
-                      <span>₹ My Earnings & Wallet</span>
+                      <span>₹ मेरी कमाई एवं वॉलेट / My Earnings</span>
                     </Link>
                   )}
 
@@ -336,7 +336,7 @@ export default function Navbar({
                     }}
                     className="flex items-center justify-center min-h-[44px] w-full px-4 py-2 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-xl"
                   >
-                    Log Out
+                    लॉग आउट / Log Out
                   </button>
                 </div>
               ) : (
@@ -348,7 +348,7 @@ export default function Navbar({
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
-                    Login
+                    लॉगिन / Login
                   </button>
                   <button
                     onClick={() => {
@@ -357,7 +357,7 @@ export default function Navbar({
                     }}
                     className="w-full min-h-[48px] px-4 py-3 text-center font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full text-sm shadow-xs active:scale-98 transition-colors"
                   >
-                    Sign Up
+                    साइन अप / Sign Up
                   </button>
                 </div>
               )}
