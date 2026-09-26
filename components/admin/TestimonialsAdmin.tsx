@@ -91,9 +91,27 @@ export default function TestimonialsAdmin() {
   }, []);
 
   const handleFieldChange = (slot: number, field: keyof TestimonialSlotData, value: any) => {
-    setTestimonials((prev) =>
-      prev.map((item) => (item.slot === slot ? { ...item, [field]: value } : item))
-    );
+    setTestimonials((prev) => {
+      const exists = prev.some((item) => item.slot === slot);
+      if (!exists) {
+        const defaultCard: TestimonialSlotData = {
+          slot,
+          customerName: slot === 1 ? 'Priya Sharma' : 'Rajesh Kumar',
+          profession: slot === 1 ? 'Homeowner & Interior Designer' : 'Operations Manager',
+          location: slot === 1 ? 'Surat, Gujarat' : 'Mumbai, Maharashtra',
+          testimonialText: '',
+          rating: 5,
+          isActive: true,
+          imageUrl: `/images/testimonials/testimonial-${slot}.jpg`,
+          imageZoom: 1.0,
+          imageOffsetX: 0.0,
+          imageOffsetY: 0.0,
+          [field]: value,
+        };
+        return [...prev, defaultCard];
+      }
+      return prev.map((item) => (item.slot === slot ? { ...item, [field]: value } : item));
+    });
   };
 
   const handleResetAdjustment = (slot: number) => {
@@ -453,7 +471,7 @@ export default function TestimonialsAdmin() {
                       transform: `scale(${zoomVal}) translate(${offsetXVal}%, ${offsetYVal}%)`,
                       transformOrigin: 'center center',
                     }}
-                    unoptimized={currentPreview.startsWith('blob:')}
+                    unoptimized={true}
                   />
 
                   {isUploading && (

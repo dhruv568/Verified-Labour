@@ -123,6 +123,7 @@ export default function TestimonialsSection() {
                         transformOrigin: 'center center',
                       }}
                       priority={card.slot === 1}
+                      unoptimized={card.imageUrl.startsWith('/uploads/') || card.imageUrl.startsWith('blob:')}
                     />
 
                     {/* Gradient Overlay at Bottom of Image */}
