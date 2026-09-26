@@ -708,7 +708,7 @@ export default function AdminPage() {
     { id: 'bookings' as AdminTab, label: 'Jobs & Bookings', icon: <Clock className="w-4 h-4" />, count: jobs.length, perm: 'jobs.view' },
     { id: 'payments' as AdminTab, label: 'Payments & Revenue', icon: <CreditCard className="w-4 h-4" />, count: payments.length, perm: 'payments.view' },
     { id: 'content' as AdminTab, label: 'Website Content', icon: <Globe className="w-4 h-4" />, perm: 'content.manage' },
-    { id: 'testimonials' as AdminTab, label: 'Testimonials (2 Cards)', icon: <Star className="w-4 h-4 text-amber-500" />, perm: 'testimonials.view' },
+    { id: 'testimonials' as AdminTab, label: 'Testimonials Management', icon: <Star className="w-4 h-4 text-amber-500" />, perm: 'testimonials.view' },
     { id: 'categories' as AdminTab, label: 'Service Categories', icon: <Building className="w-4 h-4" />, count: categories.length, perm: 'categories.view' },
     { id: 'disputes' as AdminTab, label: 'Disputes Console', icon: <Scale className="w-4 h-4" />, count: disputes.length, perm: 'bookings.manage' },
     { id: 'audit' as AdminTab, label: 'System Audit Logs', icon: <FileText className="w-4 h-4" />, count: auditLogs.length, perm: 'audit.view' },
@@ -977,8 +977,10 @@ export default function AdminPage() {
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="ACTIVE">Active</option>
+                    <option value="PENDING_VERIFICATION">Pending Verification</option>
                     <option value="SUSPENDED">Suspended</option>
                     <option value="BLOCKED">Blocked</option>
+                    <option value="INACTIVE">Inactive</option>
                   </select>
                 </div>
               </div>
@@ -1377,7 +1379,7 @@ export default function AdminPage() {
                       contentSubTab === 'testimonials' ? 'bg-navy-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Testimonials (2 Cards)
+                    Testimonials Management
                   </button>
                   <button
                     type="button"

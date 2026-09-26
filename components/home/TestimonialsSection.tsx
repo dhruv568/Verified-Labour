@@ -13,6 +13,7 @@ export interface TestimonialItem {
   testimonialText?: string | null;
   rating?: number | null;
   isActive: boolean;
+  displayTarget?: 'DESKTOP' | 'MOBILE' | 'BOTH';
   imageUrl: string;
   imageZoom?: number | null;
   imageOffsetX?: number | null;
@@ -32,10 +33,8 @@ export default function TestimonialsSection() {
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && Array.isArray(data.testimonials)) {
-          // Keep only active cards and limit strictly to max 2
-          const activeOnly = data.testimonials
-            .filter((t: TestimonialItem) => t.isActive)
-            .slice(0, 2);
+          // Keep active cards
+          const activeOnly = data.testimonials.filter((t: TestimonialItem) => t.isActive);
           setTestimonials(activeOnly);
         }
       })
@@ -52,7 +51,7 @@ export default function TestimonialsSection() {
   }, []);
 
   if (!loading && testimonials.length === 0) {
-    return null; // Gracefully handle no active testimonials
+    return null; // Cleanly hide entire section if 0 active testimonials
   }
 
   return (
@@ -93,22 +92,35 @@ export default function TestimonialsSection() {
             ))}
           </div>
         ) : (
-          /* Exactly 2 Testimonial Cards Layout */
+          /* Dynamic Testimonial Cards Layout with Device Specific Visibility */
           <div
             className={`grid grid-cols-1 ${
-              testimonials.length === 2 ? 'md:grid-cols-2' : 'md:max-w-xl md:mx-auto'
-            } gap-6 lg:gap-8 max-w-6xl mx-auto items-stretch`}
+              testimonials.length === 1
+                ? 'md:max-w-md md:mx-auto'
+                : testimonials.length === 2
+                ? 'md:grid-cols-2 max-w-5xl mx-auto'
+                : 'md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto'
+            } gap-6 lg:gap-8 items-stretch`}
           >
             {testimonials.map((card) => {
               const ratingCount = Math.min(Math.max(card.rating || 5, 1), 5);
               const zoom = card.imageZoom ?? 1;
               const offsetX = card.imageOffsetX ?? 0;
               const offsetY = card.imageOffsetY ?? 0;
+              const target = card.displayTarget || 'BOTH';
+
+              // Responsive Visibility Classes based on Admin Setting
+              let visibilityClass = 'flex';
+              if (target === 'DESKTOP') {
+                visibilityClass = 'hidden md:flex';
+              } else if (target === 'MOBILE') {
+                visibilityClass = 'flex md:hidden';
+              }
 
               return (
                 <div
                   key={card.id || `slot-${card.slot}`}
-                  className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col overflow-hidden transform hover:-translate-y-1"
+                  className={`${visibilityClass} group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex-col overflow-hidden transform hover:-translate-y-1`}
                 >
                   {/* Testimonial Fixed Aspect-Ratio Image Container (3:2 Aspect Ratio) */}
                   <div className="relative w-full aspect-[3/2] bg-slate-100 overflow-hidden shrink-0 border-b border-slate-100">

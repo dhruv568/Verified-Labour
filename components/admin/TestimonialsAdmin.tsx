@@ -16,19 +16,24 @@ import {
   ZoomOut,
   RotateCcw,
   Move,
+  Trash2,
+  Monitor,
+  Smartphone,
+  Layers,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
 export interface TestimonialSlotData {
   id?: string;
-  slot: number; // 1 or 2
+  slot: number;
   customerName: string;
   profession: string;
   location: string;
   testimonialText: string;
   rating: number;
   isActive: boolean;
+  displayTarget: 'DESKTOP' | 'MOBILE' | 'BOTH';
   imageUrl: string;
   imageZoom: number;
   imageOffsetX: number;
@@ -37,10 +42,13 @@ export interface TestimonialSlotData {
 
 export default function TestimonialsAdmin() {
   const [testimonials, setTestimonials] = useState<TestimonialSlotData[]>([]);
+  const [testimonialCount, setTestimonialCount] = useState<number>(2);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
+  const [savingCount, setSavingCount] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<{ slot: number; type: 'success' | 'error'; message: string } | null>(null);
+  const [deletingSlot, setDeletingSlot] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<{ slot?: number; type: 'success' | 'error'; message: string } | null>(null);
 
   // Dragging state for interactive positioning
   const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
@@ -56,28 +64,35 @@ export default function TestimonialsAdmin() {
         headers: { 'Cache-Control': 'no-cache' },
       });
       const data = await res.json();
-      if (data.success && Array.isArray(data.testimonials)) {
-        // Clear local blob previews so persisted database image URLs are displayed directly
+      if (data.success) {
         setImagePreviews({});
-        const slots: TestimonialSlotData[] = [1, 2].map((slotNum) => {
-          const found = data.testimonials.find((t: any) => t.slot === slotNum);
-          return {
-            slot: slotNum,
-            customerName: found?.customerName || (slotNum === 1 ? 'Priya Sharma' : 'Rajesh Kumar'),
-            profession: found?.profession || (slotNum === 1 ? 'Homeowner & Interior Designer' : 'Operations Manager'),
-            location: found?.location || (slotNum === 1 ? 'Surat, Gujarat' : 'Mumbai, Maharashtra'),
-            testimonialText: found?.testimonialText || '',
-            rating: typeof found?.rating === 'number' ? found.rating : 5,
-            isActive: found?.isActive !== undefined ? Boolean(found.isActive) : true,
-            imageUrl: (found?.imageUrl && found.imageUrl.trim().length > 0)
-              ? found.imageUrl
-              : `/images/testimonials/testimonial-${slotNum}.jpg`,
-            imageZoom: typeof found?.imageZoom === 'number' ? found.imageZoom : 1.0,
-            imageOffsetX: typeof found?.imageOffsetX === 'number' ? found.imageOffsetX : 0.0,
-            imageOffsetY: typeof found?.imageOffsetY === 'number' ? found.imageOffsetY : 0.0,
-          };
-        });
-        setTestimonials(slots);
+        if (typeof data.count === 'number') {
+          setTestimonialCount(data.count);
+        }
+        if (Array.isArray(data.testimonials)) {
+          const list: TestimonialSlotData[] = data.testimonials.map((t: any) => ({
+            id: t.id,
+            slot: t.slot,
+            customerName: t.customerName || `Customer ${t.slot}`,
+            profession: t.profession || '',
+            location: t.location || '',
+            testimonialText: t.testimonialText || '',
+            rating: typeof t.rating === 'number' ? t.rating : 5,
+            isActive: t.isActive !== undefined ? Boolean(t.isActive) : true,
+            displayTarget:
+              t.displayTarget === 'DESKTOP' || t.displayTarget === 'MOBILE' || t.displayTarget === 'BOTH'
+                ? t.displayTarget
+                : 'BOTH',
+            imageUrl:
+              t.imageUrl && t.imageUrl.trim().length > 0
+                ? t.imageUrl
+                : `/images/testimonials/testimonial-${((t.slot - 1) % 2) + 1}.jpg`,
+            imageZoom: typeof t.imageZoom === 'number' ? t.imageZoom : 1.0,
+            imageOffsetX: typeof t.imageOffsetX === 'number' ? t.imageOffsetX : 0.0,
+            imageOffsetY: typeof t.imageOffsetY === 'number' ? t.imageOffsetY : 0.0,
+          }));
+          setTestimonials(list);
+        }
       }
     } catch (err: any) {
       console.error('Failed to load admin testimonials:', err);
@@ -90,19 +105,63 @@ export default function TestimonialsAdmin() {
     fetchAdminTestimonials();
   }, []);
 
+  // Change testimonial count (with decrease confirmation)
+  const handleCountChange = async (newCount: number) => {
+    if (newCount < 0 || newCount > 20) return;
+
+    if (newCount < testimonialCount) {
+      const confirmMsg = `You are reducing the visible testimonial slots from ${testimonialCount} to ${newCount}. Testimonials beyond ${newCount} will no longer appear on the public website. Their data will be preserved in the database. Continue?`;
+      if (!window.confirm(confirmMsg)) {
+        return;
+      }
+    }
+
+    setSavingCount(true);
+    setFeedback(null);
+    try {
+      const res = await fetch('/api/admin/testimonials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPDATE_COUNT', count: newCount }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setFeedback({
+          type: 'error',
+          message: data.error || 'Failed to update testimonial count',
+        });
+        return;
+      }
+      setTestimonialCount(data.count);
+      setFeedback({
+        type: 'success',
+        message: `Number of testimonials updated to ${data.count}. Website display synced!`,
+      });
+      await fetchAdminTestimonials();
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: 'Error updating count: ' + err.message,
+      });
+    } finally {
+      setSavingCount(false);
+    }
+  };
+
   const handleFieldChange = (slot: number, field: keyof TestimonialSlotData, value: any) => {
     setTestimonials((prev) => {
       const exists = prev.some((item) => item.slot === slot);
       if (!exists) {
         const defaultCard: TestimonialSlotData = {
           slot,
-          customerName: slot === 1 ? 'Priya Sharma' : 'Rajesh Kumar',
-          profession: slot === 1 ? 'Homeowner & Interior Designer' : 'Operations Manager',
-          location: slot === 1 ? 'Surat, Gujarat' : 'Mumbai, Maharashtra',
+          customerName: `Customer ${slot}`,
+          profession: '',
+          location: '',
           testimonialText: '',
           rating: 5,
           isActive: true,
-          imageUrl: `/images/testimonials/testimonial-${slot}.jpg`,
+          displayTarget: 'BOTH',
+          imageUrl: `/images/testimonials/testimonial-${((slot - 1) % 2) + 1}.jpg`,
           imageZoom: 1.0,
           imageOffsetX: 0.0,
           imageOffsetY: 0.0,
@@ -128,7 +187,6 @@ export default function TestimonialsAdmin() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setFeedback({
@@ -139,7 +197,6 @@ export default function TestimonialsAdmin() {
       return;
     }
 
-    // Validate size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setFeedback({
         slot,
@@ -149,11 +206,9 @@ export default function TestimonialsAdmin() {
       return;
     }
 
-    // Live local preview
     const previewUrl = URL.createObjectURL(file);
     setImagePreviews((prev) => ({ ...prev, [slot]: previewUrl }));
 
-    // Upload to server
     setUploadingSlot(slot);
     setFeedback(null);
 
@@ -177,7 +232,6 @@ export default function TestimonialsAdmin() {
         return;
       }
 
-      // Update state with uploaded image URL and clean up blob preview
       handleFieldChange(slot, 'imageUrl', data.imageUrl);
       setImagePreviews((prev) => {
         const next = { ...prev };
@@ -189,7 +243,7 @@ export default function TestimonialsAdmin() {
       setFeedback({
         slot,
         type: 'success',
-        message: 'Image uploaded and saved to database! Adjust zoom and positioning below if needed.',
+        message: 'Image uploaded and saved! Adjust framing or zoom below.',
       });
     } catch (err: any) {
       setFeedback({
@@ -238,10 +292,9 @@ export default function TestimonialsAdmin() {
       setFeedback({
         slot,
         type: 'success',
-        message: `Card ${slot} saved! Changes are live on the website with your custom framing.`,
+        message: `Testimonial Card ${slot} saved! Changes are live on the website.`,
       });
 
-      // Clear local preview blobs and refetch fresh database state
       setImagePreviews((prev) => {
         const next = { ...prev };
         delete next[slot];
@@ -259,7 +312,45 @@ export default function TestimonialsAdmin() {
     }
   };
 
-  // Drag-to-Position logic
+  const handleDeleteSlot = async (slot: number) => {
+    if (!window.confirm(`Are you sure you want to delete Testimonial Card ${slot}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingSlot(slot);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(`/api/admin/testimonials?slot=${slot}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setFeedback({
+          slot,
+          type: 'error',
+          message: data.error || 'Failed to delete testimonial card',
+        });
+        return;
+      }
+
+      setFeedback({
+        type: 'success',
+        message: `Testimonial Card ${slot} deleted successfully.`,
+      });
+      await fetchAdminTestimonials();
+    } catch (err: any) {
+      setFeedback({
+        slot,
+        type: 'error',
+        message: 'Delete failed: ' + err.message,
+      });
+    } finally {
+      setDeletingSlot(null);
+    }
+  };
+
+  // Drag-to-Position logic for image framing
   const handleMouseDown = (slotNum: number, e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -332,52 +423,102 @@ export default function TestimonialsAdmin() {
     );
   }
 
+  // Display cards: render up to max(testimonialCount, available slots in DB)
+  const maxSlotInDb = testimonials.reduce((max, t) => Math.max(max, t.slot), 0);
+  const totalCardsToRender = Math.max(testimonialCount, maxSlotInDb, 1);
+  const cardSlotsList = Array.from({ length: totalCardsToRender }, (_, i) => i + 1);
+
   return (
     <div className="space-y-6">
-      {/* Top Banner Notice */}
-      <div className="bg-navy-950 text-white p-4 sm:p-5 rounded-2xl border border-navy-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
+      {/* Top Banner Notice & Number of Testimonials Selector */}
+      <div className="bg-navy-950 text-white p-4 sm:p-5 rounded-2xl border border-navy-900 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-amber-400 text-navy-950 text-[10px] font-black rounded uppercase">
-              Strict 2-Slot Enforced
+            <span className="px-2.5 py-0.5 bg-brand-500 text-white text-[10px] font-black rounded uppercase tracking-wider">
+              Dynamic Count & Visibility
             </span>
             <h3 className="font-black text-white text-base">Testimonials Management</h3>
           </div>
-          <p className="text-xs text-slate-300 mt-1">
-            Edit Card 1 and Card 2 below. Replace images (3:2 ratio), adjust zoom & drag to frame the photo, edit text, set ratings, or toggle active status.
+          <p className="text-xs text-slate-300">
+            Control how many testimonials display on the website, target Desktop/Mobile devices, upload images, framing & quotes.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchAdminTestimonials}
-          icon={<RefreshCw className="w-3.5 h-3.5" />}
-          className="text-white border-navy-800 hover:bg-navy-900 shrink-0"
-        >
-          Refresh
-        </Button>
+        {/* Number Selector Control */}
+        <div className="flex items-center gap-3 bg-navy-900/90 p-2.5 rounded-xl border border-navy-800 shrink-0">
+          <div className="flex flex-col">
+            <label className="text-[11px] font-bold text-slate-300">Number of Testimonials</label>
+            <span className="text-[10px] text-slate-400">Active slots on website</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={testimonialCount}
+              onChange={(e) => handleCountChange(Number(e.target.value))}
+              disabled={savingCount}
+              className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs font-black text-amber-400 outline-none focus:border-brand-500 cursor-pointer"
+            >
+              {Array.from({ length: 11 }, (_, i) => i).map((num) => (
+                <option key={num} value={num}>
+                  {num} {num === 1 ? 'Card' : 'Cards'}
+                </option>
+              ))}
+            </select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAdminTestimonials}
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
+              className="text-white border-navy-800 hover:bg-navy-900"
+              title="Refresh Testimonials"
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Grid of EXACTLY 2 Testimonial Card Forms */}
+      {/* Global Feedback Banner */}
+      {feedback && !feedback.slot && (
+        <div
+          className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2.5 ${
+            feedback.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}
+        >
+          {feedback.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+          )}
+          <span>{feedback.message}</span>
+        </div>
+      )}
+
+      {/* Grid of Testimonial Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[1, 2].map((slotNum) => {
+        {cardSlotsList.map((slotNum) => {
           const card = testimonials.find((t) => t.slot === slotNum) || {
             slot: slotNum,
-            customerName: '',
+            customerName: `Customer ${slotNum}`,
             profession: '',
             location: '',
             testimonialText: '',
             rating: 5,
             isActive: true,
-            imageUrl: `/images/testimonials/testimonial-${slotNum}.jpg`,
+            displayTarget: 'BOTH',
+            imageUrl: `/images/testimonials/testimonial-${((slotNum - 1) % 2) + 1}.jpg`,
             imageZoom: 1.0,
             imageOffsetX: 0.0,
             imageOffsetY: 0.0,
           };
 
+          const isSlotActiveCount = slotNum <= testimonialCount;
           const isSaving = savingSlot === slotNum;
           const isUploading = uploadingSlot === slotNum;
+          const isDeleting = deletingSlot === slotNum;
           const isDragging = draggingSlot === slotNum;
           const slotFeedback = feedback?.slot === slotNum ? feedback : null;
           const currentPreview = imagePreviews[slotNum] || card.imageUrl;
@@ -387,18 +528,38 @@ export default function TestimonialsAdmin() {
           const offsetYVal = card.imageOffsetY ?? 0.0;
 
           return (
-            <Card key={slotNum} variant="default" padding="lg" className="space-y-5 border-2 border-slate-200 shadow-sm relative">
+            <Card
+              key={slotNum}
+              variant="default"
+              padding="lg"
+              className={`space-y-5 border-2 transition-all relative ${
+                isSlotActiveCount
+                  ? 'border-slate-200 shadow-xs'
+                  : 'border-amber-200 bg-amber-50/20 opacity-90'
+              }`}
+            >
               {/* Card Header Bar */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded-xl bg-brand-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                  <span
+                    className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center shadow-xs text-white ${
+                      isSlotActiveCount ? 'bg-brand-600' : 'bg-slate-400'
+                    }`}
+                  >
                     #{slotNum}
                   </span>
                   <div>
-                    <h4 className="font-black text-slate-900 text-sm">
-                      Testimonial Card {slotNum}
-                    </h4>
-                    <span className="text-[10px] text-slate-400 font-medium">Slot {slotNum} of 2</span>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-slate-900 text-sm">
+                        Testimonial Card {slotNum}
+                      </h4>
+                      {!isSlotActiveCount && (
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-300">
+                          Inactive Slot (Beyond Count)
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">Slot {slotNum}</span>
                   </div>
                 </div>
 
@@ -426,7 +587,7 @@ export default function TestimonialsAdmin() {
                 </button>
               </div>
 
-              {/* Feedback Banner */}
+              {/* Feedback Banner for Card */}
               {slotFeedback && (
                 <div
                   className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
@@ -444,11 +605,58 @@ export default function TestimonialsAdmin() {
                 </div>
               )}
 
-              {/* Image Preview & Interactive Drag Positioning Box (Fixed 3:2 Aspect Ratio) */}
+              {/* Display Target (Show On) Setting Selector */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Show On (Target Device Visibility)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleFieldChange(slotNum, 'displayTarget', 'BOTH')}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                      card.displayTarget === 'BOTH'
+                        ? 'bg-navy-950 text-white border-navy-950 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-brand-400" />
+                    <span>Both</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFieldChange(slotNum, 'displayTarget', 'DESKTOP')}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                      card.displayTarget === 'DESKTOP'
+                        ? 'bg-navy-950 text-white border-navy-950 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Desktop Only</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFieldChange(slotNum, 'displayTarget', 'MOBILE')}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                      card.displayTarget === 'MOBILE'
+                        ? 'bg-navy-950 text-white border-navy-950 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Mobile Only</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Image Framing Preview & Interactive Drag Positioning Box (3:2 Ratio) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-700">
-                    Image Framing Preview (3:2 Aspect Ratio)
+                    Customer Photo (3:2 Aspect Ratio)
                   </label>
                   <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                     Zoom: {zoomVal.toFixed(2)}x | X: {offsetXVal}% | Y: {offsetYVal}%
@@ -473,8 +681,7 @@ export default function TestimonialsAdmin() {
                     }}
                     unoptimized={true}
                     onError={() => {
-                      // Fallback to default image if uploaded file is missing or broken
-                      const fallback = `/images/testimonials/testimonial-${slotNum}.jpg`;
+                      const fallback = `/images/testimonials/testimonial-${((slotNum - 1) % 2) + 1}.jpg`;
                       if (currentPreview !== fallback) {
                         handleFieldChange(slotNum, 'imageUrl', fallback);
                       }
@@ -488,7 +695,6 @@ export default function TestimonialsAdmin() {
                     </div>
                   )}
 
-                  {/* Drag positioning overlay hint */}
                   <div className="absolute top-3 left-3 pointer-events-none z-10">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-bold shadow-md border border-white/20">
                       <Move className="w-3 h-3 text-amber-400" />
@@ -496,7 +702,6 @@ export default function TestimonialsAdmin() {
                     </span>
                   </div>
 
-                  {/* Upload Overlay Button */}
                   <div
                     className="absolute bottom-3 right-3 z-10"
                     onMouseDown={(e) => e.stopPropagation()}
@@ -519,9 +724,8 @@ export default function TestimonialsAdmin() {
                   </div>
                 </div>
 
-                {/* IMAGE ZOOM & POSITION CONTROLS */}
+                {/* Image Framing Sliders */}
                 <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                  {/* Zoom Controls */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                       <div className="flex items-center gap-1.5">
@@ -535,7 +739,6 @@ export default function TestimonialsAdmin() {
                             handleFieldChange(slotNum, 'imageZoom', Math.max(1.0, Math.round((zoomVal - 0.1) * 100) / 100))
                           }
                           className="w-6 h-6 rounded-lg bg-white border border-slate-300 font-black text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center text-xs"
-                          title="Zoom Out"
                         >
                           −
                         </button>
@@ -548,7 +751,6 @@ export default function TestimonialsAdmin() {
                             handleFieldChange(slotNum, 'imageZoom', Math.min(3.0, Math.round((zoomVal + 0.1) * 100) / 100))
                           }
                           className="w-6 h-6 rounded-lg bg-white border border-slate-300 font-black text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center text-xs"
-                          title="Zoom In"
                         >
                           +
                         </button>
@@ -565,7 +767,6 @@ export default function TestimonialsAdmin() {
                     />
                   </div>
 
-                  {/* Position Sliders & Reset */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200">
                     <div>
                       <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 mb-1">
@@ -600,7 +801,6 @@ export default function TestimonialsAdmin() {
                     </div>
                   </div>
 
-                  {/* Reset Adjustment Button */}
                   <div className="flex justify-end pt-1">
                     <button
                       type="button"
@@ -612,22 +812,9 @@ export default function TestimonialsAdmin() {
                     </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between text-[10px] text-slate-500">
-                  <span>Supports JPG, PNG, WEBP (Max 5MB)</span>
-                  <label className="text-brand-600 font-bold hover:underline cursor-pointer">
-                    Upload File
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(e) => handleImageFileSelect(slotNum, e)}
-                    />
-                  </label>
-                </div>
               </div>
 
-              {/* Form Inputs */}
+              {/* Content Form Inputs */}
               <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -638,21 +825,21 @@ export default function TestimonialsAdmin() {
                     required
                     value={card.customerName || ''}
                     onChange={(e) => handleFieldChange(slotNum, 'customerName', e.target.value)}
-                    placeholder="e.g. Priya Sharma"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 font-semibold"
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:border-brand-600 font-semibold"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Profession / Designation
+                      Profession / Role
                     </label>
                     <input
                       type="text"
                       value={card.profession || ''}
                       onChange={(e) => handleFieldChange(slotNum, 'profession', e.target.value)}
-                      placeholder="e.g. Homeowner"
+                      placeholder="e.g. Electrician"
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:border-brand-600"
                     />
                   </div>
@@ -665,7 +852,7 @@ export default function TestimonialsAdmin() {
                       type="text"
                       value={card.location || ''}
                       onChange={(e) => handleFieldChange(slotNum, 'location', e.target.value)}
-                      placeholder="e.g. Surat, Gujarat"
+                      placeholder="e.g. Pune"
                       className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:border-brand-600"
                     />
                   </div>
@@ -679,7 +866,7 @@ export default function TestimonialsAdmin() {
                     rows={3}
                     value={card.testimonialText || ''}
                     onChange={(e) => handleFieldChange(slotNum, 'testimonialText', e.target.value)}
-                    placeholder="Short testimonial review text..."
+                    placeholder="Very reliable service..."
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none focus:border-brand-600"
                   />
                 </div>
@@ -702,8 +889,8 @@ export default function TestimonialsAdmin() {
                 </div>
               </div>
 
-              {/* Save Button for Slot */}
-              <div className="pt-2 border-t border-slate-200">
+              {/* Save & Delete Action Buttons */}
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
                 <Button
                   type="button"
                   variant="brand"
@@ -711,9 +898,22 @@ export default function TestimonialsAdmin() {
                   onClick={() => handleSaveSlot(slotNum)}
                   isLoading={isSaving}
                   icon={<Save className="w-4 h-4" />}
-                  className="w-full justify-center text-xs font-bold"
+                  className="flex-1 justify-center text-xs font-bold"
                 >
                   Save Testimonial Card {slotNum}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => handleDeleteSlot(slotNum)}
+                  isLoading={isDeleting}
+                  icon={<Trash2 className="w-4 h-4 text-red-500" />}
+                  className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 shrink-0 text-xs font-bold"
+                  title="Delete Card"
+                >
+                  Delete
                 </Button>
               </div>
             </Card>
