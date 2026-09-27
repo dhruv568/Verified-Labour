@@ -58,6 +58,7 @@ export default function WorkerCard({
               <img
                 src={worker.avatarUrl}
                 alt={worker.fullName}
+                loading="lazy"
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover border border-slate-100 shadow-2xs"
               />
             ) : (

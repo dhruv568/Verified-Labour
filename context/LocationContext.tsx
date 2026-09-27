@@ -84,24 +84,49 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   };
 
   // Detect current location via browser navigator.geolocation
-  const detectCurrentLocation = async (): Promise<boolean> => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      setError('Geolocation is not supported by your browser. Used IP fallback.');
-      setPermissionState('unavailable');
+  const detectCurrentLocation = async (opts?: { silent?: boolean; userInitiated?: boolean }): Promise<boolean> => {
+    const isSilent = opts?.silent ?? false;
+    const isUserInitiated = opts?.userInitiated ?? !isSilent;
+
+    if (!isSilent) {
       setIsLoading(true);
+    }
+    setError(null);
+
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      if (isUserInitiated) {
+        setError('Geolocation is not supported by your browser. Used IP fallback.');
+      }
+      setPermissionState('unavailable');
       const ipLoc = await fallbackToIPLocation();
       setLocation(ipLoc);
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
       return true;
     }
 
-    setIsLoading(true);
-    setError(null);
     setPermissionState('prompt');
 
     return new Promise((resolve) => {
+      let isSettled = false;
+      const finish = (result: boolean) => {
+        if (isSettled) return;
+        isSettled = true;
+        if (!isSilent) setIsLoading(false);
+        resolve(result);
+      };
+
+      // Safety timeout: abort if browser geolocation modal hangs
+      const timer = setTimeout(async () => {
+        if (isSettled) return;
+        setPermissionState('unavailable');
+        const ipLoc = await fallbackToIPLocation();
+        setLocation(ipLoc);
+        finish(true);
+      }, 3500);
+
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          clearTimeout(timer);
           try {
             const { latitude, longitude } = position.coords;
             const roundLat = parseFloat(latitude.toFixed(3));
@@ -145,16 +170,15 @@ export function LocationProvider({ children }: { children: ReactNode }) {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(newLoc));
             } catch {}
 
-            setIsLoading(false);
-            resolve(true);
+            finish(true);
           } catch {
             const ipLoc = await fallbackToIPLocation();
             setLocation(ipLoc);
-            setIsLoading(false);
-            resolve(true);
+            finish(true);
           }
         },
         async (geoErr) => {
+          clearTimeout(timer);
           if (geoErr.code === geoErr.PERMISSION_DENIED) {
             setPermissionState('denied');
           } else {
@@ -162,10 +186,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           }
           const ipLoc = await fallbackToIPLocation();
           setLocation(ipLoc);
-          setIsLoading(false);
-          resolve(true);
+          finish(true);
         },
-        { timeout: 7000, enableHighAccuracy: true, maximumAge: 60000 }
+        { timeout: 3500, enableHighAccuracy: false, maximumAge: 300000 }
       );
     });
   };
@@ -200,9 +223,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     } catch {}
   };
 
-  // Auto-detect on initial mount
+  // Non-blocking location check on initial mount
   useEffect(() => {
-    // 1. Check if user already has a saved location in localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -218,8 +240,12 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
 
-    // 2. If no saved location, automatically trigger location detection
-    detectCurrentLocation();
+    // Non-blocking background detection after initial page render
+    const idleId = setTimeout(() => {
+      detectCurrentLocation({ silent: true });
+    }, 1000);
+
+    return () => clearTimeout(idleId);
   }, []);
 
   return (

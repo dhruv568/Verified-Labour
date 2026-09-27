@@ -25,6 +25,7 @@ import {
   MapPin,
   ChevronDown,
 } from 'lucide-react';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 
 interface PlatformStats {
   verifiedWorkers: number;
@@ -60,14 +61,14 @@ export default function HomePage() {
 
   // Fetch real platform stats
   useEffect(() => {
-    fetch('/api/stats')
+    fetchWithTimeout('/api/stats', { timeoutMs: 3000 })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.stats) {
           setPlatformStats(data.stats);
         }
       })
-      .catch(console.error);
+      .catch(() => {});
   }, []);
 
   // Fetch matching workers based on selected filters and location
@@ -87,11 +88,12 @@ export default function HomePage() {
       if (minRating) params.set('minRating', minRating);
       params.set('available', onlyAvailable ? 'true' : 'false');
 
-      const res = await fetch(`/api/workers/search?${params.toString()}`);
-      const data = await res.json();
-
-      if (data.success) {
-        setWorkers(data.workers || []);
+      const res = await fetchWithTimeout(`/api/workers/search?${params.toString()}`, { timeoutMs: 6000 });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setWorkers(data.workers || []);
+        }
       }
     } catch (err) {
       console.error('Failed to search workers:', err);

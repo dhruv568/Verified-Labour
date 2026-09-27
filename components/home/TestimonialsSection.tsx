@@ -20,26 +20,24 @@ export interface TestimonialItem {
   imageOffsetY?: number | null;
 }
 
+import { fetchWithTimeout } from '@/lib/fetch-utils';
+
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    fetch(`/api/testimonials?t=${Date.now()}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    })
+    fetchWithTimeout('/api/testimonials', { timeoutMs: 3500 })
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && Array.isArray(data.testimonials)) {
-          // Keep active cards
           const activeOnly = data.testimonials.filter((t: TestimonialItem) => t.isActive);
           setTestimonials(activeOnly);
         }
       })
       .catch((err) => {
-        console.error('Failed to load testimonials:', err);
+        // Graceful error handle - will finish loading without crash
       })
       .finally(() => {
         if (isMounted) setLoading(false);

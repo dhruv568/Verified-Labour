@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { DEFAULT_SITE_CONTENT } from '@/lib/site-config';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 
 interface ContentContextType {
   content: Record<string, string>;
@@ -17,17 +18,19 @@ const ContentContext = createContext<ContentContextType>({
 
 export function ContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<Record<string, string>>(DEFAULT_SITE_CONTENT);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const refreshContent = async () => {
     try {
-      const res = await fetch('/api/content');
-      const data = await res.json();
-      if (data.success && data.content) {
-        setContent(data.content);
+      const res = await fetchWithTimeout('/api/content', { timeoutMs: 3000 });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.content) {
+          setContent(data.content);
+        }
       }
     } catch (err) {
-      console.error('Failed to load site content from API:', err);
+      // Keep default content silently on failure
     } finally {
       setLoading(false);
     }

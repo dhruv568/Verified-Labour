@@ -35,10 +35,11 @@ export default function Logo({
   if (variant === 'icon') {
     return (
       <Image
-        src="/logo.png"
+        src="/logo.webp"
         alt={alt}
-        width={512}
-        height={512}
+        width={128}
+        height={128}
+        sizes="32px"
         className={`${sizeClasses} object-contain`}
         priority={priority}
       />
@@ -47,10 +48,11 @@ export default function Logo({
 
   return (
     <Image
-      src="/logo.png"
+      src="/logo.webp"
       alt={alt}
-      width={1516}
-      height={577}
+      width={400}
+      height={152}
+      sizes="(max-width: 640px) 180px, 240px"
       className={`${sizeClasses} object-contain transition-opacity duration-200 select-none`}
       priority={priority}
     />

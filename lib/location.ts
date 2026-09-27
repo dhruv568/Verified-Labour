@@ -220,7 +220,7 @@ export async function detectLocationFromIP(): Promise<{
 }> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
 
     const res = await fetch('https://ipwho.is/', {
       signal: controller.signal,
@@ -252,7 +252,7 @@ export async function detectLocationFromIP(): Promise<{
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
 
     const res = await fetch('http://ip-api.com/json/?fields=status,city,regionName,zip,lat,lon', {
       signal: controller.signal,
@@ -264,7 +264,7 @@ export async function detectLocationFromIP(): Promise<{
       if (data.status === 'success') {
         const city = data.city || '';
         const state = data.regionName || '';
-        const postalCode = data.zip || '';
+        const postalCode = data.postalCode || data.zip || '';
         const lat = data.lat ? parseFloat(data.lat.toFixed(3)) : null;
         const lng = data.lon ? parseFloat(data.lon.toFixed(3)) : null;
         const displayName = city && state ? `${city}, ${state}` : city || 'Surat, Gujarat';
@@ -292,4 +292,5 @@ export async function detectLocationFromIP(): Promise<{
     longitude: 72.831,
   };
 }
+
 
