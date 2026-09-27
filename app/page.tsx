@@ -51,6 +51,9 @@ export default function HomePage() {
   const [loadingWorkers, setLoadingWorkers] = useState<boolean>(false);
   const [workersModalOpen, setWorkersModalOpen] = useState<boolean>(false);
 
+  // Responsive Viewport State to avoid double mounting heavy desktop & mobile trees
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
+
   // Modals
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
@@ -59,16 +62,51 @@ export default function HomePage() {
   const [selectedWorkerForBooking, setSelectedWorkerForBooking] = useState<WorkerData | null>(null);
   const [profileWorker, setProfileWorker] = useState<WorkerData | null>(null);
 
+  // Lifecycle Diagnostic Logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PAGE] mounted');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsMobileViewport(isMobile);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MOBILE] changed:', isMobile);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Fetch real platform stats
   useEffect(() => {
+    let isMounted = true;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API] stats request started');
+    }
     fetchWithTimeout('/api/stats', { timeoutMs: 3000 })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.stats) {
+        if (isMounted && data.success && data.stats) {
           setPlatformStats(data.stats);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[API] stats request completed');
+          }
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[API] stats request failed:', err);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Handle smooth scroll to section if hash is present in URL
@@ -87,6 +125,9 @@ export default function HomePage() {
   // Fetch matching workers based on selected filters and location
   const fetchWorkers = async (categoryToSearch = selectedCategory) => {
     setLoadingWorkers(true);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[STATE] loadingWorkers changed: true');
+    }
     try {
       const params = new URLSearchParams();
       if (categoryToSearch) params.set('category', categoryToSearch);
@@ -112,6 +153,9 @@ export default function HomePage() {
       console.error('Failed to search workers:', err);
     } finally {
       setLoadingWorkers(false);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[STATE] loadingWorkers changed: false');
+      }
     }
   };
 
@@ -135,7 +179,6 @@ export default function HomePage() {
 
   const handleSearchWorkers = (query?: string) => {
     if (query) {
-      // If a search query slug was passed
       setSelectedCategory(query);
       fetchWorkers(query);
     } else {
@@ -156,41 +199,45 @@ export default function HomePage() {
       <Header onOpenAuth={handleOpenAuth} />
 
       {/* ================= DESKTOP VIEW ONLY (md and above) ================= */}
-      <div className="hidden md:block">
-        <Hero
-          onSearchWorker={handleSearchWorkers}
-          onSelectCategory={handleSelectCategory}
-          onViewAllCategories={() => {
-            const el = document.getElementById('services');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-        />
-        <ServiceCategories
-          selectedCategorySlug={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-          onViewAll={handleSearchWorkers}
-        />
-        <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-              <CustomerCTA onFindWorker={handleSearchWorkers} />
-              <WorkerCTA onRegisterWorker={() => handleOpenAuth('register', 'WORKER')} />
+      {(isMobileViewport === false || isMobileViewport === null) && (
+        <div className="hidden md:block">
+          <Hero
+            onSearchWorker={handleSearchWorkers}
+            onSelectCategory={handleSelectCategory}
+            onViewAllCategories={() => {
+              const el = document.getElementById('services');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+          <ServiceCategories
+            selectedCategorySlug={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+            onViewAll={handleSearchWorkers}
+          />
+          <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                <CustomerCTA onFindWorker={handleSearchWorkers} />
+                <WorkerCTA onRegisterWorker={() => handleOpenAuth('register', 'WORKER')} />
+              </div>
             </div>
-          </div>
-        </section>
-        <TrustStats stats={platformStats} />
-      </div>
+          </section>
+          <TrustStats stats={platformStats} />
+        </div>
+      )}
 
       {/* ================= MOBILE VIEW ONLY (< md / 320px - 430px) ================= */}
-      <div className="block md:hidden">
-        <MobileHomeView
-          selectedCategory={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-          onSearchWorker={handleSearchWorkers}
-          onOpenAuth={handleOpenAuth}
-          platformStats={platformStats}
-        />
-      </div>
+      {(isMobileViewport === true || isMobileViewport === null) && (
+        <div className="block md:hidden">
+          <MobileHomeView
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+            onSearchWorker={handleSearchWorkers}
+            onOpenAuth={handleOpenAuth}
+            platformStats={platformStats}
+          />
+        </div>
+      )}
 
       {/* HOW IT WORKS SECTION (Visible on Desktop & Mobile) */}
       <HowItWorks onFindWorker={handleSearchWorkers} />

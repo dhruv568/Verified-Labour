@@ -85,7 +85,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   };
 
   // Detect current location via browser navigator.geolocation
-  const detectCurrentLocation = async (opts?: { silent?: boolean; userInitiated?: boolean }): Promise<boolean> => {
+  const detectCurrentLocation = React.useCallback(async (opts?: { silent?: boolean; userInitiated?: boolean }): Promise<boolean> => {
     const isSilent = opts?.silent ?? false;
     const isUserInitiated = opts?.userInitiated ?? !isSilent;
 
@@ -191,10 +191,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         { timeout: 3500, enableHighAccuracy: false, maximumAge: 300000 }
       );
     });
-  };
+  }, []);
 
   // Set manual location
-  const setManualLocation = (manualData: Partial<LocationData> & { displayName: string }) => {
+  const setManualLocation = React.useCallback((manualData: Partial<LocationData> & { displayName: string }) => {
     const updated: LocationData = {
       displayName: manualData.displayName,
       city: manualData.city || manualData.displayName.split(',')[0].trim(),
@@ -213,15 +213,15 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch {}
-  };
+  }, []);
 
   // Clear location
-  const clearLocation = () => {
+  const clearLocation = React.useCallback(() => {
     setLocation(DEFAULT_FALLBACK_LOCATION);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
-  };
+  }, []);
 
   // Fast non-blocking location check on initial mount
   useEffect(() => {
@@ -244,18 +244,21 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     setLocation(DEFAULT_FALLBACK_LOCATION);
   }, []);
 
+  const value = React.useMemo(
+    () => ({
+      location,
+      isLoading,
+      error,
+      permissionState,
+      detectCurrentLocation,
+      setManualLocation,
+      clearLocation,
+    }),
+    [location, isLoading, error, permissionState, detectCurrentLocation, setManualLocation, clearLocation]
+  );
+
   return (
-    <LocationContext.Provider
-      value={{
-        location,
-        isLoading,
-        error,
-        permissionState,
-        detectCurrentLocation,
-        setManualLocation,
-        clearLocation,
-      }}
-    >
+    <LocationContext.Provider value={value}>
       {children}
     </LocationContext.Provider>
   );

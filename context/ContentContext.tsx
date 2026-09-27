@@ -20,7 +20,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<Record<string, string>>(DEFAULT_SITE_CONTENT);
   const [loading, setLoading] = useState(false);
 
-  const refreshContent = async () => {
+  const refreshContent = React.useCallback(async () => {
     try {
       const res = await fetchWithTimeout('/api/content', { timeoutMs: 3000 });
       if (res.ok) {
@@ -34,14 +34,19 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshContent();
-  }, []);
+  }, [refreshContent]);
+
+  const value = React.useMemo(
+    () => ({ content, loading, refreshContent }),
+    [content, loading, refreshContent]
+  );
 
   return (
-    <ContentContext.Provider value={{ content, loading, refreshContent }}>
+    <ContentContext.Provider value={value}>
       {children}
     </ContentContext.Provider>
   );

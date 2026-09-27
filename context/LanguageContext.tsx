@@ -27,18 +27,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setLocale = (newLocale: Locale) => {
+  const setLocale = React.useCallback((newLocale: Locale) => {
     if (newLocale === 'en' || newLocale === 'hi') {
       setLocaleState(newLocale);
       localStorage.setItem('app_locale', newLocale);
     }
-  };
+  }, []);
 
   const t = getTranslation(locale);
   const isHindi = locale === 'hi';
 
+  const value = React.useMemo(
+    () => ({ locale, setLocale, t, isHindi }),
+    [locale, setLocale, t, isHindi]
+  );
+
   return (
-    <LanguageContext.Provider value={{ locale, setLocale, t, isHindi }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

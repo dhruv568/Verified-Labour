@@ -43,24 +43,32 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
     }
   };
 
-  const fetchSession = async () => {
-    try {
-      const res = await fetchWithTimeout('/api/auth/me', { timeoutMs: 2500 });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.authenticated) {
-          setSessionUser(data.user);
-          return;
-        }
-      }
-      setSessionUser(null);
-    } catch {
-      setSessionUser(null);
-    }
-  };
-
   useEffect(() => {
-    fetchSession();
+    let isMounted = true;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AUTH] started');
+    }
+    fetchWithTimeout('/api/auth/me', { timeoutMs: 2500 })
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data) => {
+        if (isMounted) {
+          if (data.authenticated) {
+            setSessionUser(data.user);
+          } else {
+            setSessionUser(null);
+          }
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AUTH] completed');
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) setSessionUser(null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLogout = async () => {

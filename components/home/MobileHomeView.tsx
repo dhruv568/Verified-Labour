@@ -207,7 +207,7 @@ export default function MobileHomeView({
                 }`}
               >
                 {/* Upper Image Box with Icon Badge */}
-                <div className="relative w-full aspect-[4/4.5] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
+                <div className="relative w-full aspect-[8/9] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
                   <Image
                     src={item.image}
                     alt={`${item.title} (${item.hindiTitle})`}
