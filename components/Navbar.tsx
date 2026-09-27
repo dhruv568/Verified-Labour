@@ -14,6 +14,7 @@ import LocationSelector from './LocationSelector';
 import LanguageSelector from './LanguageSelector';
 import Logo from '@/components/Logo';
 import { useLanguage } from '@/context/LanguageContext';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 
 interface NavbarProps {
   onOpenAuth?: (
@@ -31,13 +32,15 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
 
   const fetchSession = async () => {
     try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.authenticated) {
-        setSessionUser(data.user);
-      } else {
-        setSessionUser(null);
+      const res = await fetchWithTimeout('/api/auth/me', { timeoutMs: 2500 });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated) {
+          setSessionUser(data.user);
+          return;
+        }
       }
+      setSessionUser(null);
     } catch {
       setSessionUser(null);
     }

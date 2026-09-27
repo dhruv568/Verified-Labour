@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { formatLocationDisplayName } from '@/lib/location';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 
 export interface LocationData {
   displayName: string;
@@ -53,7 +54,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
   const fallbackToIPLocation = async (): Promise<LocationData> => {
     try {
-      const res = await fetch('/api/location/ip');
+      const res = await fetchWithTimeout('/api/location/ip', { timeoutMs: 3000 });
       const json = await res.json();
       if (json.success && json.data) {
         const d = json.data;
@@ -126,14 +127,13 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          clearTimeout(timer);
           try {
             const { latitude, longitude } = position.coords;
             const roundLat = parseFloat(latitude.toFixed(3));
             const roundLng = parseFloat(longitude.toFixed(3));
             setPermissionState('granted');
 
-            const res = await fetch(`/api/location/reverse?lat=${roundLat}&lng=${roundLng}`);
+            const res = await fetchWithTimeout(`/api/location/reverse?lat=${roundLat}&lng=${roundLng}`, { timeoutMs: 3000 });
             const json = await res.json();
 
             let area = '';
@@ -169,11 +169,11 @@ export function LocationProvider({ children }: { children: ReactNode }) {
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(newLoc));
             } catch {}
-
-            finish(true);
           } catch {
             const ipLoc = await fallbackToIPLocation();
             setLocation(ipLoc);
+          } finally {
+            clearTimeout(timer);
             finish(true);
           }
         },

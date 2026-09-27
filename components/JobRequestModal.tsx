@@ -5,6 +5,7 @@ import { X, Calendar, Clock, MapPin, AlertCircle, ShieldCheck, RefreshCw } from 
 import { WorkerData } from './WorkerCard';
 import { LocationData } from '@/context/LocationContext';
 import VoiceNoteRecorder from './VoiceNoteRecorder';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 
 interface JobRequestModalProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ export default function JobRequestModal({
     setLoadingServices(true);
     setCategoriesError(null);
     try {
-      const res = await fetch('/api/categories');
+      const res = await fetchWithTimeout('/api/categories', { timeoutMs: 3000 });
       const data = await res.json();
       if (data.success && Array.isArray(data.categories)) {
         setCategories(data.categories);

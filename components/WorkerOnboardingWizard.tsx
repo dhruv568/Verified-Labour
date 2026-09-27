@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 import {
   CheckCircle2,
   ShieldCheck,
@@ -288,7 +289,7 @@ export default function WorkerOnboardingWizard({
 
     const fallbackIP = async () => {
       try {
-        const res = await fetch('/api/location/ip');
+        const res = await fetchWithTimeout('/api/location/ip', { timeoutMs: 3000 });
         const json = await res.json();
         if (json.success && json.data) {
           const detState = json.data.state || 'Gujarat';
@@ -318,7 +319,7 @@ export default function WorkerOnboardingWizard({
             setLatitude(lat);
             setLongitude(lng);
 
-            const res = await fetch(`/api/location/reverse?lat=${lat}&lng=${lng}`);
+            const res = await fetchWithTimeout(`/api/location/reverse?lat=${lat}&lng=${lng}`, { timeoutMs: 3000 });
             const json = await res.json();
             if (json.success && json.data) {
               const detState = json.data.state || 'Gujarat';
@@ -335,13 +336,15 @@ export default function WorkerOnboardingWizard({
             }
           } catch {
             await fallbackIP();
+          } finally {
+            setLocDetecting(false);
           }
         },
         async () => {
           await fallbackIP();
           setLocDetecting(false);
         },
-        { timeout: 7000, enableHighAccuracy: true }
+        { timeout: 5000, enableHighAccuracy: true }
       );
     } else {
       await fallbackIP();

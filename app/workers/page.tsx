@@ -10,6 +10,7 @@ import WorkerProfileModal from '@/components/WorkerProfileModal';
 import AuthModal from '@/components/AuthModal';
 import { useLocation } from '@/context/LocationContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { fetchWithTimeout } from '@/lib/fetch-utils';
 import {
   Search,
   Filter,
@@ -47,7 +48,7 @@ function FindWorkerContent() {
 
   // Fetch categories
   useEffect(() => {
-    fetch('/api/categories')
+    fetchWithTimeout('/api/categories', { timeoutMs: 3000 })
       .then((res) => res.json())
       .then((data) => {
         if (data.categories) setCategories(data.categories);
@@ -70,7 +71,7 @@ function FindWorkerContent() {
       params.set('radius', searchRadius.toString());
       if (location.city) params.set('city', location.city);
 
-      const res = await fetch(`/api/workers/search?${params.toString()}`);
+      const res = await fetchWithTimeout(`/api/workers/search?${params.toString()}`, { timeoutMs: 5000 });
       const data = await res.json();
 
       if (data.success) {
