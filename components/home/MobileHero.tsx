@@ -12,6 +12,7 @@ interface MobileHeroProps {
 
 export default function MobileHero({ onSearchWorker }: MobileHeroProps) {
   const { isHindi } = useLanguage();
+  const [imgError, setImgError] = React.useState(false);
 
   // Dynamic Content Data Structure based on active language
   const content = {
@@ -112,18 +113,30 @@ export default function MobileHero({ onSearchWorker }: MobileHeroProps) {
             <div className="absolute bottom-0 w-36 h-36 xs:w-40 xs:h-40 bg-gradient-to-t from-blue-300/40 via-blue-200/20 to-transparent rounded-full pointer-events-none" />
 
             {/* AI WORKER IMAGE INTEGRATED DIRECTLY INTO HERO CANVAS */}
-            <div className="relative w-full h-[200px] xs:h-[225px] overflow-hidden flex items-end justify-center">
-              <Image
-                src="/images/home/mobile-hero-worker.jpg"
-                alt="Verified Labour Professional Skilled Worker"
-                fill
-                priority
-                className="object-cover object-[center_10%] transform scale-110 drop-shadow-md"
-                sizes="(max-width: 640px) 50vw, 220px"
-              />
+            <div className="relative w-full h-[200px] xs:h-[225px] overflow-hidden">
+              {!imgError ? (
+                <Image
+                  src="/images/home/mobile-hero-worker.jpg"
+                  alt="Verified Labour Professional Skilled Worker"
+                  fill
+                  priority
+                  unoptimized
+                  onError={() => setImgError(true)}
+                  className="object-cover transform scale-110 drop-shadow-md"
+                  style={{ objectFit: 'cover', objectPosition: 'center 10%' }}
+                  sizes="(max-width: 640px) 50vw, 220px"
+                />
+              ) : (
+                <img
+                  src="/images/home/mobile-hero-worker.jpg"
+                  alt="Verified Labour Professional Skilled Worker"
+                  className="absolute inset-0 w-full h-full object-cover transform scale-110 drop-shadow-md"
+                  style={{ objectFit: 'cover', objectPosition: 'center 10%' }}
+                />
+              )}
               {/* Left side soft gradient mask so worker blends seamlessly into hero background */}
-              <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#F3F7FE] via-[#F3F7FE]/70 to-transparent pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#E2EEFE] to-transparent pointer-events-none" />
+              <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#F3F7FE] via-[#F3F7FE]/70 to-transparent pointer-events-none z-10" />
+              <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#E2EEFE] to-transparent pointer-events-none z-10" />
             </div>
 
             {/* GOLDEN VERIFICATION BADGE OVERLAY ON WORKER */}
