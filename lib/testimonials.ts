@@ -158,53 +158,47 @@ export async function ensureDefaultTestimonials(targetCount?: number) {
 export async function getTestimonials(onlyActive: boolean = true): Promise<TestimonialData[]> {
   try {
     const configuredCount = await getTestimonialCount();
-    await ensureDefaultTestimonials(configuredCount);
+    if (onlyActive && configuredCount === 0) return [];
+
+    if (!onlyActive) {
+      await ensureDefaultTestimonials(configuredCount);
+    }
 
     const records = await prisma.testimonial.findMany({
       orderBy: { slot: 'asc' },
     });
 
-    const validatedRecords: TestimonialData[] = await Promise.all(
-      records.map(async (rec) => {
-        let finalUrl = rec.imageUrl;
-        if (rec.imageUrl && rec.imageUrl.startsWith('/uploads/')) {
-          const diskPath = path.join(process.cwd(), 'public', rec.imageUrl);
-          if (!fs.existsSync(diskPath)) {
-            finalUrl = `/images/testimonials/testimonial-${((rec.slot - 1) % 2) + 1}.jpg`;
-            await prisma.testimonial.update({
-              where: { slot: rec.slot },
-              data: { imageUrl: finalUrl },
-            }).catch(console.error);
-          }
-        }
-        const target: 'DESKTOP' | 'MOBILE' | 'BOTH' =
-          rec.displayTarget === 'DESKTOP' || rec.displayTarget === 'MOBILE' || rec.displayTarget === 'BOTH'
-            ? (rec.displayTarget as 'DESKTOP' | 'MOBILE' | 'BOTH')
-            : 'BOTH';
+    if (records.length === 0 && onlyActive) {
+      return DEFAULT_TESTIMONIALS.filter((t) => t.isActive);
+    }
 
-        return {
-          id: rec.id,
-          slot: rec.slot,
-          customerName: rec.customerName,
-          profession: rec.profession,
-          location: rec.location,
-          testimonialText: rec.testimonialText,
-          rating: rec.rating,
-          isActive: rec.isActive,
-          displayTarget: target,
-          imageUrl: finalUrl,
-          imageZoom: rec.imageZoom,
-          imageOffsetX: rec.imageOffsetX,
-          imageOffsetY: rec.imageOffsetY,
-          createdAt: rec.createdAt,
-          updatedAt: rec.updatedAt,
-        };
-      })
-    );
+    const validatedRecords: TestimonialData[] = records.map((rec) => {
+      let finalUrl = rec.imageUrl;
+      const target: 'DESKTOP' | 'MOBILE' | 'BOTH' =
+        rec.displayTarget === 'DESKTOP' || rec.displayTarget === 'MOBILE' || rec.displayTarget === 'BOTH'
+          ? (rec.displayTarget as 'DESKTOP' | 'MOBILE' | 'BOTH')
+          : 'BOTH';
+
+      return {
+        id: rec.id,
+        slot: rec.slot,
+        customerName: rec.customerName,
+        profession: rec.profession,
+        location: rec.location,
+        testimonialText: rec.testimonialText,
+        rating: rec.rating,
+        isActive: rec.isActive,
+        displayTarget: target,
+        imageUrl: finalUrl,
+        imageZoom: rec.imageZoom,
+        imageOffsetX: rec.imageOffsetX,
+        imageOffsetY: rec.imageOffsetY,
+        createdAt: rec.createdAt,
+        updatedAt: rec.updatedAt,
+      };
+    });
 
     if (onlyActive) {
-      if (configuredCount === 0) return [];
-      // Return active testimonials within the configured slot count
       return validatedRecords.filter((t) => t.slot <= configuredCount && t.isActive);
     }
 

@@ -254,7 +254,7 @@ export async function detectLocationFromIP(): Promise<{
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-    const res = await fetch('http://ip-api.com/json/?fields=status,city,regionName,zip,lat,lon', {
+    const res = await fetch('https://ip-api.com/json/?fields=status,city,regionName,zip,lat,lon', {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

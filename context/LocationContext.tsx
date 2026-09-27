@@ -223,7 +223,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     } catch {}
   };
 
-  // Non-blocking location check on initial mount
+  // Fast non-blocking location check on initial mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -240,12 +240,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
 
-    // Non-blocking background detection after initial page render
-    const idleId = setTimeout(() => {
-      detectCurrentLocation({ silent: true });
-    }, 1000);
-
-    return () => clearTimeout(idleId);
+    // Default to fallback location immediately without prompting GPS or hanging initial load
+    setLocation(DEFAULT_FALLBACK_LOCATION);
   }, []);
 
   return (
