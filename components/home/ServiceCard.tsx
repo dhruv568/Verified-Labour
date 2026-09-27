@@ -51,10 +51,18 @@ export default function ServiceCard({
           src={image}
           alt={`${title} (${hindiTitle}) - Verified Labour Professional`}
           fill
+          unoptimized
           sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 12vw"
           priority={priority}
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           style={{ objectPosition }}
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            if (target) {
+              target.onerror = null;
+              target.src = image;
+            }
+          }}
         />
 
         {badge && (

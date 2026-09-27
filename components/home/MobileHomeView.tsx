@@ -184,7 +184,7 @@ export default function MobileHomeView({
 
         {/* 2-Column Responsive Grid matching reference image exactly */}
         <div className="grid grid-cols-2 gap-2.5">
-          {FEATURED_CATEGORIES.map((item) => {
+          {FEATURED_CATEGORIES.map((item, idx) => {
             const IconComp = item.icon;
             const isSelected = selectedCategory === item.slug;
 
@@ -212,9 +212,19 @@ export default function MobileHomeView({
                     src={item.image}
                     alt={`${item.title} (${item.hindiTitle})`}
                     fill
-                    sizes="45vw"
+                    unoptimized
+                    priority={idx < 4}
+                    sizes="(max-width: 640px) 45vw, 220px"
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     style={{ objectPosition: item.objectPosition || 'center top' }}
+                    onError={(e) => {
+                      // Fail-safe fallback to standard img element if Next.js image loading is interrupted
+                      const target = e.currentTarget as HTMLImageElement;
+                      if (target) {
+                        target.onerror = null;
+                        target.src = item.image;
+                      }
+                    }}
                   />
 
                   {/* Circular Icon Overlay Badge matching Reference */}
@@ -253,7 +263,21 @@ export default function MobileHomeView({
                   className="bg-white rounded-xl p-2 border border-slate-200 flex items-center gap-2 cursor-pointer hover:bg-slate-50 active:scale-98 shadow-2xs"
                 >
                   <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-slate-100">
-                    <Image src={item.image} alt={item.title} fill className="object-cover" style={{ objectPosition: item.objectPosition || 'center top' }} />
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      style={{ objectPosition: item.objectPosition || 'center top' }}
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target) {
+                          target.onerror = null;
+                          target.src = item.image;
+                        }
+                      }}
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold text-[#082B66] truncate font-devanagari">
