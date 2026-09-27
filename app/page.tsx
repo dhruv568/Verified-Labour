@@ -71,6 +71,19 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
+  // Handle smooth scroll to section if hash is present in URL
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#how') {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('how');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Fetch matching workers based on selected filters and location
   const fetchWorkers = async (categoryToSearch = selectedCategory) => {
     setLoadingWorkers(true);
@@ -157,7 +170,6 @@ export default function HomePage() {
           onSelectCategory={handleSelectCategory}
           onViewAll={handleSearchWorkers}
         />
-        <HowItWorks onFindWorker={handleSearchWorkers} />
         <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
@@ -179,6 +191,9 @@ export default function HomePage() {
           platformStats={platformStats}
         />
       </div>
+
+      {/* HOW IT WORKS SECTION (Visible on Desktop & Mobile) */}
+      <HowItWorks onFindWorker={handleSearchWorkers} />
 
       {/* TESTIMONIALS SECTION */}
       <TestimonialsSection />

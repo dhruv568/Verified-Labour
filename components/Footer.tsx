@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Facebook,
   Instagram,
@@ -11,6 +12,7 @@ import {
   Search,
   Briefcase,
   HelpCircle,
+  Info,
   Building2,
   FileText,
   ShieldCheck,
@@ -26,6 +28,18 @@ import { useLanguage } from '@/context/LanguageContext';
 export default function Footer() {
   const { content } = useContent();
   const { isHindi, t } = useLanguage();
+  const pathname = usePathname();
+
+  const handleHowItWorksClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname === '/') {
+      e.preventDefault();
+      const el = document.getElementById('how');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+        window.history.pushState(null, '', '/#how');
+      }
+    }
+  };
 
   return (
     <footer className="bg-white text-slate-600 pt-12 sm:pt-16 pb-8 border-t border-slate-200 mt-auto">
@@ -70,10 +84,16 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="/#how" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                <Link href="/#how" onClick={handleHowItWorksClick} className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
                   <span>{t.howItWorks}</span>
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">
+                  <Info className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1464D2] transition-colors shrink-0" />
+                  <span>{t.about}</span>
+                </Link>
               </li>
               <li>
                 <Link href="/business/bulk" className="inline-flex items-center gap-2 py-1 hover:text-[#1464D2] transition-colors group">

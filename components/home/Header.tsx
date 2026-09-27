@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Menu,
   X,
@@ -26,10 +26,23 @@ interface HeaderProps {
 
 export default function Header({ onOpenAuth }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useLanguage();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const handleHowItWorksClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setMobileMenuOpen(false);
+    if (pathname === '/') {
+      e.preventDefault();
+      const el = document.getElementById('how');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+        window.history.pushState(null, '', '/#how');
+      }
+    }
+  };
 
   const fetchSession = async () => {
     try {
@@ -101,24 +114,25 @@ export default function Header({ onOpenAuth }: HeaderProps) {
             >
               {t.becomeWorker}
             </button>
-            <a
+            <Link
               href="/#how"
+              onClick={handleHowItWorksClick}
               className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
               {t.howItWorks}
-            </a>
-            <a
-              href="/#about"
+            </Link>
+            <Link
+              href="/about"
               className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
               {t.about}
-            </a>
-            <a
-              href="/#contact"
+            </Link>
+            <Link
+              href="/contact"
               className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
             >
               {t.contact}
-            </a>
+            </Link>
           </nav>
 
           {/* Right Tools: Location Selector + Language Selector + Green Login + Blue Sign Up */}
@@ -245,27 +259,27 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                   {t.earnDaily}
                 </span>
               </button>
-              <a
+              <Link
                 href="/#how"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleHowItWorksClick}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 {t.howItWorks}
-              </a>
-              <a
-                href="/#about"
+              </Link>
+              <Link
+                href="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 {t.about}
-              </a>
-              <a
-                href="/#contact"
+              </Link>
+              <Link
+                href="/contact"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center min-h-[44px] px-3.5 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 {t.contact}
-              </a>
+              </Link>
             </nav>
 
             <div className="pt-3 border-t border-slate-100 px-1">
