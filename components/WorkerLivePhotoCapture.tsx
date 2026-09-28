@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, RefreshCw, CheckCircle2, AlertCircle, ShieldCheck, Upload, Sparkles, Loader2, UserCheck, X } from 'lucide-react';
+import {
+  Camera,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  Upload,
+  Loader2,
+  X,
+} from 'lucide-react';
 import Button from './ui/Button';
 
 interface WorkerLivePhotoCaptureProps {
@@ -29,10 +38,16 @@ export default function WorkerLivePhotoCapture({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(Boolean(existingAvatarUrl));
 
-  // Stop camera media stream safely
+  // Safely stop camera tracks and release hardware stream
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      });
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -47,6 +62,19 @@ export default function WorkerLivePhotoCapture({
     };
   }, [stopCamera]);
 
+  // When GRANTED state renders, attach stream to video DOM element
+  useEffect(() => {
+    if (permissionStatus === 'GRANTED' && streamRef.current && videoRef.current) {
+      const videoEl = videoRef.current;
+      videoEl.srcObject = streamRef.current;
+      videoEl
+        .play()
+        .catch((err) => {
+          console.warn('Video play deferred or prevented:', err);
+        });
+    }
+  }, [permissionStatus]);
+
   // Request camera permission and start video feed
   const startCamera = async () => {
     setErrorMsg(null);
@@ -59,24 +87,21 @@ export default function WorkerLivePhotoCapture({
     }
 
     try {
-      stopCamera(); // ensure no stale stream
+      stopCamera(); // Stop any existing stream
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: 'user', // front camera preference for mobile devices
-          width: { ideal: 640 },
-          height: { ideal: 640 },
+          facingMode: { ideal: 'user' }, // Front camera for mobile devices
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
         },
         audio: false,
-      });
+      };
 
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
+      // Update state to GRANTED. The useEffect above will attach srcObject to videoRef once mounted.
       setPermissionStatus('GRANTED');
     } catch (err: any) {
       console.error('Camera access error:', err);
@@ -84,52 +109,69 @@ export default function WorkerLivePhotoCapture({
 
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setPermissionStatus('DENIED');
-        setErrorMsg('Camera permission was denied. Please allow camera permissions in your browser address bar and try again.');
+        setErrorMsg('Camera permission was denied. Please allow camera access in your browser settings and try again.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setPermissionStatus('UNSUPPORTED');
-        setErrorMsg('No camera hardware found on this device. You can upload a live selfie image file.');
+        setErrorMsg('No camera hardware detected on this device. You can upload a live selfie file below.');
       } else {
         setPermissionStatus('ERROR');
-        setErrorMsg(err.message || 'Failed to initialize camera. Please try again or upload a photo file.');
+        setErrorMsg(err.message || 'Unable to access camera. Please try again or upload a photo file.');
       }
     }
   };
 
-  // Capture frame from video feed to canvas
+  // Auto-start camera when entering step if no photo is saved yet
+  useEffect(() => {
+    if (!existingAvatarUrl && !savedUrl && !capturedImage && permissionStatus === 'IDLE') {
+      startCamera();
+    }
+  }, [existingAvatarUrl, savedUrl, capturedImage, permissionStatus]);
+
+  // Capture photo frame from video feed to canvas
   const capturePhoto = () => {
-    if (!videoRef.current || permissionStatus !== 'GRANTED') return;
+    if (!videoRef.current || permissionStatus !== 'GRANTED') {
+      setErrorMsg('Camera is not ready. Please wait a moment.');
+      return;
+    }
 
     const video = videoRef.current;
-    const videoWidth = video.videoWidth || 640;
-    const videoHeight = video.videoHeight || 640;
+    if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+      setErrorMsg('Camera stream is still initializing. Please wait a second and click capture again.');
+      return;
+    }
 
-    // Create a 600x600 square crop from center of video frame
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    // Crop center square frame
     const size = Math.min(videoWidth, videoHeight);
     const startX = (videoWidth - size) / 2;
     const startY = (videoHeight - size) / 2;
 
-    const canvas = document.createElement('canvas');
+    const canvas = canvasRef.current || document.createElement('canvas');
     canvas.width = 600;
     canvas.height = 600;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      setErrorMsg('Failed to create image canvas context.');
+      setErrorMsg('Failed to initialize image canvas context.');
       return;
     }
 
-    // Mirror horizontal image for front camera feel
+    // Horizontal mirror for selfie mode
+    ctx.save();
     ctx.translate(600, 0);
     ctx.scale(-1, 1);
 
     // Draw square cropped video frame
     ctx.drawImage(video, startX, startY, size, size, 0, 0, 600, 600);
+    ctx.restore();
 
-    // Convert canvas to JPEG blob
+    // Convert canvas to JPEG Blob
     canvas.toBlob(
       (blob) => {
-        if (!blob) {
-          setErrorMsg('Failed to process captured image frame.');
+        if (!blob || blob.size === 0) {
+          setErrorMsg('Unable to capture photo frame. Please try again.');
           return;
         }
 
@@ -137,16 +179,17 @@ export default function WorkerLivePhotoCapture({
         setCapturedBlob(blob);
         setCapturedImage(previewUrl);
         setIsSaved(false);
+        setErrorMsg(null);
 
-        // Stop camera to turn off device indicator
+        // Turn off camera stream hardware
         stopCamera();
       },
       'image/jpeg',
-      0.88
+      0.90
     );
   };
 
-  // Reset captured image and restart camera
+  // Reset captured image and restart camera for retake
   const handleRetake = () => {
     if (capturedImage && capturedImage.startsWith('blob:')) {
       URL.revokeObjectURL(capturedImage);
@@ -158,8 +201,13 @@ export default function WorkerLivePhotoCapture({
     startCamera();
   };
 
-  // Upload captured image blob or selected file to server API
+  // Upload photo blob to backend API
   const uploadPhotoBlob = async (blobToUpload: Blob) => {
+    if (!blobToUpload || blobToUpload.size === 0) {
+      setErrorMsg('No valid photo captured to upload. Please capture your photo first.');
+      return;
+    }
+
     setIsUploading(true);
     setErrorMsg(null);
 
@@ -182,19 +230,24 @@ export default function WorkerLivePhotoCapture({
       setIsSaved(true);
       onPhotoSaved(data.avatarUrl);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Live photo upload failed');
+      setErrorMsg(err.message || 'Failed to save live photo. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Handle fallback file selection
+  // Mobile/file upload fallback handler
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Selected file exceeds 5MB limit.');
+      setErrorMsg('Selected image exceeds 5MB limit.');
       return;
     }
 
@@ -202,9 +255,10 @@ export default function WorkerLivePhotoCapture({
     setCapturedBlob(file);
     setCapturedImage(previewUrl);
     setIsSaved(false);
+    setErrorMsg(null);
     stopCamera();
 
-    // Auto upload selected file
+    // Automatically upload the selected file
     uploadPhotoBlob(file);
   };
 
@@ -252,7 +306,7 @@ export default function WorkerLivePhotoCapture({
       {/* Main Camera / Capture Viewport Container */}
       <div className="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-xl min-h-[340px] sm:min-h-[380px] flex flex-col items-center justify-center p-4">
 
-        {/* STATE 1: SAVED / PREVIEW STATE */}
+        {/* STATE 1: SAVED / VERIFIED STATE */}
         {isSaved && savedUrl ? (
           <div className="w-full text-center space-y-4 py-4 animate-in zoom-in-95 duration-200">
             <div className="relative inline-block mx-auto">
@@ -372,7 +426,7 @@ export default function WorkerLivePhotoCapture({
                 className="px-6 py-3 bg-[#1264D6] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl transition-all flex items-center gap-2 cursor-pointer ring-4 ring-blue-500/30"
               >
                 <Camera className="w-5 h-5" />
-                <span>Take Live Photo</span>
+                <span>📷 Capture Photo</span>
               </button>
 
               <button
@@ -434,7 +488,7 @@ export default function WorkerLivePhotoCapture({
                   className="inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white font-semibold cursor-pointer hover:underline transition-colors"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Or select live photo file from device</span>
+                  <span>📷 Take Photo / Select Live Photo File</span>
                 </label>
               </div>
             </div>
