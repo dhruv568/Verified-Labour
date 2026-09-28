@@ -161,6 +161,7 @@ model Service {
   categoryId    String
   subcategoryId String?
   name          String
+  nameHi        String?
   slug          String        @unique
   description   String?
   basePrice     Float         @default(300.0)

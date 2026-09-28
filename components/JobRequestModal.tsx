@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Clock, MapPin, AlertCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 import { WorkerData } from './WorkerCard';
 import { LocationData } from '@/context/LocationContext';
 import VoiceNoteRecorder from './VoiceNoteRecorder';
 import { fetchWithTimeout } from '@/lib/fetch-utils';
+import ServiceSearchableSelect, { ServiceItem } from '@/components/ui/ServiceSearchableSelect';
 
 interface JobRequestModalProps {
   isOpen: boolean;
@@ -25,8 +26,8 @@ export default function JobRequestModal({
   onRequireAuth,
 }: JobRequestModalProps) {
   const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const [services, setServices] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+  const [allServices, setAllServices] = useState<ServiceItem[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [loadingServices, setLoadingServices] = useState<boolean>(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
@@ -64,57 +65,97 @@ export default function JobRequestModal({
     }
   }, [isOpen]);
 
-  // Fetch all categories with their associated services from backend API
+  // Fetch all categories and complete active service list from backend API
   const fetchCategoriesAndServices = async () => {
     setLoadingServices(true);
     setCategoriesError(null);
     try {
-      const res = await fetchWithTimeout('/api/categories', { timeoutMs: 3000 });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.categories)) {
-        setCategories(data.categories);
+      const [catRes, svcRes] = await Promise.all([
+        fetchWithTimeout('/api/categories', { timeoutMs: 4000 }),
+        fetchWithTimeout('/api/services', { timeoutMs: 4000 }),
+      ]);
 
-        // Determine matching category for current worker
-        let matchedCat = null;
-        if (worker) {
-          const pCat = worker.primaryCategory;
-          const targetSlug = typeof pCat === 'object' ? pCat?.slug : pCat;
-          const targetName = typeof pCat === 'object' ? pCat?.name : pCat;
-          const targetId = typeof pCat === 'object' ? (pCat as any)?.id : null;
+      const catData = await catRes.json();
+      const svcData = await svcRes.json();
 
-          matchedCat = data.categories.find((c: any) =>
+      let catList: any[] = [];
+      if (catData.success && Array.isArray(catData.categories)) {
+        catList = catData.categories;
+        setCategories(catList);
+      }
+
+      let svcList: ServiceItem[] = [];
+      if (svcData.success && Array.isArray(svcData.services)) {
+        svcList = svcData.services;
+      } else if (catList.length > 0) {
+        // Fallback: extract services from categories
+        const extracted: ServiceItem[] = [];
+        catList.forEach((c: any) => {
+          if (c.services && Array.isArray(c.services)) {
+            c.services.forEach((s: any) => {
+              extracted.push({ ...s, categoryId: s.categoryId || c.id, category: c });
+            });
+          }
+        });
+        svcList = extracted;
+      }
+
+      // Ensure unique services by ID
+      const seenIds = new Set<string>();
+      const uniqueServices: ServiceItem[] = [];
+      for (const s of svcList) {
+        if (s && s.id && !seenIds.has(s.id)) {
+          seenIds.add(s.id);
+          uniqueServices.push(s);
+        }
+      }
+
+      setAllServices(uniqueServices);
+
+      // Determine matching category and service for current worker
+      let matchedCat: any = null;
+      let matchedSvc: ServiceItem | undefined = undefined;
+
+      if (worker) {
+        const pCat = worker.primaryCategory;
+        const targetSlug = typeof pCat === 'object' ? pCat?.slug : pCat;
+        const targetName = typeof pCat === 'object' ? pCat?.name : pCat;
+        const targetId = typeof pCat === 'object' ? (pCat as any)?.id : null;
+
+        matchedCat = catList.find(
+          (c: any) =>
             (targetId && c.id === targetId) ||
             (targetSlug && c.slug.toLowerCase() === String(targetSlug).toLowerCase()) ||
             (targetName && c.name.toLowerCase() === String(targetName).toLowerCase())
-          );
+        );
 
-          if (!matchedCat && worker.skills && worker.skills.length > 0) {
-            const skillCatId =
-              worker.skills[0]?.categoryId ||
-              worker.skills[0]?.category?.id ||
-              worker.skills[0]?.category?.slug;
-            matchedCat = data.categories.find(
-              (c: any) => c.id === skillCatId || c.slug === skillCatId
-            );
-          }
-        }
-
-        if (!matchedCat && data.categories.length > 0) {
-          matchedCat = data.categories[0];
+        if (!matchedCat && worker.skills && worker.skills.length > 0) {
+          const skillCatId =
+            worker.skills[0]?.categoryId ||
+            worker.skills[0]?.category?.id ||
+            worker.skills[0]?.category?.slug;
+          matchedCat = catList.find((c: any) => c.id === skillCatId || c.slug === skillCatId);
         }
 
         if (matchedCat) {
-          setSelectedCategoryId(matchedCat.id);
-          const catServices = matchedCat.services || [];
-          setServices(catServices);
-          if (catServices.length > 0) {
-            setSelectedServiceId(catServices[0].id);
-          } else {
-            setSelectedServiceId('');
-          }
+          matchedSvc = uniqueServices.find((s) => s.categoryId === matchedCat.id);
         }
-      } else {
-        throw new Error(data.error || 'Failed to load categories');
+      }
+
+      if (matchedSvc) {
+        setSelectedCategoryId(matchedSvc.categoryId);
+        setSelectedServiceId(matchedSvc.id);
+      } else if (matchedCat) {
+        setSelectedCategoryId(matchedCat.id);
+        const catSvc = uniqueServices.filter((s) => s.categoryId === matchedCat.id);
+        if (catSvc.length > 0) {
+          setSelectedServiceId(catSvc[0].id);
+        } else if (uniqueServices.length > 0) {
+          setSelectedServiceId(uniqueServices[0].id);
+        }
+      } else if (uniqueServices.length > 0) {
+        setSelectedCategoryId('ALL');
+        setSelectedServiceId(uniqueServices[0].id);
       }
     } catch (err: any) {
       console.error('Error loading services:', err);
@@ -130,30 +171,58 @@ export default function JobRequestModal({
     }
   }, [isOpen, worker]);
 
+  // Compute available services for dropdown based on category filter
+  const availableServices = useMemo(() => {
+    if (!selectedCategoryId || selectedCategoryId === 'ALL') {
+      return allServices;
+    }
+    const filtered = allServices.filter((s) => s.categoryId === selectedCategoryId);
+    return filtered.length > 0 ? filtered : allServices;
+  }, [allServices, selectedCategoryId]);
+
   // Handle category change by user
   const handleCategoryChange = (newCatId: string) => {
     setSelectedCategoryId(newCatId);
-    const cat = categories.find((c) => c.id === newCatId);
-    const catServices = cat?.services || [];
-    setServices(catServices);
+    if (newCatId === 'ALL') {
+      if (allServices.length > 0 && !allServices.some((s) => s.id === selectedServiceId)) {
+        setSelectedServiceId(allServices[0].id);
+      }
+    } else {
+      const catSvcs = allServices.filter((s) => s.categoryId === newCatId);
+      if (catSvcs.length > 0) {
+        const isStillValid = catSvcs.some((s) => s.id === selectedServiceId);
+        if (!isStillValid) {
+          setSelectedServiceId(catSvcs[0].id);
+        }
+      }
+    }
+  };
 
-    // Reset selected service if it doesn't belong to the newly selected category
-    const isStillValid = catServices.some((s: any) => s.id === selectedServiceId);
-    if (!isStillValid) {
-      setSelectedServiceId(catServices.length > 0 ? catServices[0].id : '');
+  // Handle service selection by user from SearchableSelect
+  const handleServiceSelect = (serviceId: string, service: ServiceItem) => {
+    setSelectedServiceId(serviceId);
+    if (service && service.categoryId) {
+      setSelectedCategoryId(service.categoryId);
     }
   };
 
   if (!isOpen || !worker) return null;
 
-  const selectedService = services.find((s) => s.id === selectedServiceId);
+  const selectedService = allServices.find((s) => s.id === selectedServiceId);
   const estimatedAmount = selectedService?.basePrice || worker.hourlyRate || 350;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!selectedCategoryId) {
+    // Resolve categoryId if ALL was selected
+    const workerCatId = typeof worker.primaryCategory === 'object' ? (worker.primaryCategory as any)?.id : null;
+    const finalCategoryId =
+      selectedCategoryId && selectedCategoryId !== 'ALL'
+        ? selectedCategoryId
+        : selectedService?.categoryId || workerCatId || '';
+
+    if (!finalCategoryId) {
       setError('कृपया एक श्रेणी चुनें / Please select a category');
       return;
     }
@@ -196,7 +265,7 @@ export default function JobRequestModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workerId: worker.id,
-          categoryId: selectedCategoryId,
+          categoryId: finalCategoryId,
           serviceId: selectedServiceId,
           description,
           voiceNoteUrl: uploadedVoiceUrl,
@@ -250,7 +319,7 @@ export default function JobRequestModal({
             <span className="text-[11px] sm:text-xs font-bold text-brand-400 tracking-wider uppercase">
               तुरंत बुकिंग / On-Demand Booking
             </span>
-            <h2 className="text-base sm:text-lg font-black text-white truncate max-w-[240px] sm:max-w-none">
+            <h2 className="text-base sm:text-lg font-black text-white truncate max-w-[240px] sm:max-w-none font-devanagari">
               {worker.fullName} को बुक करें / Request Worker
             </h2>
           </div>
@@ -263,7 +332,7 @@ export default function JobRequestModal({
           </button>
         </div>
 
-        {/* Worker Snapshot with Live Photo */}
+        {/* Worker Snapshot */}
         <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs shrink-0 gap-3">
           <div className="flex items-center gap-3">
             {worker.avatarUrl ? (
@@ -281,7 +350,7 @@ export default function JobRequestModal({
               <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
                 <span>{worker.fullName}</span>
                 <span className="text-slate-400 font-normal">•</span>
-                <span className="text-slate-600 font-medium">
+                <span className="text-slate-600 font-medium font-devanagari">
                   {worker.primaryCategory?.name || 'Skilled Professional'}
                 </span>
               </div>
@@ -292,8 +361,8 @@ export default function JobRequestModal({
           </div>
           <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-1 rounded-lg border border-brand-200 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            <span className="hidden sm:inline">सत्यापित पेशेवर / Verified</span>
-            <span className="sm:hidden">सत्यापित</span>
+            <span className="hidden sm:inline font-devanagari">सत्यापित पेशेवर / Verified</span>
+            <span className="sm:hidden font-devanagari">सत्यापित</span>
           </div>
         </div>
 
@@ -302,21 +371,24 @@ export default function JobRequestModal({
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <span className="font-devanagari">{error}</span>
             </div>
           )}
 
           {/* Main Category Selection */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
               मुख्य श्रेणी / Main Category *
             </label>
             <select
               value={selectedCategoryId}
               onChange={(e) => handleCategoryChange(e.target.value)}
               disabled={loadingServices}
-              className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px]"
+              className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px] font-devanagari"
             >
+              <option value="ALL">
+                सभी श्रेणियां ({allServices.length} सेवाएं) / All Categories ({allServices.length} Services)
+              </option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.nameHi ? `${cat.nameHi} / ${cat.name}` : cat.name}
@@ -325,52 +397,40 @@ export default function JobRequestModal({
             </select>
           </div>
 
-          {/* Service Selection */}
+          {/* Service Selection (Searchable Dropdown with Dynamic 1..N Indexing) */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              विशिष्ट कार्य / सेवा / Select Specific Work / Service *
-            </label>
             {categoriesError ? (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-2">
-                <span>{categoriesError}</span>
+                <span className="font-devanagari">{categoriesError}</span>
                 <button
                   type="button"
                   onClick={fetchCategoriesAndServices}
-                  className="px-2.5 py-1 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1 text-xs shrink-0"
+                  className="px-2.5 py-1 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1 text-xs shrink-0 font-devanagari"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>पुनः प्रयास करें / Retry</span>
                 </button>
               </div>
             ) : (
-              <select
+              <ServiceSearchableSelect
+                label="विशिष्ट कार्य / सेवा / Select Specific Work / Service"
+                required
+                disabled={loadingServices || availableServices.length === 0}
+                placeholder={
+                  loadingServices
+                    ? 'सेवाएं लोड हो रही हैं... / Loading services...'
+                    : 'सेवा चुनें (खोजने के लिए टाइप करें) / Select or search service...'
+                }
+                services={availableServices}
                 value={selectedServiceId}
-                onChange={(e) => setSelectedServiceId(e.target.value)}
-                disabled={loadingServices || services.length === 0}
-                className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px] disabled:bg-slate-100 disabled:text-slate-500"
-              >
-                {loadingServices ? (
-                  <option value="" disabled>
-                    सेवाएं लोड हो रही हैं... / Loading services...
-                  </option>
-                ) : services.length === 0 ? (
-                  <option value="" disabled>
-                    इस श्रेणी के लिए कोई सेवा उपलब्ध नहीं है / No services available for this category
-                  </option>
-                ) : (
-                  services.map((svc) => (
-                    <option key={svc.id} value={svc.id}>
-                      {svc.nameHi ? `${svc.nameHi} / ${svc.name}` : svc.name} — ₹{svc.basePrice} ({svc.priceUnit || 'per job'})
-                    </option>
-                  ))
-                )}
-              </select>
+                onChange={handleServiceSelect}
+              />
             )}
           </div>
 
           {/* Address */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
               सेवा का पता / Service Address & Landmark *
             </label>
             <div className="relative">
@@ -388,14 +448,14 @@ export default function JobRequestModal({
 
           {/* Urgency */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 font-devanagari">
               आवश्यकता / Urgency *
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setUrgency('IMMEDIATE')}
-                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center font-devanagari ${
                   urgency === 'IMMEDIATE'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500 shadow-2xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -407,7 +467,7 @@ export default function JobRequestModal({
               <button
                 type="button"
                 onClick={() => setUrgency('SCHEDULED')}
-                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center font-devanagari ${
                   urgency === 'SCHEDULED'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500 shadow-2xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -419,11 +479,11 @@ export default function JobRequestModal({
             </div>
           </div>
 
-          {/* Schedule Date & Time (Active when Schedule Later is selected) */}
+          {/* Schedule Date & Time */}
           {urgency === 'SCHEDULED' && (
             <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in duration-150">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
                   पसंदीदा तारीख / Preferred Date *
                 </label>
                 <div className="relative">
@@ -439,7 +499,7 @@ export default function JobRequestModal({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
                   समय सीमा / Time Slot *
                 </label>
                 <div className="relative">
@@ -463,10 +523,10 @@ export default function JobRequestModal({
           {/* Description & Voice Note */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-slate-700">
+              <label className="block text-xs font-bold text-slate-700 font-devanagari">
                 कार्य विवरण / Work Requirement Details
               </label>
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-[11px] text-slate-500 font-medium font-devanagari">
                 टेक्स्ट, वॉइस नोट या दोनों / Text, Voice Note, or Both
               </span>
             </div>
@@ -475,7 +535,7 @@ export default function JobRequestModal({
               placeholder="अपनी आवश्यकता का विवरण लिखें (जैसे: रसोई के सिंक का नल लीक हो रहा है) / Describe your requirement in detail"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none font-devanagari"
             />
             <VoiceNoteRecorder
               onVoiceNoteChange={(blob, durSec, previewUrl) => {
@@ -493,10 +553,10 @@ export default function JobRequestModal({
           {/* Pricing Summary */}
           <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-700 block">
+              <span className="text-xs font-bold text-slate-700 block font-devanagari">
                 अनुमानित सेवा शुल्क / Estimated Service Fee
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 font-devanagari">
                 काम पूरा होने के बाद सुरक्षित भुगतान करें / Pay securely after work is done
               </span>
             </div>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { getServiceHindiName } from '@/lib/service-translations';
 
 export async function GET(req: NextRequest) {
   try {
-    const categories = await prisma.category.findMany({
+    const rawCategories = await prisma.category.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
       include: {
@@ -13,6 +14,14 @@ export async function GET(req: NextRequest) {
         },
       },
     });
+
+    const categories = rawCategories.map((cat) => ({
+      ...cat,
+      services: cat.services.map((svc) => ({
+        ...svc,
+        nameHi: getServiceHindiName(svc),
+      })),
+    }));
 
     return NextResponse.json({
       success: true,
