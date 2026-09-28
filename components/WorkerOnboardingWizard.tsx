@@ -37,6 +37,7 @@ import Card from './ui/Card';
 import Badge from './ui/Badge';
 import SearchableSelect from './ui/SearchableSelect';
 import { INDIAN_STATES_AND_CITIES } from '@/lib/indian-locations';
+import { LOCAL_COORDINATE_MAP, calculateHaversineDistanceKm } from '@/lib/location';
 import { COMMON_TRADES } from '@/lib/common-trades';
 import WorkerLivePhotoCapture from './WorkerLivePhotoCapture';
 
@@ -80,9 +81,13 @@ export default function WorkerOnboardingWizard({
   const [postalCode, setPostalCode] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [serviceRadiusKm, setServiceRadiusKm] = useState(15);
   const [serviceAreas, setServiceAreas] = useState('');
   const [locDetecting, setLocDetecting] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+  const [locSuccess, setLocSuccess] = useState(false);
+  const [userHasEditedLoc, setUserHasEditedLoc] = useState(false);
 
   // Step 5: Worker Live Photo
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -280,77 +285,201 @@ export default function WorkerOnboardingWizard({
   const handleStateChange = (newState: string) => {
     setState(newState);
     setCity('');
+    setUserHasEditedLoc(true);
   };
 
-  // Location Geolocation Handler with Fallback
-  const handleDetectLocation = async () => {
+  // High-Accuracy Device GPS Location Detection & Automatic State/City Auto-Selection
+  const handleDetectLocation = async (userInitiated = true) => {
     setLocDetecting(true);
-    setError(null);
+    setLocError(null);
+    setLocSuccess(false);
 
-    const fallbackIP = async () => {
-      try {
-        const res = await fetchWithTimeout('/api/location/ip', { timeoutMs: 3000 });
-        const json = await res.json();
-        if (json.success && json.data) {
-          const detState = json.data.state || 'Gujarat';
-          const detCity = json.data.city || 'Surat';
-          setState(detState);
-          setCity(detCity);
-          if (json.data.postalCode) setPostalCode(json.data.postalCode);
-          if (json.data.area) {
-            setArea(json.data.area);
-            if (!serviceAreas) setServiceAreas(json.data.area);
-          }
-          if (json.data.latitude) setLatitude(json.data.latitude);
-          if (json.data.longitude) setLongitude(json.data.longitude);
-        }
-      } catch {
-        if (!state) setState('Gujarat');
-        if (!city) setCity('Surat');
-      }
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setLocError('Browser location service is not supported. Please select your State and City manually.');
+      setLocDetecting(false);
+      return;
+    }
+
+    const options: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
     };
 
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const lat = parseFloat(pos.coords.latitude.toFixed(3));
-            const lng = parseFloat(pos.coords.longitude.toFixed(3));
-            setLatitude(lat);
-            setLongitude(lng);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Math.round(pos.coords.accuracy || 0);
 
-            const res = await fetchWithTimeout(`/api/location/reverse?lat=${lat}&lng=${lng}`, { timeoutMs: 3000 });
-            const json = await res.json();
-            if (json.success && json.data) {
-              const detState = json.data.state || 'Gujarat';
-              const detCity = json.data.city || 'Surat';
-              setState(detState);
-              setCity(detCity);
-              if (json.data.postalCode) setPostalCode(json.data.postalCode);
-              if (json.data.area) {
-                setArea(json.data.area);
-                if (!serviceAreas) setServiceAreas(json.data.area);
+          setLatitude(lat);
+          setLongitude(lng);
+          setLocationAccuracy(accuracy);
+
+          // Reverse-geocode coordinates via API
+          const res = await fetchWithTimeout(`/api/location/reverse?lat=${lat}&lng=${lng}`, { timeoutMs: 5000 });
+          const json = await res.json();
+
+          if (json.success && json.data) {
+            const detData = json.data;
+            const detState = detData.state || '';
+            const detCity = detData.city || '';
+            const detPostalCode = detData.postalCode || '';
+            const detArea = detData.area || '';
+
+            // 1. Auto-select State
+            let matchedState = '';
+            if (detState) {
+              const foundStateObj = INDIAN_STATES_AND_CITIES.find(
+                (s) =>
+                  s.state.toLowerCase() === detState.toLowerCase() ||
+                  detState.toLowerCase().includes(s.state.toLowerCase()) ||
+                  s.state.toLowerCase().includes(detState.toLowerCase())
+              );
+              if (foundStateObj) {
+                matchedState = foundStateObj.state;
               }
-            } else {
-              await fallbackIP();
             }
-          } catch {
-            await fallbackIP();
-          } finally {
-            setLocDetecting(false);
+
+            // Fallback state lookup if state string didn't match directly
+            if (!matchedState && detCity) {
+              const stateWithCity = INDIAN_STATES_AND_CITIES.find((s) =>
+                s.cities.some((c) => c.toLowerCase() === detCity.toLowerCase())
+              );
+              if (stateWithCity) {
+                matchedState = stateWithCity.state;
+              }
+            }
+
+            if (matchedState) {
+              setState(matchedState);
+            }
+
+            // 2. Auto-select City
+            let matchedCity = '';
+            const targetStateName = matchedState || state;
+
+            if (targetStateName) {
+              const foundStateObj = INDIAN_STATES_AND_CITIES.find(
+                (s) => s.state.toLowerCase() === targetStateName.toLowerCase()
+              );
+
+              if (foundStateObj) {
+                // Try exact or partial city match
+                const cityMatch = foundStateObj.cities.find(
+                  (c) =>
+                    c.toLowerCase() === detCity.toLowerCase() ||
+                    c.toLowerCase().split(' ')[0] === detCity.toLowerCase().split(' ')[0]
+                );
+
+                if (cityMatch) {
+                  matchedCity = cityMatch;
+                } else if (detData.district) {
+                  const distMatch = foundStateObj.cities.find(
+                    (c) =>
+                      c.toLowerCase() === detData.district.toLowerCase() ||
+                      detData.district.toLowerCase().includes(c.toLowerCase()) ||
+                      c.toLowerCase().includes(detData.district.toLowerCase())
+                  );
+                  if (distMatch) {
+                    matchedCity = distMatch;
+                  }
+                }
+
+                // Check local coordinate map fallback for locality -> city (e.g. Ravet -> Pimpri-Chinchwad)
+                if (!matchedCity) {
+                  const areaLower = (detArea || detCity || '').toLowerCase();
+                  if (LOCAL_COORDINATE_MAP[areaLower]) {
+                    const mapItem = LOCAL_COORDINATE_MAP[areaLower];
+                    const mapCityMatch = foundStateObj.cities.find(
+                      (c) => c.toLowerCase() === mapItem.city.toLowerCase()
+                    );
+                    if (mapCityMatch) {
+                      matchedCity = mapCityMatch;
+                    }
+                  }
+                }
+
+                // Distance-based city match fallback from LOCAL_COORDINATE_MAP
+                if (!matchedCity) {
+                  let closestMapCity = '';
+                  let minDist = 35; // 35km radius
+                  for (const item of Object.values(LOCAL_COORDINATE_MAP)) {
+                    const d = calculateHaversineDistanceKm(lat, lng, item.lat, item.lng);
+                    if (d < minDist) {
+                      const matchInState = foundStateObj.cities.find(
+                        (c) => c.toLowerCase() === item.city.toLowerCase()
+                      );
+                      if (matchInState) {
+                        minDist = d;
+                        closestMapCity = matchInState;
+                      }
+                    }
+                  }
+                  if (closestMapCity) {
+                    matchedCity = closestMapCity;
+                  }
+                }
+
+                if (!matchedCity && detCity) {
+                  matchedCity = detCity;
+                }
+              }
+            }
+
+            if (matchedCity) {
+              setCity(matchedCity);
+            }
+
+            // 3. PIN Code
+            if (detPostalCode && /^\d{6}$/.test(detPostalCode)) {
+              setPostalCode(detPostalCode);
+            }
+
+            // 4. Base Area / Landmark
+            if (detArea) {
+              setArea(detArea);
+              setServiceAreas((prev) => (!prev || prev === 'Surat' || prev === detCity ? detArea : prev));
+            } else if (detCity && (!serviceAreas || serviceAreas === 'Surat')) {
+              setServiceAreas(detCity);
+            }
+
+            setLocSuccess(true);
+            setUserHasEditedLoc(false);
+          } else {
+            setLocError('GPS acquired, but address details could not be reverse-geocoded. Please select State and City.');
           }
-        },
-        async () => {
-          await fallbackIP();
+        } catch (err: any) {
+          setLocError('Could not process location data. You can select your location manually.');
+        } finally {
           setLocDetecting(false);
-        },
-        { timeout: 5000, enableHighAccuracy: true }
-      );
-    } else {
-      await fallbackIP();
-      setLocDetecting(false);
-    }
+        }
+      },
+      (err) => {
+        let errMsg = 'Location permission is required to automatically detect your location. You can select your location manually.';
+        if (err.code === err.PERMISSION_DENIED) {
+          errMsg = 'Location permission was denied. You can select your location manually.';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          errMsg = 'GPS signal unavailable. You can select your location manually.';
+        } else if (err.code === err.TIMEOUT) {
+          errMsg = 'GPS request timed out. Please click Auto-Detect to retry or select manually.';
+        }
+        setLocError(errMsg);
+        setLocDetecting(false);
+      },
+      options
+    );
   };
+
+  // Automatically trigger location detection when Step 4 opens
+  useEffect(() => {
+    if (currentStep === 4) {
+      if (!userHasEditedLoc && (!latitude || !longitude || !state || !city)) {
+        handleDetectLocation(false);
+      }
+    }
+  }, [currentStep]);
 
   // Save Step Data to backend and auto-advance
   const saveStepData = async (stepNum: number) => {
@@ -376,8 +505,40 @@ export default function WorkerOnboardingWizard({
         }
       }
       if (stepNum === 4) {
-        if (!state) throw new Error('Please select your State.');
-        if (!city) throw new Error('Please select your City.');
+        if (!state.trim()) throw new Error('Please select your State.');
+        if (!city.trim()) throw new Error('Please select your City.');
+
+        // Resolve real coordinates if GPS coords were missing for manual entry
+        let finalLat = latitude;
+        let finalLng = longitude;
+
+        if (finalLat === null || finalLng === null) {
+          const locQuery = `${area ? area + ', ' : ''}${city}, ${state}, India`;
+          try {
+            const geoRes = await fetch(`/api/location/geocode?q=${encodeURIComponent(locQuery)}`);
+            if (geoRes.ok) {
+              const geoJson = await geoRes.json();
+              if (geoJson.success && geoJson.data) {
+                finalLat = geoJson.data.latitude;
+                finalLng = geoJson.data.longitude;
+                setLatitude(finalLat);
+                setLongitude(finalLng);
+              }
+            }
+          } catch {}
+
+          if (finalLat === null || finalLng === null) {
+            const cityLower = city.toLowerCase();
+            const areaLower = area.toLowerCase();
+            const mapMatch = LOCAL_COORDINATE_MAP[areaLower] || LOCAL_COORDINATE_MAP[cityLower];
+            if (mapMatch) {
+              finalLat = mapMatch.lat;
+              finalLng = mapMatch.lng;
+              setLatitude(finalLat);
+              setLongitude(finalLng);
+            }
+          }
+        }
       }
 
       const res = await fetch('/api/workers/onboarding', {
@@ -974,20 +1135,71 @@ export default function WorkerOnboardingWizard({
                 </div>
                 <h3 className="text-xl font-black text-slate-900">Location & Service Radius</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Select State first to filter available Cities, or auto-detect.
+                  Your location is automatically detected using GPS. You can review and edit if needed.
                 </p>
               </div>
 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDetectLocation}
+                onClick={() => handleDetectLocation(true)}
                 isLoading={locDetecting}
                 icon={<Navigation className="w-3.5 h-3.5 text-[#1264D6]" />}
               >
                 Auto-Detect
               </Button>
             </div>
+
+            {/* Location Detection Status Banners */}
+            {locDetecting && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2.5 animate-pulse">
+                <Loader2 className="w-4 h-4 text-[#1264D6] animate-spin shrink-0" />
+                <div>
+                  <span className="font-bold block">Detecting your location...</span>
+                  <span className="text-[11px] text-blue-600">Acquiring device GPS coordinates...</span>
+                </div>
+              </div>
+            )}
+
+            {locSuccess && !locDetecting && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="font-bold block">
+                      Location Detected: {area ? `${area}, ` : ''}{city}, {state}
+                    </span>
+                    <span className="text-[11px] text-emerald-700 font-mono">
+                      GPS Coordinates: {latitude?.toFixed(4)}, {longitude?.toFixed(4)} {locationAccuracy ? `(±${locationAccuracy}m)` : ''}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDetectLocation(true)}
+                  className="text-[11px] font-bold text-emerald-700 underline hover:text-emerald-900 shrink-0"
+                >
+                  Re-detect
+                </button>
+              </div>
+            )}
+
+            {locError && !locDetecting && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="font-bold block">Location Detection Notice</span>
+                  <span className="text-[11px] leading-relaxed block">{locError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDetectLocation(true)}
+                  className="text-[11px] font-bold text-amber-800 underline hover:text-amber-950 shrink-0 ml-1"
+                >
+                  Retry GPS
+                </button>
+              </div>
+            )}
 
             <div className="space-y-3.5">
               <SearchableSelect
@@ -1006,7 +1218,10 @@ export default function WorkerOnboardingWizard({
                 placeholder={state ? 'Search & select City...' : 'Select State first'}
                 options={cityOptions}
                 value={city}
-                onChange={(val) => setCity(val)}
+                onChange={(val) => {
+                  setCity(val);
+                  setUserHasEditedLoc(true);
+                }}
                 helperText={!state ? 'You must select a State first to pick a City.' : undefined}
               />
 
@@ -1016,13 +1231,19 @@ export default function WorkerOnboardingWizard({
                   maxLength={6}
                   placeholder="e.g. 395009"
                   value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => {
+                    setPostalCode(e.target.value.replace(/\D/g, ''));
+                    setUserHasEditedLoc(true);
+                  }}
                 />
                 <Input
                   label="Base Area / Landmark"
                   placeholder="e.g. Adajan Circle"
                   value={area}
-                  onChange={(e) => setArea(e.target.value)}
+                  onChange={(e) => {
+                    setArea(e.target.value);
+                    setUserHasEditedLoc(true);
+                  }}
                 />
               </div>
 
@@ -1053,7 +1274,10 @@ export default function WorkerOnboardingWizard({
                 label="Localities Served (Comma separated)"
                 placeholder="e.g. Adajan, Pal, Vesu, Rander"
                 value={serviceAreas}
-                onChange={(e) => setServiceAreas(e.target.value)}
+                onChange={(e) => {
+                  setServiceAreas(e.target.value);
+                  setUserHasEditedLoc(true);
+                }}
               />
             </div>
 
