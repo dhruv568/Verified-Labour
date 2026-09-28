@@ -19,6 +19,7 @@ import {
   Wrench,
   ChevronDown,
   Search,
+  Edit2,
 } from 'lucide-react';
 import AuthHeader from './AuthHeader';
 import OtpStep from './OtpStep';
@@ -99,12 +100,18 @@ export default function AuthModal({
   // Field errors for inline validation
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
-  // Mobile OTP fallback flow states
+  // Mobile OTP & Email verification states
   const [otpPhone, setOtpPhone] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpStep, setOtpStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [resendTimer, setResendTimer] = useState(0);
+
+  // Edit Email states
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editedEmail, setEditedEmail] = useState('');
+  const [editEmailError, setEditEmailError] = useState<string | null>(null);
+  const [editEmailLoading, setEditEmailLoading] = useState(false);
 
   // Async states
   const [loading, setLoading] = useState(false);
@@ -125,6 +132,10 @@ export default function AuthModal({
       setCustomSkill('');
       setSkillDropdownOpen(false);
       setSkillSearchQuery('');
+      setIsEditingEmail(false);
+      setEditedEmail('');
+      setEditEmailError(null);
+      setEditEmailLoading(false);
     }
   }, [isOpen, initialMode, defaultRole]);
 
@@ -377,6 +388,57 @@ export default function AuthModal({
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Save Edited Email
+  const handleSaveEditedEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditEmailError(null);
+    setError(null);
+    setSuccessMsg(null);
+
+    const trimmedNewEmail = editedEmail.trim().toLowerCase();
+    const emailErr = validateEmail(trimmedNewEmail);
+    if (emailErr) {
+      setEditEmailError(emailErr);
+      return;
+    }
+
+    if (trimmedNewEmail === pendingEmail.toLowerCase()) {
+      setIsEditingEmail(false);
+      return;
+    }
+
+    setEditEmailLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldEmail: pendingEmail,
+          newEmail: trimmedNewEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update email address');
+      }
+
+      const correctedEmail = data.email || trimmedNewEmail;
+      setPendingEmail(correctedEmail);
+      setRegEmail(correctedEmail);
+      setLoginEmail(correctedEmail);
+      setOtpCode('');
+      setResendTimer(60);
+      setIsEditingEmail(false);
+      setSuccessMsg(data.message || `A new verification code has been sent to ${correctedEmail}`);
+    } catch (err: any) {
+      setEditEmailError(err.message);
+    } finally {
+      setEditEmailLoading(false);
     }
   };
 
@@ -1066,87 +1128,181 @@ export default function AuthModal({
 
           {/* TAB 4: EMAIL OTP VERIFICATION FLOW */}
           {tab === 'email-otp' && (
-            <form onSubmit={handleVerifyEmailOtp} className="space-y-4 font-devanagari">
-              <div className="text-center pb-1">
-                <div className="mx-auto w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
-                  <Mail className="w-6 h-6 text-emerald-600" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">आपकी ईमेल पर कोड भेज दिया गया है</h3>
-                <p className="text-xs text-slate-600 mt-1">
-                  6 अंकों का OTP दर्ज करें:
-                </p>
-                <p className="text-xs font-bold text-[#1264D6] mt-1 font-mono bg-blue-50/50 py-1 px-2 rounded-lg inline-block border border-blue-200">
-                  {pendingEmail}
-                </p>
-              </div>
+            <div>
+              {isEditingEmail ? (
+                <form onSubmit={handleSaveEditedEmail} className="space-y-4 font-devanagari animate-in fade-in duration-150">
+                  <div className="text-center pb-1">
+                    <div className="mx-auto w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-2">
+                      <Edit2 className="w-6 h-6 text-[#1264D6]" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">ईमेल पता बदलें / Edit Email Address</h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      अपना सही ईमेल पता दर्ज करें। हम इस पर एक नया OTP भेजेंगे।
+                    </p>
+                  </div>
 
-              <div>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  maxLength={6}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="• • • • • •"
-                  value={otpCode}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '');
-                    setOtpCode(val);
-                    if (error) setError(null);
-                  }}
-                  onPaste={(e) => {
-                    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                    if (pasted) {
-                      setOtpCode(pasted);
-                      e.preventDefault();
-                    }
-                  }}
-                  className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#1264D6] outline-none bg-white text-slate-900"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
+                      सही ईमेल पता <span className="text-red-500">*</span>
+                      <span className="block text-[11px] text-slate-400 font-normal font-sans">
+                        Correct Email Address *
+                      </span>
+                    </label>
+                    <div
+                      className={`flex items-center rounded-xl border transition-all overflow-hidden bg-white ${
+                        editEmailError
+                          ? 'border-red-300 focus-within:ring-2 focus-within:ring-red-400 bg-red-50/20'
+                          : 'border-slate-300 focus-within:ring-2 focus-within:ring-[#1264D6] focus-within:border-[#1264D6]'
+                      }`}
+                    >
+                      <span className="pl-3.5 pr-2 text-slate-400">
+                        <Mail className="w-4 h-4 text-[#1264D6]" />
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        autoFocus
+                        autoComplete="email"
+                        inputMode="email"
+                        placeholder="name@example.com"
+                        value={editedEmail}
+                        onChange={(e) => {
+                          setEditedEmail(e.target.value);
+                          if (editEmailError) setEditEmailError(null);
+                        }}
+                        className="w-full py-2.5 pr-3.5 text-sm sm:text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent min-h-[44px]"
+                      />
+                    </div>
+                    {editEmailError && (
+                      <p className="text-[11px] text-red-600 mt-1 font-medium font-devanagari">{editEmailError}</p>
+                    )}
+                  </div>
 
-              <Button
-                type="submit"
-                variant="brand"
-                size="lg"
-                fullWidth
-                isLoading={loading}
-                disabled={loading || otpCode.length !== 6}
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                {loading ? 'सत्यापित हो रहा है...' : 'सत्यापित करें / Verify & Continue'}
-              </Button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingEmail(false);
+                        setEditEmailError(null);
+                      }}
+                      disabled={editEmailLoading}
+                      className="w-1/3 py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors min-h-[44px]"
+                    >
+                      रद्द करें / Cancel
+                    </button>
 
-              <div className="flex items-center justify-between text-xs pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTab('login');
-                    setError(null);
-                    setSuccessMsg(null);
-                    setOtpCode('');
-                  }}
-                  className="text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>लॉगिन पर वापस / Back to Login</span>
-                </button>
+                    <Button
+                      type="submit"
+                      variant="brand"
+                      size="lg"
+                      className="w-2/3 min-h-[44px]"
+                      isLoading={editEmailLoading}
+                      disabled={editEmailLoading || !editedEmail.trim()}
+                      icon={<ArrowRight className="w-4 h-4" />}
+                    >
+                      {editEmailLoading ? 'भेजा जा रहा है...' : 'नया OTP भेजें / Save & Send OTP'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyEmailOtp} className="space-y-4 font-devanagari">
+                  <div className="text-center pb-1">
+                    <div className="mx-auto w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
+                      <Mail className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">आपकी ईमेल पर कोड भेज दिया गया है</h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      6 अंकों का OTP दर्ज करें:
+                    </p>
+                    <div className="mt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                      <span className="text-xs font-bold text-[#1264D6] font-mono bg-blue-50/80 py-1.5 px-3 rounded-lg inline-block border border-blue-200 break-all max-w-full">
+                        {pendingEmail}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditedEmail(pendingEmail);
+                          setEditEmailError(null);
+                          setIsEditingEmail(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1264D6] hover:text-[#082B66] hover:bg-blue-100/60 bg-blue-50/50 px-2.5 py-1.5 rounded-lg border border-blue-200 transition-all cursor-pointer active:scale-95 touch-manipulation min-h-[36px]"
+                        title="ईमेल बदलें / Edit Email"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-[#1264D6]" />
+                        <span>ईमेल बदलें / Edit Email</span>
+                      </button>
+                    </div>
+                  </div>
 
-                {resendTimer > 0 ? (
-                  <span className="text-slate-400 font-medium">{resendTimer}s में पुनः भेजें</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResendEmailOtp}
-                    disabled={loading}
-                    className="text-[#1264D6] font-bold hover:underline"
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      maxLength={6}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="• • • • • •"
+                      value={otpCode}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setOtpCode(val);
+                        if (error) setError(null);
+                      }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                        if (pasted) {
+                          setOtpCode(pasted);
+                          e.preventDefault();
+                        }
+                      }}
+                      className="w-full text-center tracking-[0.5em] text-2xl font-bold py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#1264D6] outline-none bg-white text-slate-900"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="brand"
+                    size="lg"
+                    fullWidth
+                    isLoading={loading}
+                    disabled={loading || otpCode.length !== 6}
+                    icon={<ArrowRight className="w-4 h-4" />}
                   >
-                    पुनः भेजें / Resend OTP
-                  </button>
-                )}
-              </div>
-            </form>
+                    {loading ? 'सत्यापित हो रहा है...' : 'सत्यापित करें / Verify & Continue'}
+                  </Button>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTab('login');
+                        setError(null);
+                        setSuccessMsg(null);
+                        setOtpCode('');
+                      }}
+                      className="text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 transition-colors min-h-[36px]"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>लॉगिन पर वापस / Back to Login</span>
+                    </button>
+
+                    {resendTimer > 0 ? (
+                      <span className="text-slate-400 font-medium">{resendTimer}s में पुनः भेजें</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendEmailOtp}
+                        disabled={loading}
+                        className="text-[#1264D6] font-bold hover:underline min-h-[36px] flex items-center"
+                      >
+                        पुनः भेजें / Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -7,6 +7,7 @@ import { POST as registerHandler } from '../app/api/auth/register/route';
 import { POST as loginHandler } from '../app/api/auth/login/route';
 import { POST as verifyOtpHandler } from '../app/api/auth/verify-otp/route';
 import { POST as resendOtpHandler } from '../app/api/auth/resend-otp/route';
+import { POST as changeEmailHandler } from '../app/api/auth/change-email/route';
 
 export async function runAuthFlowTests() {
   console.log('\n--- Mandatory Email OTP Authentication & Verification Tests ---');
@@ -286,11 +287,96 @@ export async function runAuthFlowTests() {
     assert(verifyRes.cookies.get('vl_auth_token') !== undefined, 'Auth cookie MUST be set after OTP verification');
   });
 
+  // 5. Test Edit Email Flow During Verification
+  const wrongEmail = `wrong_email_${uniqueSuffix}@example.com`;
+  const correctedEmail = `corrected_email_${uniqueSuffix}@example.com`;
+  const editPhone = `96${uniqueSuffix}88`;
+
+  await testAsync('Edit Email flow invalidates old OTP, updates pending user DB record without duplicates, and sends new OTP', async () => {
+    // 1. Register with wrong email
+    const regReq = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Edit Email Test User',
+        email: wrongEmail,
+        phone: editPhone,
+        password: 'Password@123',
+        role: 'CUSTOMER',
+      }),
+    });
+    const regRes = await registerHandler(regReq);
+    const regData = await regRes.json();
+    assert.strictEqual(regRes.status, 200);
+    assert.strictEqual(regData.success, true);
+
+    const oldOtpStored = activeOtps.get(wrongEmail.toLowerCase());
+    assert(oldOtpStored !== undefined);
+    const oldOtpCode = oldOtpStored.otp;
+
+    // 2. User clicks "Edit Email" and submits corrected email
+    const changeReq = new NextRequest('http://localhost:3000/api/auth/change-email', {
+      method: 'POST',
+      body: JSON.stringify({
+        oldEmail: wrongEmail,
+        newEmail: correctedEmail,
+      }),
+    });
+    const changeRes = await changeEmailHandler(changeReq);
+    const changeData = await changeRes.json();
+    assert.strictEqual(changeRes.status, 200);
+    assert.strictEqual(changeData.success, true);
+    assert.strictEqual(changeData.email, correctedEmail.toLowerCase());
+
+    // 3. Verify old OTP is invalidated
+    assert.strictEqual(activeOtps.get(wrongEmail.toLowerCase()), undefined, 'Old OTP MUST be deleted when email is changed');
+
+    // 4. Verify new OTP stored for corrected email
+    const newOtpStored = activeOtps.get(correctedEmail.toLowerCase());
+    assert(newOtpStored !== undefined, 'New OTP MUST be generated for corrected email');
+    const newOtpCode = newOtpStored.otp;
+
+    // 5. Verify database user count: NO duplicate account created, pending user email updated
+    const oldUser = await prisma.user.findFirst({ where: { email: wrongEmail.toLowerCase() } });
+    assert.strictEqual(oldUser, null, 'Old email user record MUST NOT exist');
+
+    const updatedUser = await prisma.user.findFirst({ where: { email: correctedEmail.toLowerCase() } });
+    assert(updatedUser !== null, 'Updated email user record MUST exist in DB');
+    assert.strictEqual(updatedUser?.status, 'PENDING_VERIFICATION');
+
+    // 6. Security: Old OTP MUST NOT verify corrected email
+    const verifyOldReq = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: correctedEmail,
+        otp: oldOtpCode,
+      }),
+    });
+    const verifyOldRes = await verifyOtpHandler(verifyOldReq);
+    const verifyOldData = await verifyOldRes.json();
+    assert.strictEqual(verifyOldRes.status, 400);
+    assert.strictEqual(verifyOldData.success, false);
+
+    // 7. Correct OTP verifies corrected email successfully and activates account
+    const verifyNewReq = new NextRequest('http://localhost:3000/api/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: correctedEmail,
+        otp: newOtpCode,
+      }),
+    });
+    const verifyNewRes = await verifyOtpHandler(verifyNewReq);
+    const verifyNewData = await verifyNewRes.json();
+    assert.strictEqual(verifyNewRes.status, 200);
+    assert.strictEqual(verifyNewData.success, true);
+    assert.strictEqual(verifyNewData.user.email, correctedEmail.toLowerCase());
+    assert.strictEqual(verifyNewData.user.status, 'ACTIVE');
+  });
+
   // Clean up created test users from database
   try {
     await prisma.user.deleteMany({
       where: {
-        email: { in: [testRegEmail.toLowerCase(), unverifiedEmail.toLowerCase()] },
+        email: { in: [testRegEmail.toLowerCase(), unverifiedEmail.toLowerCase(), wrongEmail.toLowerCase(), correctedEmail.toLowerCase()] },
       },
     });
   } catch (cleanErr) {

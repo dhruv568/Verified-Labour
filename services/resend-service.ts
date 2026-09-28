@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
-import activeOtps from '@/lib/otp-store';
+import activeOtps, { tokenToEmail } from '@/lib/otp-store';
+import { generateSecureToken } from '@/lib/tokens';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -35,6 +36,7 @@ export interface RenderOtpEmailOptions {
   otp: string;
   email: string;
   name?: string;
+  token?: string;
   verifyUrl?: string;
   appUrl?: string;
 }
@@ -45,9 +47,12 @@ export interface RenderOtpEmailOptions {
  * responsive design, and Verified Labour brand guidelines.
  */
 export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: string; text: string } {
-  const { otp, email, name, appUrl: customAppUrl, verifyUrl: customVerifyUrl } = options;
+  const { otp, email, name, token, appUrl: customAppUrl, verifyUrl: customVerifyUrl } = options;
   const appUrl = customAppUrl && !customAppUrl.includes('localhost') ? customAppUrl : getAppBaseUrl();
-  const verifyUrl = customVerifyUrl || `${appUrl}/auth/verify-email?email=${encodeURIComponent(email)}&otp=${otp}`;
+  const defaultVerifyUrl = token
+    ? `${appUrl}/auth/verify-email?token=${token}`
+    : `${appUrl}/auth/verify-email?email=${encodeURIComponent(email)}`;
+  const verifyUrl = customVerifyUrl || defaultVerifyUrl;
   const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
 
   const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -262,22 +267,31 @@ export async function sendEmailOtp(params: {
 }): Promise<SendEmailOtpResult> {
   const normalizedEmail = params.email.toLowerCase().trim();
 
-  // Generate dynamic 6-digit numeric OTP
+  // Invalidate previous token and OTP entry if present
+  const existingOtpEntry = activeOtps.get(normalizedEmail);
+  if (existingOtpEntry?.token) {
+    tokenToEmail.delete(existingOtpEntry.token);
+  }
+
+  // Generate dynamic 6-digit numeric OTP and secure URL token
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const token = generateSecureToken(32);
   const expiresInSeconds = 600; // 10 minutes
   const expiresAt = Date.now() + expiresInSeconds * 1000;
 
-  // Invalidate previous OTP by setting new OTP entry in store
+  tokenToEmail.set(token, normalizedEmail);
   activeOtps.set(normalizedEmail, {
     otp,
     expiresAt,
     attempts: 0,
+    token,
   });
 
   const { html, text } = renderOtpEmailHtml({
     otp,
     email: normalizedEmail,
     name: params.name,
+    token,
   });
 
   let messageId: string | undefined = undefined;
@@ -342,22 +356,26 @@ export function verifyEmailOtpCode(email: string, otpInput: string): { success: 
   }
 
   if (Date.now() > stored.expiresAt) {
+    if (stored.token) tokenToEmail.delete(stored.token);
     activeOtps.delete(normalizedEmail);
     return { success: false, error: 'Verification code has expired. Please request a new code.' };
   }
 
   if (stored.attempts >= 5) {
+    if (stored.token) tokenToEmail.delete(stored.token);
     activeOtps.delete(normalizedEmail);
     return { success: false, error: 'Too many incorrect attempts. Please request a new code.' };
   }
 
   if (stored.otp === otpInput) {
-    // Invalidate OTP after successful verification
+    // Invalidate OTP and token after successful verification
+    if (stored.token) tokenToEmail.delete(stored.token);
     activeOtps.delete(normalizedEmail);
     return { success: true };
   } else {
     stored.attempts += 1;
     if (stored.attempts >= 5) {
+      if (stored.token) tokenToEmail.delete(stored.token);
       activeOtps.delete(normalizedEmail);
       return { success: false, error: 'Too many incorrect attempts. Please request a new code.' };
     }

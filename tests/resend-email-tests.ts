@@ -35,10 +35,12 @@ export async function runResendEmailTests() {
   const sampleOtp = '187509';
 
   test('HTML email template renders all required structure and branding elements', () => {
+    const token = 'abcdef1234567890abcdef1234567890';
     const { html, text } = renderOtpEmailHtml({
       otp: sampleOtp,
       email: testEmail,
       name: 'Ramesh Patel',
+      token,
     });
 
     // 1. Logo & Tagline
@@ -62,8 +64,12 @@ export async function runResendEmailTests() {
     assert(html.includes('Never share this code with anyone.'), 'HTML must include security warning');
     assert(html.includes('If you did not request this verification code, you can safely ignore this email.'), 'HTML must include safety notice');
 
-    // 5. CTA Button
+    // 5. CTA Button and Verification URL Checks
     assert(html.includes('Verify Email'), 'HTML must include CTA button "Verify Email"');
+    assert(html.includes('https://verifiedlabour.com/auth/verify-email?token='), 'CTA link must use production host https://verifiedlabour.com/auth/verify-email');
+    assert(!html.includes('localhost'), 'Verification link must never contain localhost');
+    assert(!html.includes('127.0.0.1'), 'Verification link must never contain 127.0.0.1');
+    assert(!html.includes(`otp=${sampleOtp}`), 'Verification link must never include the 6-digit OTP code in URL params');
 
     // 6. Footer Links & Branding
     assert(html.includes('Privacy Policy'), 'Footer must contain Privacy Policy link');
@@ -79,9 +85,10 @@ export async function runResendEmailTests() {
     assert(text.includes('Valid for 10 minutes'), 'Plain text fallback must include validity duration');
     assert(text.includes('Never share this code with anyone'), 'Plain text fallback must include security notice');
     assert(text.includes('MyProFunnels ❤️'), 'Plain text fallback must include MyProFunnels link text');
+    assert(text.includes('https://verifiedlabour.com/auth/verify-email?token='), 'Plain text fallback must use secure verify URL');
   });
 
-  await testAsync('sendEmailOtp generates dynamic OTP and stores it in activeOtps', async () => {
+  await testAsync('sendEmailOtp generates dynamic OTP, secure token, and maps token to email', async () => {
     const res = await sendEmailOtp({ email: testEmail, name: 'Test User' });
     assert.strictEqual(res.success, true);
     assert.strictEqual(res.otp.length, 6);
@@ -89,19 +96,26 @@ export async function runResendEmailTests() {
 
     const stored = activeOtps.get(testEmail);
     assert.strictEqual(stored?.otp, res.otp);
+    assert(stored?.token, 'OTP entry must include a secure verification token');
     assert(stored.expiresAt > Date.now());
+
+    assert.strictEqual(res.html.includes(`token=${stored.token}`), true, 'Email HTML must include secure token param');
+    assert.strictEqual(res.html.includes('https://verifiedlabour.com/auth/verify-email?token='), true, 'Email HTML must use production URL https://verifiedlabour.com');
   });
 
-  await testAsync('Resending email OTP generates a NEW OTP and invalidates previous OTP', async () => {
+  await testAsync('Resending email OTP generates a NEW OTP and NEW token, invalidating previous token and OTP', async () => {
     const firstRes = await sendEmailOtp({ email: testEmail });
     const firstOtp = firstRes.otp;
+    const firstToken = activeOtps.get(testEmail)?.token;
 
     // Simulate resend
     const secondRes = await sendEmailOtp({ email: testEmail, isResend: true });
     const secondOtp = secondRes.otp;
+    const secondToken = activeOtps.get(testEmail)?.token;
 
     assert.strictEqual(secondRes.success, true);
     assert.notStrictEqual(firstOtp, secondOtp, 'Resending OTP must generate a fresh OTP code');
+    assert.notStrictEqual(firstToken, secondToken, 'Resending OTP must generate a fresh verification token');
 
     // Verifying with old OTP should fail
     const oldVerify = verifyEmailOtpCode(testEmail, firstOtp);
