@@ -49,10 +49,26 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Only restrict DB query by city substring if coordinates are NOT available.
+    // Only restrict DB query by location string if coordinates are NOT available.
     // When coordinates are available, Haversine geographic radius filtering handles location matching.
     if (city && !hasCoords) {
-      whereClause.city = { contains: city };
+      const locationCondition = {
+        OR: [
+          { city: { contains: city } },
+          { state: { contains: city } },
+          { serviceAreas: { some: { areaName: { contains: city } } } },
+          { serviceAreas: { some: { city: { contains: city } } } },
+        ],
+      };
+      if (whereClause.OR) {
+        whereClause.AND = [
+          { OR: whereClause.OR },
+          locationCondition,
+        ];
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = locationCondition.OR;
+      }
     }
 
     // Fetch matching workers with relations
