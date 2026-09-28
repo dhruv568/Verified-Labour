@@ -24,7 +24,7 @@ export function calculateHaversineDistanceKm(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
 
-  return Math.round(distance * 10) / 10; // Round to 1 decimal place
+  return Math.round(distance * 100) / 100; // Round to 2 decimal places for accuracy
 }
 
 function toRad(degrees: number): number {
@@ -102,6 +102,7 @@ export function sanitizeWorkerForPublic(worker: any, customerLat?: number, custo
 export function formatLocationDisplayName(loc: {
   area?: string;
   city?: string;
+  district?: string;
   state?: string;
   formattedAddress?: string;
 }): string {
@@ -112,14 +113,17 @@ export function formatLocationDisplayName(loc: {
   if (area && city && area.toLowerCase() !== city.toLowerCase()) {
     return `${area}, ${city}`;
   }
+  if (area && state && area.toLowerCase() !== state.toLowerCase()) {
+    return `${area}, ${state}`;
+  }
   if (city && state && city.toLowerCase() !== state.toLowerCase()) {
     return `${city}, ${state}`;
   }
-  if (city) {
-    return city;
-  }
   if (area) {
     return area;
+  }
+  if (city) {
+    return city;
   }
   if (loc.formattedAddress) {
     const parts = loc.formattedAddress.split(',').map((p) => p.trim()).filter(Boolean);
@@ -134,12 +138,59 @@ export function formatLocationDisplayName(loc: {
 }
 
 /**
- * Reverse geocodes coordinates to an address using OpenStreetMap / Nominatim
+ * Known approximate coordinate map for key localities & cities
+ */
+export const LOCAL_COORDINATE_MAP: Record<string, { lat: number; lng: number; city: string; state: string; postalCode?: string; area?: string }> = {
+  ravet: { lat: 18.648, lng: 73.748, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '412101', area: 'Ravet' },
+  tathawade: { lat: 18.619, lng: 73.751, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033', area: 'Tathawade' },
+  punawale: { lat: 18.630, lng: 73.740, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033', area: 'Punawale' },
+  wakad: { lat: 18.599, lng: 73.769, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411057', area: 'Wakad' },
+  nigdi: { lat: 18.658, lng: 73.775, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411044', area: 'Nigdi' },
+  akurdi: { lat: 18.649, lng: 73.780, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411035', area: 'Akurdi' },
+  chinchwad: { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033', area: 'Chinchwad' },
+  pimpri: { lat: 18.623, lng: 73.815, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411018', area: 'Pimpri' },
+  gahunje: { lat: 18.667, lng: 73.702, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033', area: 'Gahunje' },
+  hinjawadi: { lat: 18.591, lng: 73.738, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411057', area: 'Hinjawadi' },
+  bhosari: { lat: 18.620, lng: 73.847, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411026', area: 'Bhosari' },
+  sangvi: { lat: 18.577, lng: 73.818, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411027', area: 'Sangvi' },
+  'pimpri-chinchwad': { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033', area: 'Pimpri-Chinchwad' },
+  pune: { lat: 18.520, lng: 73.856, city: 'Pune', state: 'Maharashtra', postalCode: '411001', area: '' },
+  surat: { lat: 21.170, lng: 72.831, city: 'Surat', state: 'Gujarat', postalCode: '395007', area: '' },
+  adajan: { lat: 21.192, lng: 72.793, city: 'Surat', state: 'Gujarat', postalCode: '395009', area: 'Adajan' },
+  vesu: { lat: 21.144, lng: 72.772, city: 'Surat', state: 'Gujarat', postalCode: '395007', area: 'Vesu' },
+};
+
+function cleanCityName(rawCity: string, addr: any): string {
+  let cleaned = (rawCity || '').trim();
+
+  // If city is a subdistrict/taluka like "Haveli Subdistrict" or "Mulshi Subdistrict"
+  if (/subdistrict|taluka|tahsil|tehsil/i.test(cleaned) || !cleaned) {
+    if (addr.city) return addr.city;
+    if (addr.municipality) return addr.municipality;
+    if (addr.town) return addr.town;
+
+    const dist = (addr.state_district || addr.district || addr.county || '').replace(/\s+district/i, '').trim();
+    const areaLower = (addr.suburb || addr.neighbourhood || addr.residential || addr.road || '').toLowerCase();
+
+    const pcmcLocalities = ['ravet', 'tathawade', 'punawale', 'wakad', 'nigdi', 'akurdi', 'chinchwad', 'pimpri', 'gahunje', 'hinjawadi', 'bhosari', 'sangvi', 'thergaon'];
+    if (pcmcLocalities.some((k) => areaLower.includes(k))) {
+      return 'Pimpri-Chinchwad';
+    }
+
+    if (dist) return dist;
+  }
+
+  return cleaned;
+}
+
+/**
+ * Reverse geocodes coordinates to an address using Nominatim with spatial fallback
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<{
   formattedAddress: string;
   city: string;
   state: string;
+  district?: string;
   postalCode: string;
   area: string;
 }> {
@@ -147,7 +198,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<{
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`;
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'VerifiedLabour/1.0 (info@verifiedlabour.com)',
@@ -159,26 +210,35 @@ export async function reverseGeocode(lat: number, lng: number): Promise<{
     if (res.ok) {
       const data = await res.json();
       const addr = data.address || {};
-      const city =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.municipality ||
-        addr.city_district ||
-        addr.suburb ||
-        addr.district ||
-        addr.county ||
-        '';
-      const state = addr.state || '';
-      const postalCode = addr.postcode || '';
+      
+      // Extract area/locality precisely without confusing city/suburb
       const area =
         addr.suburb ||
         addr.neighbourhood ||
         addr.residential ||
+        addr.quarter ||
         addr.subdivision ||
-        addr.road ||
+        addr.locality ||
         addr.hamlet ||
+        addr.road ||
+        addr.village ||
+        addr.commercial ||
         '';
+
+      // Extract municipal city or corporation (Exclude suburb from city logic)
+      const rawCity =
+        addr.city ||
+        addr.town ||
+        addr.municipality ||
+        addr.city_district ||
+        addr.county ||
+        addr.district ||
+        '';
+
+      const city = cleanCityName(rawCity, addr);
+      const district = (addr.state_district || addr.district || addr.county || '').replace(/\s+district/i, '').trim();
+      const state = addr.state || '';
+      const postalCode = addr.postcode || '';
 
       const parts = [area, city, state, postalCode].filter(Boolean);
       const formattedAddress = data.display_name || parts.join(', ');
@@ -187,19 +247,42 @@ export async function reverseGeocode(lat: number, lng: number): Promise<{
         formattedAddress,
         city,
         state,
+        district,
         postalCode,
         area,
       };
     }
   } catch (err) {
-    // Graceful fallback if external geocoder times out or fails
+    // Fallthrough to spatial coordinate map lookup
   }
 
-  // Graceful fallback without hardcoded city
+  // Spatial lookup fallback: match closest known locality within 4.5 km
+  let closestMatch: { name: string; dist: number; data: typeof LOCAL_COORDINATE_MAP['ravet'] } | null = null;
+  for (const [key, item] of Object.entries(LOCAL_COORDINATE_MAP)) {
+    const dist = calculateHaversineDistanceKm(lat, lng, item.lat, item.lng);
+    if (dist <= 4.5 && (!closestMatch || dist < closestMatch.dist)) {
+      closestMatch = { name: key, dist, data: item };
+    }
+  }
+
+  if (closestMatch) {
+    const item = closestMatch.data;
+    const areaName = item.area || (closestMatch.name.charAt(0).toUpperCase() + closestMatch.name.slice(1));
+    const displayName = `${areaName}, ${item.city}`;
+    return {
+      formattedAddress: `${displayName}, ${item.state}`,
+      city: item.city,
+      state: item.state,
+      postalCode: item.postalCode || '',
+      area: areaName,
+    };
+  }
+
   return {
-    formattedAddress: `Location near (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
+    formattedAddress: `Location near (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
     city: '',
     state: '',
+    district: '',
     postalCode: '',
     area: '',
   };
@@ -217,10 +300,12 @@ export async function detectLocationFromIP(): Promise<{
   area: string;
   latitude: number | null;
   longitude: number | null;
+  source: 'ip';
+  isApproximate: boolean;
 }> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
 
     const res = await fetch('https://ipwho.is/', {
       signal: controller.signal,
@@ -233,18 +318,20 @@ export async function detectLocationFromIP(): Promise<{
         const city = data.city || '';
         const state = data.region || '';
         const postalCode = data.postal || '';
-        const lat = data.latitude ? parseFloat(data.latitude.toFixed(3)) : null;
-        const lng = data.longitude ? parseFloat(data.longitude.toFixed(3)) : null;
-        const displayName = city && state ? `${city}, ${state}` : city || 'Surat, Gujarat';
+        const lat = data.latitude ? parseFloat(data.latitude.toFixed(6)) : null;
+        const lng = data.longitude ? parseFloat(data.longitude.toFixed(6)) : null;
+        const displayName = city && state ? `${city}, ${state} (Approximate)` : (city || 'Approximate Location');
 
         return {
           formattedAddress: displayName,
-          city: city || 'Surat',
-          state: state || 'Gujarat',
+          city: city || 'Unknown City',
+          state: state || '',
           postalCode,
           area: '',
           latitude: lat,
           longitude: lng,
+          source: 'ip',
+          isApproximate: true,
         };
       }
     }
@@ -252,7 +339,7 @@ export async function detectLocationFromIP(): Promise<{
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
 
     const res = await fetch('https://ip-api.com/json/?fields=status,city,regionName,zip,lat,lon', {
       signal: controller.signal,
@@ -265,53 +352,37 @@ export async function detectLocationFromIP(): Promise<{
         const city = data.city || '';
         const state = data.regionName || '';
         const postalCode = data.postalCode || data.zip || '';
-        const lat = data.lat ? parseFloat(data.lat.toFixed(3)) : null;
-        const lng = data.lon ? parseFloat(data.lon.toFixed(3)) : null;
-        const displayName = city && state ? `${city}, ${state}` : city || 'Surat, Gujarat';
+        const lat = data.lat ? parseFloat(data.lat.toFixed(6)) : null;
+        const lng = data.lon ? parseFloat(data.lon.toFixed(6)) : null;
+        const displayName = city && state ? `${city}, ${state} (Approximate)` : (city || 'Approximate Location');
 
         return {
           formattedAddress: displayName,
-          city: city || 'Surat',
-          state: state || 'Gujarat',
+          city: city || 'Unknown City',
+          state: state || '',
           postalCode,
           area: '',
           latitude: lat,
           longitude: lng,
+          source: 'ip',
+          isApproximate: true,
         };
       }
     }
   } catch {}
 
   return {
-    formattedAddress: 'Surat, Gujarat',
-    city: 'Surat',
-    state: 'Gujarat',
-    postalCode: '395007',
+    formattedAddress: 'Pimpri-Chinchwad, Maharashtra (Approximate)',
+    city: 'Pimpri-Chinchwad',
+    state: 'Maharashtra',
+    postalCode: '411033',
     area: '',
-    latitude: 21.170,
-    longitude: 72.831,
+    latitude: 18.627,
+    longitude: 73.800,
+    source: 'ip',
+    isApproximate: true,
   };
 }
-
-/**
- * Known approximate coordinate map for key localities & cities
- */
-const LOCAL_COORDINATE_MAP: Record<string, { lat: number; lng: number; city: string; state: string; postalCode?: string }> = {
-  gahunje: { lat: 18.667, lng: 73.702, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
-  ravet: { lat: 18.648, lng: 73.748, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '412101' },
-  tathawade: { lat: 18.619, lng: 73.751, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
-  wakad: { lat: 18.599, lng: 73.769, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411057' },
-  punawale: { lat: 18.630, lng: 73.740, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
-  nigdi: { lat: 18.658, lng: 73.775, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411044' },
-  akurdi: { lat: 18.649, lng: 73.780, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411035' },
-  chinchwad: { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
-  pimpri: { lat: 18.623, lng: 73.815, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411018' },
-  'pimpri-chinchwad': { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
-  pune: { lat: 18.520, lng: 73.856, city: 'Pune', state: 'Maharashtra', postalCode: '411001' },
-  surat: { lat: 21.170, lng: 72.831, city: 'Surat', state: 'Gujarat', postalCode: '395007' },
-  adajan: { lat: 21.192, lng: 72.793, city: 'Surat', state: 'Gujarat', postalCode: '395009' },
-  vesu: { lat: 21.144, lng: 72.772, city: 'Surat', state: 'Gujarat', postalCode: '395007' },
-};
 
 /**
  * Forward geocodes a location text query to coordinates & structured address details.
@@ -333,12 +404,13 @@ export async function forwardGeocode(query: string): Promise<{
   const lowerQuery = cleanQuery.toLowerCase();
   for (const [key, val] of Object.entries(LOCAL_COORDINATE_MAP)) {
     if (lowerQuery.includes(key)) {
+      const areaName = val.area || (key.charAt(0).toUpperCase() + key.slice(1));
       return {
-        formattedAddress: cleanQuery,
+        formattedAddress: `${areaName}, ${val.city}, ${val.state}`,
         city: val.city,
         state: val.state,
         postalCode: val.postalCode || '',
-        area: key.charAt(0).toUpperCase() + key.slice(1),
+        area: areaName,
         latitude: val.lat,
         longitude: val.lng,
       };
@@ -374,23 +446,21 @@ export async function forwardGeocode(query: string): Promise<{
           const city =
             addr.city ||
             addr.town ||
-            addr.village ||
             addr.municipality ||
             addr.city_district ||
-            addr.suburb ||
-            addr.district ||
+            addr.county ||
             cand.split(',')[0].trim();
           const state = addr.state || '';
           const area = addr.suburb || addr.neighbourhood || addr.residential || addr.road || queryParts[0] || '';
 
           return {
             formattedAddress: item.display_name || cleanQuery,
-            city,
+            city: cleanCityName(city, addr),
             state,
             postalCode: addr.postcode || '',
             area,
-            latitude: parseFloat(parseFloat(item.lat).toFixed(3)),
-            longitude: parseFloat(parseFloat(item.lon).toFixed(3)),
+            latitude: parseFloat(item.lat),
+            longitude: parseFloat(item.lon),
           };
         }
       }
@@ -399,6 +469,3 @@ export async function forwardGeocode(query: string): Promise<{
 
   return null;
 }
-
-
-

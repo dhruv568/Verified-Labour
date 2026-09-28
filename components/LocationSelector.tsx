@@ -8,7 +8,7 @@ import {
   ChevronDown,
   Search,
   Check,
-  AlertCircle,
+  Compass,
   Loader2,
 } from 'lucide-react';
 
@@ -50,9 +50,11 @@ export default function LocationSelector({ className = '', isMobile = false }: L
 
   const handleUseCurrentLocation = async () => {
     setCustomError(null);
-    const success = await detectCurrentLocation();
+    const success = await detectCurrentLocation({ userInitiated: true });
     if (success) {
       setIsOpen(false);
+    } else {
+      setCustomError(error || 'Could not fetch precise GPS coordinates.');
     }
   };
 
@@ -71,9 +73,9 @@ export default function LocationSelector({ className = '', isMobile = false }: L
         if (geoJson.success && geoJson.data) {
           const d = geoJson.data;
           setManualLocation({
-            displayName: query,
-            city: d.city || 'Pimpri-Chinchwad',
-            state: d.state || 'Maharashtra',
+            displayName: d.area && d.city && d.area !== d.city ? `${d.area}, ${d.city}` : d.city || query,
+            city: d.city || query,
+            state: d.state || '',
             area: d.area || '',
             formattedAddress: d.formattedAddress || query,
             postalCode: d.postalCode || '',
@@ -107,7 +109,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
     setManualLoading(false);
   };
 
-  const displayText = location.displayName || 'Surat, Gujarat';
+  const displayText = location.displayName || 'Pimpri-Chinchwad, Maharashtra';
 
   if (isMobile) {
     return (
@@ -126,14 +128,29 @@ export default function LocationSelector({ className = '', isMobile = false }: L
 
         {isOpen && (
           <div className="mt-2.5 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xl space-y-3.5 animate-in fade-in duration-150">
-            {/* Auto Detected Location Info */}
-            <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100">
-              <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">
-                Automatically Detected Location
-              </span>
-              <p className="text-xs font-bold text-slate-800 mt-0.5 line-clamp-1">
-                📍 {displayText}
-              </p>
+            {/* Location Status Info */}
+            <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">
+                  Current Location
+                </span>
+                <p className="text-xs font-bold text-slate-800 mt-0.5 line-clamp-1">
+                  📍 {displayText}
+                </p>
+              </div>
+              {location.source === 'gps' ? (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                  GPS {location.accuracy ? `(±${location.accuracy}m)` : ''}
+                </span>
+              ) : location.source === 'ip' ? (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                  Approx (IP)
+                </span>
+              ) : location.source === 'manual' ? (
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">
+                  Manual
+                </span>
+              ) : null}
             </div>
 
             {/* Re-detect GPS Location */}
@@ -146,26 +163,32 @@ export default function LocationSelector({ className = '', isMobile = false }: L
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-brand-700" />
-                  <span>Detecting Location...</span>
+                  <span>Acquiring GPS Signal...</span>
                 </>
               ) : (
                 <>
                   <Navigation className="w-4 h-4 text-brand-700" />
-                  <span>Re-detect Location (GPS)</span>
+                  <span>Use Current Location (GPS)</span>
                 </>
               )}
             </button>
 
+            {customError && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                {customError}
+              </p>
+            )}
+
             {/* Manual Change Input */}
             <form onSubmit={handleManualSearchSubmit} className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700">
-                Change Location
+                Search or Change Location
               </label>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder="Type city or area to change (e.g. Adajan, Surat)..."
+                  placeholder="Type area or city (e.g. Ravet, Wakad, Tathawade)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-10 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none"
@@ -183,10 +206,10 @@ export default function LocationSelector({ className = '', isMobile = false }: L
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      {/* Navbar Trigger Button: matches reference style with MapPin icon */}
+      {/* Navbar Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 min-h-[38px] h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors max-w-[200px] shrink-0"
+        className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 min-h-[38px] h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors max-w-[220px] shrink-0"
         title={displayText}
       >
         <MapPin className="w-3.5 h-3.5 text-[#1464D2] shrink-0" />
@@ -200,23 +223,31 @@ export default function LocationSelector({ className = '', isMobile = false }: L
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 text-xs z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 text-xs z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-brand-600" />
               <span className="font-bold text-slate-800">Location Settings</span>
             </div>
-            {location.isConfirmed && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
-                <Check className="w-2.5 h-2.5" /> Auto Selected
+            {location.source === 'gps' ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <Check className="w-2.5 h-2.5" /> GPS Active {location.accuracy ? `(±${location.accuracy}m)` : ''}
               </span>
-            )}
+            ) : location.source === 'manual' ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                <Check className="w-2.5 h-2.5" /> Manual Selection
+              </span>
+            ) : location.source === 'ip' ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                <Compass className="w-2.5 h-2.5" /> Approx (IP)
+              </span>
+            ) : null}
           </div>
 
           {/* Current Selection */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-              Current Location
+              Selected Service Area
             </span>
             <p className="text-xs font-bold text-slate-800 line-clamp-1 mt-0.5">
               📍 {displayText}
@@ -227,31 +258,37 @@ export default function LocationSelector({ className = '', isMobile = false }: L
           <button
             onClick={handleUseCurrentLocation}
             disabled={isLoading}
-            className="w-full py-2 px-3 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs rounded-xl border border-brand-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-2.5 px-3 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs rounded-xl border border-brand-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-700" />
-                <span>Detecting Location...</span>
+                <span>Acquiring GPS Signal...</span>
               </>
             ) : (
               <>
                 <Navigation className="w-3.5 h-3.5 text-brand-700" />
-                <span>Re-detect Location (GPS)</span>
+                <span>Use Current Location (GPS)</span>
               </>
             )}
           </button>
 
+          {customError && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+              {customError}
+            </p>
+          )}
+
           {/* Manual Search */}
           <form onSubmit={handleManualSearchSubmit} className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-600">
-              Change location manually:
+              Search locality or city:
             </label>
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Type city or area & press Enter..."
+                placeholder="e.g. Ravet, Wakad, Tathawade..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none"

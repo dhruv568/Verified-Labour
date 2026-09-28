@@ -31,9 +31,9 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
           if (geoJson.success && geoJson.data) {
             const d = geoJson.data;
             setManualLocation({
-              displayName: cleanQuery,
-              city: d.city || 'Pimpri-Chinchwad',
-              state: d.state || 'Maharashtra',
+              displayName: d.area && d.city && d.area !== d.city ? `${d.area}, ${d.city}` : d.city || cleanQuery,
+              city: d.city || cleanQuery,
+              state: d.state || '',
               area: d.area || '',
               formattedAddress: d.formattedAddress || cleanQuery,
               postalCode: d.postalCode || '',
@@ -60,7 +60,7 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
   };
 
   const handleDetectGPS = async () => {
-    await detectCurrentLocation();
+    await detectCurrentLocation({ userInitiated: true });
   };
 
   return (
@@ -73,8 +73,8 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
             type="text"
             placeholder={
               isHindi
-                ? '📍 स्थान चुनें (जैसे: सूरत, अदाजन, वेसू)'
-                : '📍 Select location (e.g. Surat, Adajan, Vesu)'
+                ? '📍 क्षेत्र / स्थान चुनें (जैसे: रावेत, वाकड, पिंपरी-चिंचवड)'
+                : '📍 Select locality or area (e.g. Ravet, Wakad, Pimpri-Chinchwad)'
             }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -83,8 +83,9 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
           <button
             type="button"
             onClick={handleDetectGPS}
-            title={isHindi ? 'स्थान पहचानें' : 'Detect location via GPS'}
-            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-[#1264D6] transition-colors shrink-0 rounded-xl hover:bg-blue-50 active:scale-95 cursor-pointer ml-1"
+            disabled={isLoading}
+            title={isHindi ? 'GPS द्वारा स्थान पहचानें' : 'Detect location via GPS'}
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-[#1264D6] transition-colors shrink-0 rounded-xl hover:bg-blue-50 active:scale-95 cursor-pointer ml-1 disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-4.5 h-4.5 animate-spin text-[#1264D6]" />
