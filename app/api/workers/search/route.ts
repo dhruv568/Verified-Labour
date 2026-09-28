@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { calculateHaversineDistanceKm, sanitizeWorkerForPublic } from '@/lib/location';
+import { calculateHaversineDistanceKm, sanitizeWorkerForPublic, forwardGeocode } from '@/lib/location';
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,11 +16,22 @@ export async function GET(req: NextRequest) {
     const pageStr = searchParams.get('page') || '1';
     const limitStr = searchParams.get('limit') || '20';
 
-    const customerLat = latStr ? parseFloat(latStr) : undefined;
-    const customerLng = lngStr ? parseFloat(lngStr) : undefined;
+    let customerLat = latStr ? parseFloat(latStr) : undefined;
+    let customerLng = lngStr ? parseFloat(lngStr) : undefined;
     const searchRadiusKm = parseFloat(radiusStr);
     const page = parseInt(pageStr, 10);
     const limit = parseInt(limitStr, 10);
+
+    // If coordinates are missing but location/city query string is present, try server-side forward geocoding
+    if ((customerLat === undefined || customerLng === undefined || isNaN(customerLat) || isNaN(customerLng)) && city) {
+      const geocoded = await forwardGeocode(city);
+      if (geocoded) {
+        customerLat = geocoded.latitude;
+        customerLng = geocoded.longitude;
+      }
+    }
+
+    const hasCoords = customerLat !== undefined && customerLng !== undefined && !isNaN(customerLat) && !isNaN(customerLng);
 
     // Build Prisma query filter
     const whereClause: any = {
@@ -38,7 +49,9 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    if (city) {
+    // Only restrict DB query by city substring if coordinates are NOT available.
+    // When coordinates are available, Haversine geographic radius filtering handles location matching.
+    if (city && !hasCoords) {
       whereClause.city = { contains: city };
     }
 

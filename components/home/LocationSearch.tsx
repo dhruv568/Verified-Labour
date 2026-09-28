@@ -20,10 +20,32 @@ export default function LocationSearch({ onSearch }: LocationSearchProps) {
     }
   }, [location.displayName]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanQuery = query.trim();
     if (cleanQuery && cleanQuery !== location.displayName) {
+      try {
+        const geoRes = await fetch(`/api/location/geocode?q=${encodeURIComponent(cleanQuery)}`);
+        if (geoRes.ok) {
+          const geoJson = await geoRes.json();
+          if (geoJson.success && geoJson.data) {
+            const d = geoJson.data;
+            setManualLocation({
+              displayName: cleanQuery,
+              city: d.city || 'Pimpri-Chinchwad',
+              state: d.state || 'Maharashtra',
+              area: d.area || '',
+              formattedAddress: d.formattedAddress || cleanQuery,
+              postalCode: d.postalCode || '',
+              latitude: d.latitude,
+              longitude: d.longitude,
+            });
+            if (onSearch) onSearch(cleanQuery);
+            return;
+          }
+        }
+      } catch {}
+
       setManualLocation({
         displayName: cleanQuery,
         city: cleanQuery.split(',')[0].trim(),

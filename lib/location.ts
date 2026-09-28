@@ -293,4 +293,112 @@ export async function detectLocationFromIP(): Promise<{
   };
 }
 
+/**
+ * Known approximate coordinate map for key localities & cities
+ */
+const LOCAL_COORDINATE_MAP: Record<string, { lat: number; lng: number; city: string; state: string; postalCode?: string }> = {
+  gahunje: { lat: 18.667, lng: 73.702, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
+  ravet: { lat: 18.648, lng: 73.748, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '412101' },
+  tathawade: { lat: 18.619, lng: 73.751, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
+  wakad: { lat: 18.599, lng: 73.769, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411057' },
+  punawale: { lat: 18.630, lng: 73.740, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
+  nigdi: { lat: 18.658, lng: 73.775, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411044' },
+  akurdi: { lat: 18.649, lng: 73.780, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411035' },
+  chinchwad: { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
+  pimpri: { lat: 18.623, lng: 73.815, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411018' },
+  'pimpri-chinchwad': { lat: 18.627, lng: 73.800, city: 'Pimpri-Chinchwad', state: 'Maharashtra', postalCode: '411033' },
+  pune: { lat: 18.520, lng: 73.856, city: 'Pune', state: 'Maharashtra', postalCode: '411001' },
+  surat: { lat: 21.170, lng: 72.831, city: 'Surat', state: 'Gujarat', postalCode: '395007' },
+  adajan: { lat: 21.192, lng: 72.793, city: 'Surat', state: 'Gujarat', postalCode: '395009' },
+  vesu: { lat: 21.144, lng: 72.772, city: 'Surat', state: 'Gujarat', postalCode: '395007' },
+};
+
+/**
+ * Forward geocodes a location text query to coordinates & structured address details.
+ * Performs multi-stage token matching and fallback lookup.
+ */
+export async function forwardGeocode(query: string): Promise<{
+  formattedAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+} | null> {
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return null;
+
+  // 1. Check local lookup dictionary for known locality tokens
+  const lowerQuery = cleanQuery.toLowerCase();
+  for (const [key, val] of Object.entries(LOCAL_COORDINATE_MAP)) {
+    if (lowerQuery.includes(key)) {
+      return {
+        formattedAddress: cleanQuery,
+        city: val.city,
+        state: val.state,
+        postalCode: val.postalCode || '',
+        area: key.charAt(0).toUpperCase() + key.slice(1),
+        latitude: val.lat,
+        longitude: val.lng,
+      };
+    }
+  }
+
+  // 2. Try Nominatim candidate queries
+  const queryParts = cleanQuery.split(',').map((p) => p.trim()).filter(Boolean);
+  const candidates = [cleanQuery];
+  if (queryParts.length > 1) {
+    for (let i = 1; i < queryParts.length; i++) {
+      candidates.push(queryParts.slice(i).join(', '));
+    }
+  }
+
+  for (const cand of candidates) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cand)}&format=json&addressdetails=1&limit=1`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'VerifiedLabour/1.0 (info@verifiedlabour.com)' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const results = await res.json();
+        if (results && results.length > 0) {
+          const item = results[0];
+          const addr = item.address || {};
+          const city =
+            addr.city ||
+            addr.town ||
+            addr.village ||
+            addr.municipality ||
+            addr.city_district ||
+            addr.suburb ||
+            addr.district ||
+            cand.split(',')[0].trim();
+          const state = addr.state || '';
+          const area = addr.suburb || addr.neighbourhood || addr.residential || addr.road || queryParts[0] || '';
+
+          return {
+            formattedAddress: item.display_name || cleanQuery,
+            city,
+            state,
+            postalCode: addr.postcode || '',
+            area,
+            latitude: parseFloat(parseFloat(item.lat).toFixed(3)),
+            longitude: parseFloat(parseFloat(item.lon).toFixed(3)),
+          };
+        }
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+
 

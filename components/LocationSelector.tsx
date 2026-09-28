@@ -65,57 +65,20 @@ export default function LocationSelector({ className = '', isMobile = false }: L
     setCustomError(null);
 
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          query
-        )}&format=json&addressdetails=1&limit=1`,
-        {
-          headers: {
-            'User-Agent': 'VerifiedLabour/1.0 (info@verifiedlabour.com)',
-          },
-        }
-      );
-
-      if (res.ok) {
-        const results = await res.json();
-        if (results && results.length > 0) {
-          const item = results[0];
-          const addr = item.address || {};
-          const city =
-            addr.city ||
-            addr.town ||
-            addr.village ||
-            addr.municipality ||
-            addr.city_district ||
-            addr.suburb ||
-            addr.district ||
-            query.split(',')[0].trim();
-          const state = addr.state || '';
-          const area =
-            addr.suburb ||
-            addr.neighbourhood ||
-            addr.residential ||
-            addr.road ||
-            '';
-
-          let displayName = query;
-          if (area && city && area.toLowerCase() !== city.toLowerCase()) {
-            displayName = `${area}, ${city}`;
-          } else if (city && state) {
-            displayName = `${city}, ${state}`;
-          } else if (city) {
-            displayName = city;
-          }
-
+      const geoRes = await fetch(`/api/location/geocode?q=${encodeURIComponent(query)}`);
+      if (geoRes.ok) {
+        const geoJson = await geoRes.json();
+        if (geoJson.success && geoJson.data) {
+          const d = geoJson.data;
           setManualLocation({
-            displayName,
-            city,
-            state,
-            area,
-            formattedAddress: item.display_name || query,
-            postalCode: addr.postcode || '',
-            latitude: parseFloat(parseFloat(item.lat).toFixed(3)),
-            longitude: parseFloat(parseFloat(item.lon).toFixed(3)),
+            displayName: query,
+            city: d.city || 'Pimpri-Chinchwad',
+            state: d.state || 'Maharashtra',
+            area: d.area || '',
+            formattedAddress: d.formattedAddress || query,
+            postalCode: d.postalCode || '',
+            latitude: d.latitude,
+            longitude: d.longitude,
           });
 
           setSearchQuery('');
