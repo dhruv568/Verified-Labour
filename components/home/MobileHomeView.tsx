@@ -125,15 +125,13 @@ const FEATURED_CATEGORIES = [
   },
 ];
 
-// Additional 10 categories for "View All" expander
+// Additional 8 categories for "View All" expander on mobile homepage
 const MORE_CATEGORIES = [
   { title: 'Computer Hardware', hindiTitle: 'कंप्यूटर हार्डवेयर', slug: 'computer-hardware', image: '/images/services/computer-hardware.jpg', objectPosition: 'center 4%' },
   { title: 'Computer Software', hindiTitle: 'कंप्यूटर सॉफ्टवेयर', slug: 'computer-software', image: '/images/services/computer-software.jpg', objectPosition: 'center 4%' },
-  { title: 'Confectioner', hindiTitle: 'हलवाई / कन्फेक्शनर', slug: 'confectioner', image: '/images/services/confectioner.jpg', objectPosition: 'center 4%' },
   { title: 'Mechanic', hindiTitle: 'मैकेनिक', slug: 'mechanic', image: '/images/services/mechanic.jpg', objectPosition: 'center 5%' },
   { title: 'Gas Cylinder Wala', hindiTitle: 'गैस सिलेंडर वाला', slug: 'gas-cylinder', image: '/images/services/gas-cylinder.jpg', objectPosition: 'center 4%' },
   { title: 'Watchman', hindiTitle: 'सुरक्षा गार्ड / चौकीदार', slug: 'watchman', image: '/images/services/watchman.jpg', objectPosition: 'center 2%' },
-  { title: 'House Care Taker', hindiTitle: 'घर की देखभाल', slug: 'house-care-taker', image: '/images/services/house-care-taker.jpg', objectPosition: 'center 5%' },
   { title: 'Office Boy', hindiTitle: 'ऑफिस बॉय', slug: 'office-boy', image: '/images/services/office-boy.jpg', objectPosition: 'center 5%' },
   { title: 'Delivery Helper', hindiTitle: 'डिलीवरी सहायक', slug: 'loading-moving', image: '/images/services/delivery.jpg', objectPosition: 'center 5%' },
   { title: 'Other Services', hindiTitle: 'अन्य सेवाएं', slug: 'construction', image: '/images/services/others.jpg', objectPosition: 'center 4%' },

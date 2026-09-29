@@ -11,9 +11,12 @@ interface ServiceCategoriesProps {
   onViewAll?: () => void;
 }
 
-// Exactly 18 categories matching reference image in exact order and colors
+// Excluded from homepage display only (remains fully functional in DB, Admin, Booking & Worker profiles)
+const EXCLUDED_HOMEPAGE_SLUGS = ['confectioner', 'house-care-taker'];
+
+// Exactly 16 categories for homepage grid (2 rows of 8 cards on desktop)
 const CATEGORY_ITEMS = [
-  // --- ROW 1 (9 items) ---
+  // --- ROW 1 (8 items) ---
   {
     title: 'Electrician',
     hindiTitle: 'इलेक्ट्रीशियन',
@@ -31,24 +34,6 @@ const CATEGORY_ITEMS = [
     pillColor: 'bg-[#0284C7]',
     priority: true,
     objectPosition: 'center 2%',
-  },
-  {
-    title: 'Pagadhi Wala',
-    hindiTitle: 'हलवाई / पगड़ी वाला',
-    slug: 'confectioner',
-    image: '/images/services/confectioner.jpg',
-    pillColor: 'bg-[#C026D3]',
-    priority: true,
-    objectPosition: 'center 4%',
-  },
-  {
-    title: 'Child Care Taker',
-    hindiTitle: 'चाइल्ड केयर / घर की देखभाल',
-    slug: 'house-care-taker',
-    image: '/images/services/house-care-taker.jpg',
-    pillColor: 'bg-[#0D9488]',
-    priority: true,
-    objectPosition: 'center 5%',
   },
   {
     title: 'Computer Hardware',
@@ -95,16 +80,17 @@ const CATEGORY_ITEMS = [
     priority: true,
     objectPosition: 'center 2%',
   },
-
-  // --- ROW 2 (9 items) ---
   {
     title: 'Office Boy',
     hindiTitle: 'ऑफिस बॉय',
     slug: 'office-boy',
     image: '/images/services/office-boy.jpg',
     pillColor: 'bg-[#A16207]',
+    priority: true,
     objectPosition: 'center 5%',
   },
+
+  // --- ROW 2 (8 items) ---
   {
     title: 'Cook',
     hindiTitle: 'रसोइया',
@@ -190,10 +176,12 @@ export default function ServiceCategories({
         // Map database categories by slug for fast lookup
         const dbCatMap = new Map<string, any>();
         data.categories.forEach((cat: any) => {
-          if (cat.slug) dbCatMap.set(cat.slug, cat);
+          if (cat.slug && !EXCLUDED_HOMEPAGE_SLUGS.includes(cat.slug)) {
+            dbCatMap.set(cat.slug, cat);
+          }
         });
 
-        // Merge DB dynamic metadata into full CATEGORY_ITEMS array (preserving all 18 categories)
+        // Merge DB dynamic metadata into full CATEGORY_ITEMS array (preserving 16 homepage categories)
         const merged = CATEGORY_ITEMS.map((item) => {
           const dbCat = dbCatMap.get(item.slug);
           return {
@@ -204,9 +192,13 @@ export default function ServiceCategories({
           };
         });
 
-        // Append any extra DB categories not already in CATEGORY_ITEMS
+        // Append any extra DB categories not already in CATEGORY_ITEMS (skipping excluded)
         data.categories.forEach((cat: any) => {
-          if (!merged.some((item) => item.slug === cat.slug)) {
+          if (
+            cat.slug &&
+            !EXCLUDED_HOMEPAGE_SLUGS.includes(cat.slug) &&
+            !merged.some((item) => item.slug === cat.slug)
+          ) {
             merged.push({
               title: cat.name,
               hindiTitle: cat.nameHi || cat.name,
@@ -268,9 +260,9 @@ export default function ServiceCategories({
 
             {/* Subtitle with Hindi translation */}
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-              <span>18+ Verified Categories — More Coming Soon!</span>
+              <span>16+ Verified Categories — More Coming Soon!</span>
               <span className="text-slate-400 font-normal ml-1 sm:ml-2">
-                • 18+ सत्यापित सेवाएं — और भी जल्द!
+                • 16+ सत्यापित सेवाएं — और भी जल्द!
               </span>
             </p>
           </div>
@@ -289,8 +281,8 @@ export default function ServiceCategories({
           </div>
         </div>
 
-        {/* Dense Grid Layout displaying all 18 service cards */}
-        <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
+        {/* Balanced Grid Layout displaying 16 service cards (2 rows of 8 cards) */}
+        <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
           {categoriesList.map((item) => (
             <ServiceCard
               key={item.slug || item.title}
