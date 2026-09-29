@@ -10,6 +10,7 @@ const createJobSchema = z
     workerId: z.string(),
     serviceId: z.string(),
     categoryId: z.string(),
+    customService: z.string().optional(),
     description: z.string().optional().default(''),
     voiceNoteUrl: z.string().optional().nullable(),
     voiceNoteDuration: z.number().optional().nullable(),
@@ -24,7 +25,17 @@ const createJobSchema = z
     budget: z.number().optional(),
   })
   .refine(
-    (data) => (data.description && data.description.trim().length >= 3) || !!data.voiceNoteUrl,
+    (data) => (data.serviceId === 'OTHER' ? !!data.customService && data.customService.trim().length >= 1 : true),
+    {
+      message: 'Please describe your work',
+      path: ['customService'],
+    }
+  )
+  .refine(
+    (data) =>
+      (data.description && data.description.trim().length >= 3) ||
+      !!data.voiceNoteUrl ||
+      (!!data.customService && data.customService.trim().length >= 1),
     {
       message: 'Please describe your requirement in text or attach a voice note',
       path: ['description'],
@@ -153,10 +164,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch service base price
-    const service = await prisma.service.findUnique({ where: { id: data.serviceId } });
-    const basePrice = service ? service.basePrice : 350.0;
+    // Resolve fallback serviceId for Job model relation if OTHER was selected
+    let serviceIdToUse = data.serviceId;
+    let serviceNameForNotification = 'Home Service';
+    let basePrice = worker.hourlyRate || 350.0;
+
+    if (data.serviceId === 'OTHER' || data.customService) {
+      const catService = await prisma.service.findFirst({
+        where: { categoryId: data.categoryId, isActive: true },
+      });
+      if (catService) {
+        serviceIdToUse = catService.id;
+        basePrice = catService.basePrice || basePrice;
+        serviceNameForNotification = catService.name;
+      } else {
+        const anyService = await prisma.service.findFirst({ where: { isActive: true } });
+        if (anyService) {
+          serviceIdToUse = anyService.id;
+          basePrice = anyService.basePrice || basePrice;
+          serviceNameForNotification = anyService.name;
+        }
+      }
+      if (data.customService?.trim()) {
+        serviceNameForNotification = `Custom Work: ${data.customService.trim()}`;
+      }
+    } else {
+      const service = await prisma.service.findUnique({ where: { id: data.serviceId } });
+      if (service) {
+        basePrice = service.basePrice;
+        serviceNameForNotification = service.name;
+      }
+    }
+
     const finalAmount = data.budget || basePrice;
+
+    // Build job request description incorporating custom service if specified
+    let fullDescription = data.description?.trim() || '';
+    if (data.customService?.trim()) {
+      const customPrefix = `[विशिष्ट काम / Custom Work: ${data.customService.trim()}]`;
+      fullDescription = fullDescription ? `${customPrefix} ${fullDescription}` : customPrefix;
+    }
+    if (!fullDescription) {
+      fullDescription = 'Voice note requirement attached';
+    }
 
     // Create JobRequest and Job in database
     const result = await prisma.$transaction(async (tx) => {
@@ -164,8 +214,8 @@ export async function POST(req: NextRequest) {
         data: {
           customerId: customerProfileId,
           categoryId: data.categoryId,
-          serviceId: data.serviceId,
-          description: data.description?.trim() || 'Voice note requirement attached',
+          serviceId: data.serviceId === 'OTHER' ? null : data.serviceId,
+          description: fullDescription,
           voiceNoteUrl: data.voiceNoteUrl || null,
           voiceNoteDuration: data.voiceNoteDuration || null,
           formattedAddress: data.formattedAddress,
@@ -186,7 +236,7 @@ export async function POST(req: NextRequest) {
           jobRequestId: jobRequest.id,
           customerId: customerProfileId,
           workerId: data.workerId,
-          serviceId: data.serviceId,
+          serviceId: serviceIdToUse,
           status: 'REQUESTED',
           baseAmount: basePrice,
           finalAmount: finalAmount,
@@ -219,7 +269,7 @@ export async function POST(req: NextRequest) {
       workerId: worker.userId,
       jobId: result.job.id,
       eventType: 'REQUESTED',
-      serviceName: service?.name || 'Home Service',
+      serviceName: serviceNameForNotification,
     });
 
     return NextResponse.json({

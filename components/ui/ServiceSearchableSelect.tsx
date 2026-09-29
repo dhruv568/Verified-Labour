@@ -96,16 +96,14 @@ export default function ServiceSearchableSelect({
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent | TouchEvent) {
+    function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
 
@@ -244,14 +242,7 @@ export default function ServiceSearchableSelect({
                   <button
                     key={item.service.id}
                     type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleSelect(item);
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSelect(item);
-                    }}
+                    onClick={() => handleSelect(item)}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm sm:text-xs flex items-center justify-between transition-all select-none active:scale-[0.99] cursor-pointer gap-2 ${
                       isSelected
                         ? 'bg-brand-50 text-brand-900 font-bold border border-brand-200'

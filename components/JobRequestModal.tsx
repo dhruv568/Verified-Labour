@@ -26,9 +26,10 @@ export default function JobRequestModal({
   onRequireAuth,
 }: JobRequestModalProps) {
   const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+  const [workerCategory, setWorkerCategory] = useState<any | null>(null);
   const [allServices, setAllServices] = useState<ServiceItem[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [customWork, setCustomWork] = useState<string>('');
   const [loadingServices, setLoadingServices] = useState<boolean>(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
@@ -55,6 +56,7 @@ export default function JobRequestModal({
   useEffect(() => {
     if (!isOpen) {
       setDescription('');
+      setCustomWork('');
       if (voiceNotePreviewUrl) {
         URL.revokeObjectURL(voiceNotePreviewUrl);
       }
@@ -65,7 +67,7 @@ export default function JobRequestModal({
     }
   }, [isOpen]);
 
-  // Fetch all categories and complete active service list from backend API
+  // Fetch categories & services from API and determine matching category for selected worker
   const fetchCategoriesAndServices = async () => {
     setLoadingServices(true);
     setCategoriesError(null);
@@ -88,7 +90,6 @@ export default function JobRequestModal({
       if (svcData.success && Array.isArray(svcData.services)) {
         svcList = svcData.services;
       } else if (catList.length > 0) {
-        // Fallback: extract services from categories
         const extracted: ServiceItem[] = [];
         catList.forEach((c: any) => {
           if (c.services && Array.isArray(c.services)) {
@@ -100,7 +101,6 @@ export default function JobRequestModal({
         svcList = extracted;
       }
 
-      // Ensure unique services by ID
       const seenIds = new Set<string>();
       const uniqueServices: ServiceItem[] = [];
       for (const s of svcList) {
@@ -112,10 +112,8 @@ export default function JobRequestModal({
 
       setAllServices(uniqueServices);
 
-      // Determine matching category and service for current worker
+      // Match worker category
       let matchedCat: any = null;
-      let matchedSvc: ServiceItem | undefined = undefined;
-
       if (worker) {
         const pCat = worker.primaryCategory;
         const targetSlug = typeof pCat === 'object' ? pCat?.slug : pCat;
@@ -125,8 +123,8 @@ export default function JobRequestModal({
         matchedCat = catList.find(
           (c: any) =>
             (targetId && c.id === targetId) ||
-            (targetSlug && c.slug.toLowerCase() === String(targetSlug).toLowerCase()) ||
-            (targetName && c.name.toLowerCase() === String(targetName).toLowerCase())
+            (targetSlug && c.slug?.toLowerCase() === String(targetSlug).toLowerCase()) ||
+            (targetName && c.name?.toLowerCase() === String(targetName).toLowerCase())
         );
 
         if (!matchedCat && worker.skills && worker.skills.length > 0) {
@@ -136,26 +134,21 @@ export default function JobRequestModal({
             worker.skills[0]?.category?.slug;
           matchedCat = catList.find((c: any) => c.id === skillCatId || c.slug === skillCatId);
         }
-
-        if (matchedCat) {
-          matchedSvc = uniqueServices.find((s) => s.categoryId === matchedCat.id);
-        }
       }
 
-      if (matchedSvc) {
-        setSelectedCategoryId(matchedSvc.categoryId);
-        setSelectedServiceId(matchedSvc.id);
-      } else if (matchedCat) {
-        setSelectedCategoryId(matchedCat.id);
-        const catSvc = uniqueServices.filter((s) => s.categoryId === matchedCat.id);
-        if (catSvc.length > 0) {
-          setSelectedServiceId(catSvc[0].id);
-        } else if (uniqueServices.length > 0) {
-          setSelectedServiceId(uniqueServices[0].id);
-        }
+      setWorkerCategory(matchedCat);
+
+      // Determine default selected service
+      let catServices: ServiceItem[] = [];
+      if (matchedCat) {
+        catServices = uniqueServices.filter((s) => s.categoryId === matchedCat.id);
+      }
+      if (catServices.length > 0) {
+        setSelectedServiceId(catServices[0].id);
       } else if (uniqueServices.length > 0) {
-        setSelectedCategoryId('ALL');
         setSelectedServiceId(uniqueServices[0].id);
+      } else {
+        setSelectedServiceId('OTHER');
       }
     } catch (err: any) {
       console.error('Error loading services:', err);
@@ -189,59 +182,51 @@ export default function JobRequestModal({
     };
   }, [isOpen, worker]);
 
-  // Compute available services for dropdown based on category filter
+  // Compute available services for dropdown based on selected worker's category + "Other" option
   const availableServices = useMemo(() => {
-    if (!selectedCategoryId || selectedCategoryId === 'ALL') {
-      return allServices;
+    let list = allServices;
+    if (workerCategory) {
+      const catServices = allServices.filter((s) => s.categoryId === workerCategory.id);
+      if (catServices.length > 0) {
+        list = catServices;
+      }
     }
-    const filtered = allServices.filter((s) => s.categoryId === selectedCategoryId);
-    return filtered.length > 0 ? filtered : allServices;
-  }, [allServices, selectedCategoryId]);
 
-  // Handle category change by user
-  const handleCategoryChange = (newCatId: string) => {
-    setSelectedCategoryId(newCatId);
-    if (newCatId === 'ALL') {
-      if (allServices.length > 0 && !allServices.some((s) => s.id === selectedServiceId)) {
-        setSelectedServiceId(allServices[0].id);
-      }
-    } else {
-      const catSvcs = allServices.filter((s) => s.categoryId === newCatId);
-      if (catSvcs.length > 0) {
-        const isStillValid = catSvcs.some((s) => s.id === selectedServiceId);
-        if (!isStillValid) {
-          setSelectedServiceId(catSvcs[0].id);
-        }
-      }
-    }
-  };
+    const otherServiceItem: ServiceItem = {
+      id: 'OTHER',
+      name: 'Other Work / Service',
+      nameHi: 'अन्य कार्य / सेवा',
+      slug: 'other',
+      basePrice: worker?.hourlyRate || 350,
+      priceUnit: 'per job',
+      categoryId: workerCategory?.id || 'ALL',
+    };
+
+    return [...list, otherServiceItem];
+  }, [allServices, workerCategory, worker]);
 
   // Handle service selection by user from SearchableSelect
-  const handleServiceSelect = (serviceId: string, service: ServiceItem) => {
+  const handleServiceSelect = (serviceId: string) => {
     setSelectedServiceId(serviceId);
-    if (service && service.categoryId) {
-      setSelectedCategoryId(service.categoryId);
+    if (serviceId !== 'OTHER') {
+      setCustomWork('');
     }
   };
 
   if (!isOpen || !worker) return null;
 
-  const selectedService = allServices.find((s) => s.id === selectedServiceId);
+  const selectedService = availableServices.find((s) => s.id === selectedServiceId);
   const estimatedAmount = selectedService?.basePrice || worker.hourlyRate || 350;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Resolve categoryId if ALL was selected
     const workerCatId = typeof worker.primaryCategory === 'object' ? (worker.primaryCategory as any)?.id : null;
-    const finalCategoryId =
-      selectedCategoryId && selectedCategoryId !== 'ALL'
-        ? selectedCategoryId
-        : selectedService?.categoryId || workerCatId || '';
+    const finalCategoryId = workerCategory?.id || workerCatId || selectedService?.categoryId || '';
 
-    if (!finalCategoryId) {
-      setError('कृपया एक श्रेणी चुनें / Please select a category');
+    if (!finalCategoryId && selectedServiceId !== 'OTHER') {
+      setError('वर्ker की श्रेणी उपलब्ध नहीं है / Worker category unavailable');
       return;
     }
 
@@ -250,12 +235,17 @@ export default function JobRequestModal({
       return;
     }
 
+    if (selectedServiceId === 'OTHER' && !customWork.trim()) {
+      setError('कृपया अपना काम बताएं / Please describe your work');
+      return;
+    }
+
     setLoading(true);
 
     try {
       let uploadedVoiceUrl: string | null = null;
 
-      // 1. Upload voice note if recorded for this job request
+      // Upload voice note if recorded for this job request
       if (voiceNoteBlob) {
         const formData = new FormData();
         const ext =
@@ -277,14 +267,15 @@ export default function JobRequestModal({
         uploadedVoiceUrl = uploadData.url;
       }
 
-      // 2. Create JobRequest with selected category & service ID
+      // Create JobRequest with selected category & service ID / customService
       const res = await fetch('/api/jobs/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workerId: worker.id,
-          categoryId: finalCategoryId,
+          categoryId: finalCategoryId || 'ALL',
           serviceId: selectedServiceId,
+          customService: selectedServiceId === 'OTHER' ? customWork.trim() : undefined,
           description,
           voiceNoteUrl: uploadedVoiceUrl,
           voiceNoteDuration: voiceNoteDuration || 0,
@@ -318,6 +309,7 @@ export default function JobRequestModal({
       setVoiceNoteBlob(null);
       setVoiceNoteDuration(0);
       setVoiceNotePreviewUrl(null);
+      setCustomWork('');
 
       onSuccess(data.jobId);
       onClose();
@@ -393,36 +385,8 @@ export default function JobRequestModal({
             </div>
           )}
 
-          {/* Main Category Selection */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
-              मुख्य श्रेणी / Main Category *
-            </label>
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              disabled={loadingServices}
-              className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px] font-devanagari"
-            >
-              {allServices.length === 0 && !loadingServices ? (
-                <option disabled value="">
-                  कोई सेवा उपलब्ध नहीं / No services available
-                </option>
-              ) : (
-                <option value="ALL">
-                  सभी श्रेणियां ({allServices.length} सेवाएं) / All Categories ({allServices.length} Services)
-                </option>
-              )}
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nameHi ? `${cat.nameHi} / ${cat.name}` : cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Service Selection (Searchable Dropdown with Dynamic 1..N Indexing) */}
-          <div>
+          <div className="space-y-3">
             {categoriesError ? (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-2">
                 <span className="font-devanagari">{categoriesError}</span>
@@ -449,6 +413,23 @@ export default function JobRequestModal({
                 value={selectedServiceId}
                 onChange={handleServiceSelect}
               />
+            )}
+
+            {/* Custom Work Input when "Other" is selected */}
+            {selectedServiceId === 'OTHER' && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-150">
+                <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
+                  कृपया अपना काम बताएं / Describe your work <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customWork}
+                  onChange={(e) => setCustomWork(e.target.value)}
+                  placeholder="जैसे: पंखा मरम्मत, नल बदलना, नया प्लग लगाना / e.g. Fan repair, Tap replacement"
+                  className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px] font-devanagari"
+                />
+              </div>
             )}
           </div>
 
@@ -592,7 +573,13 @@ export default function JobRequestModal({
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading || (!description.trim() && !voiceNoteBlob) || loadingServices || !selectedServiceId}
+            disabled={
+              loading ||
+              (!description.trim() && !voiceNoteBlob && !customWork.trim()) ||
+              loadingServices ||
+              !selectedServiceId ||
+              (selectedServiceId === 'OTHER' && !customWork.trim())
+            }
             className="w-full min-h-[48px] py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base flex items-center justify-center font-devanagari"
           >
             {loading ? 'अनुरोध भेजा जा रहा है... / Sending Request...' : 'पुष्टि करें और वर्कर बुक करें / Confirm & Request Worker'}
