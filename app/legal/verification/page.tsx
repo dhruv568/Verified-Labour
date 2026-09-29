@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function VerificationPolicyPage() {
   return (
@@ -37,6 +38,18 @@ export default function VerificationPolicyPage() {
                 history, and certifications before public search indexing.
               </li>
             </ul>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-bold text-slate-900">Verification Compliance & Corporate Entity</h2>
+            <p>
+              Verification procedures are operated under strict compliance guidelines by:
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-slate-900">{COMPANY_NAME}</p>
+              <p className="text-slate-700">Registered Office: {COMPANY_REGISTERED_ADDRESS}</p>
+              <p className="text-slate-600 font-medium">Verification Desk Email: help@verifiedlabour.com</p>
+            </div>
           </section>
         </div>
       </main>

@@ -169,6 +169,24 @@ export default function JobRequestModal({
     if (isOpen) {
       fetchCategoriesAndServices();
     }
+
+    const handleUpdate = () => {
+      if (isOpen) {
+        fetchCategoriesAndServices();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('categories-updated', handleUpdate);
+      window.addEventListener('site-content-updated', handleUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('categories-updated', handleUpdate);
+        window.removeEventListener('site-content-updated', handleUpdate);
+      }
+    };
   }, [isOpen, worker]);
 
   // Compute available services for dropdown based on category filter
@@ -386,9 +404,15 @@ export default function JobRequestModal({
               disabled={loadingServices}
               className="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px] font-devanagari"
             >
-              <option value="ALL">
-                सभी श्रेणियां ({allServices.length} सेवाएं) / All Categories ({allServices.length} Services)
-              </option>
+              {allServices.length === 0 && !loadingServices ? (
+                <option disabled value="">
+                  कोई सेवा उपलब्ध नहीं / No services available
+                </option>
+              ) : (
+                <option value="ALL">
+                  सभी श्रेणियां ({allServices.length} सेवाएं) / All Categories ({allServices.length} Services)
+                </option>
+              )}
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.nameHi ? `${cat.nameHi} / ${cat.name}` : cat.name}

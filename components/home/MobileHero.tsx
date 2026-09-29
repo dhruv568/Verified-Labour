@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { ShieldCheck, Users, Clock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useContent } from '@/context/ContentContext';
 
 interface MobileHeroProps {
   onSearchWorker?: (query?: string) => void;
@@ -12,18 +13,19 @@ interface MobileHeroProps {
 
 export default function MobileHero({ onSearchWorker }: MobileHeroProps) {
   const { isHindi } = useLanguage();
+  const { content: siteContent } = useContent();
   const [imgError, setImgError] = React.useState(false);
 
-  // Dynamic Content Data Structure based on active language
+  // Dynamic Content Data Structure based on active language & siteContent
   const content = {
     brandTagline: isHindi ? '✓ काम के लिए भरोसेमंद लोग' : '✓ Trusted Skilled Workers',
     badgeText: isHindi ? 'सत्यापित कामगार' : 'Verified Workers',
-    headlineLine1: isHindi ? 'आपके घर और व्यवसाय' : 'Trusted Workers For',
-    headlineLine2: isHindi ? 'के लिए भरोसेमंद कामगार' : 'Your Home & Business',
-    supportingBullets: isHindi
-      ? 'सत्यापित • अनुभवी • भरोसेमंद • आपके पास'
-      : 'Verified • Experienced • Reliable • Near You',
-    ctaText: isHindi ? 'अभी कामगार बुक करें' : 'Book a Worker Now',
+    headlineLine1: siteContent.hero_title || (isHindi ? 'आपके घर और व्यवसाय' : 'Trusted Workers For'),
+    headlineLine2: siteContent.hero_subtitle || (isHindi ? 'के लिए भरोसेमंद कामगार' : 'Your Home & Business'),
+    supportingBullets: siteContent.hero_description || (isHindi
+      ? 'सत्यापित • अनुभवी • भरोसेमंद'
+      : 'Verified • Experienced • Reliable • Near You'),
+    ctaText: siteContent.hero_button_primary || (isHindi ? 'अभी कामगार बुक करें' : 'Book a Worker Now'),
     trustSeals: {
       verifiedSeal: isHindi ? 'जाँच-परखे कामगार' : 'Verified Worker',
     },

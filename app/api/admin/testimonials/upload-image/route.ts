@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
     }
 
     const slot = Number(slotStr);
-    if (slot !== 1 && slot !== 2) {
+    if (isNaN(slot) || slot < 1 || slot > 20) {
       return NextResponse.json(
-        { success: false, error: 'Invalid slot. Must be 1 or 2.' },
+        { success: false, error: 'Invalid slot number. Must be between 1 and 20.' },
         { status: 400 }
       );
     }
@@ -54,16 +54,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Safely remove previous custom uploaded image file for this slot if it exists
+    // Capture previous custom uploaded image path for deferred cleanup
     const existingRecord = await prisma.testimonial.findUnique({ where: { slot } });
-    if (existingRecord?.imageUrl && existingRecord.imageUrl.startsWith('/uploads/testimonials/')) {
-      const oldFilePath = path.join(process.cwd(), 'public', existingRecord.imageUrl);
-      try {
-        await unlink(oldFilePath);
-      } catch {
-        // Silently ignore if file doesn't exist
-      }
-    }
+    const previousImageUrl = existingRecord?.imageUrl;
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -81,6 +74,20 @@ export async function POST(req: NextRequest) {
 
     // Immediately persist new image URL to database
     const updatedTestimonial = await updateTestimonialSlot(slot, { imageUrl: publicUrl });
+
+    // Clean up old custom uploaded file ONLY AFTER new file write and DB update succeed
+    if (
+      previousImageUrl &&
+      previousImageUrl.startsWith('/uploads/testimonials/') &&
+      previousImageUrl !== publicUrl
+    ) {
+      const oldFilePath = path.join(process.cwd(), 'public', previousImageUrl);
+      try {
+        await unlink(oldFilePath);
+      } catch {
+        // Silently ignore if file doesn't exist
+      }
+    }
 
     return NextResponse.json({
       success: true,

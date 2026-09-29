@@ -1,5 +1,6 @@
 import prisma from './db';
 import { hashPassword } from './auth';
+import { COMPANY_REGISTERED_ADDRESS } from './company-info';
 
 export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   // Site Basic Settings
@@ -60,7 +61,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   // Contact Information
   contact_email: 'help@verifiedlabour.com',
   contact_phone: '+91 9109019090',
-  contact_address: 'Surat, Gujarat, India - 395007',
+  contact_address: COMPANY_REGISTERED_ADDRESS,
   contact_hours: 'Monday to Sunday: 8:00 AM - 9:00 PM',
 
   // Footer Content

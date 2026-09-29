@@ -113,6 +113,32 @@ export async function runTestimonialTests(): Promise<{ passed: number; failed: n
       assert.strictEqual(card1?.imageZoom, 1.35);
       assert.strictEqual(card2?.imageZoom, 1.5);
     });
+
+    // 5. Verify image replacement logic: new image replaces old image in DB while preserving other fields
+    await testAsync('image replacement updates DB with new image URL without resetting displayTarget', async () => {
+      const testFileReplacement = path.join(uploadDir, `test-slot-1-replacement-${Date.now()}.jpg`);
+      fs.writeFileSync(testFileReplacement, 'dummy-replacement-content');
+      const replacementRelPath = `/uploads/testimonials/${path.basename(testFileReplacement)}`;
+
+      try {
+        // Set displayTarget to DESKTOP
+        await updateTestimonialSlot(1, { displayTarget: 'DESKTOP' });
+
+        // Replace image URL with partial update
+        const replaced = await updateTestimonialSlot(1, { imageUrl: replacementRelPath });
+
+        assert.strictEqual(replaced.imageUrl, replacementRelPath, 'New image URL must be persisted');
+        assert.strictEqual(replaced.displayTarget, 'DESKTOP', 'displayTarget must be preserved during partial image update');
+
+        // Confirm DB state
+        const freshList = await getTestimonials(false);
+        const card1 = freshList.find((t) => t.slot === 1);
+        assert.strictEqual(card1?.imageUrl, replacementRelPath);
+        assert.strictEqual(card1?.displayTarget, 'DESKTOP');
+      } finally {
+        if (fs.existsSync(testFileReplacement)) fs.unlinkSync(testFileReplacement);
+      }
+    });
   } finally {
     if (fs.existsSync(testFile1)) fs.unlinkSync(testFile1);
     if (fs.existsSync(testFile2)) fs.unlinkSync(testFile2);

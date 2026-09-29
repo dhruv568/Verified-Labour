@@ -39,6 +39,49 @@ export interface BankVerifyResponse {
   message: string;
 }
 
+export interface CreateDigiLockerUrlParams {
+  workerId: string;
+  verificationId?: string;
+  redirectUrl?: string;
+  userFlow?: 'signup' | 'signin';
+  documentsRequested?: Array<'AADHAAR' | 'PAN' | 'DRIVING_LICENSE'>;
+}
+
+export interface CreateDigiLockerUrlResponse {
+  success: boolean;
+  verificationId: string;
+  referenceId?: string | number;
+  url?: string;
+  status?: string;
+  redirectUrl?: string;
+  userFlow?: string;
+  message: string;
+  error?: string;
+}
+
+export interface GetDigiLockerStatusParams {
+  verificationId?: string;
+  referenceId?: string | number;
+}
+
+export interface GetDigiLockerStatusResponse {
+  success: boolean;
+  status: 'PENDING' | 'AUTHENTICATED' | 'EXPIRED' | 'CONSENT_DENIED' | 'FAILED';
+  verificationId?: string;
+  referenceId?: string | number;
+  userDetails?: {
+    name?: string;
+    dob?: string;
+    gender?: string;
+    eaadhaar?: string;
+    mobile?: string;
+  };
+  documentRequested?: string[];
+  documentConsent?: string[];
+  message: string;
+  error?: string;
+}
+
 export class CashfreeVerificationService {
   private clientId: string;
   private clientSecret: string;
@@ -409,6 +452,211 @@ export class CashfreeVerificationService {
         refId: '',
         failureReason: 'PROVIDER_TIMEOUT',
         message: 'Bank verification service is momentarily slow. Please try again.',
+      };
+    }
+  }
+
+  /**
+   * Cashfree Secure ID DigiLocker Verification (VRS v2 API)
+   * Endpoint: POST /verification/digilocker
+   * Creates a DigiLocker session URL for document verification (Aadhaar).
+   */
+  async createDigiLockerUrl(
+    params: CreateDigiLockerUrlParams
+  ): Promise<CreateDigiLockerUrlResponse> {
+    const {
+      workerId,
+      redirectUrl: customRedirectUrl,
+      userFlow = 'signup',
+      documentsRequested = ['AADHAAR'],
+    } = params;
+
+    // Unique verification_id max 50 chars: alphanumeric, period, hyphen, underscore
+    const cleanWorkerSlug = workerId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 18);
+    const verificationId =
+      params.verificationId || `DGL_${cleanWorkerSlug}_${Date.now()}`;
+
+    const redirectUrl =
+      customRedirectUrl ||
+      process.env.CASHFREE_DIGILOCKER_REDIRECT_URL ||
+      'https://verifiedlabour.com/worker/onboarding';
+
+    if (this.isMockMode()) {
+      const mockRefId = Math.floor(10000 + Math.random() * 90000);
+      return {
+        success: true,
+        verificationId,
+        referenceId: mockRefId,
+        url: `https://verification-test.cashfree.com/dgl/mock_${Date.now()}`,
+        status: 'PENDING',
+        redirectUrl,
+        userFlow,
+        message: 'DigiLocker URL generated successfully (Sandbox/Mock mode).',
+      };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const response = await fetch(`${this.baseUrl}/digilocker`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': this.clientId,
+          'x-client-secret': this.clientSecret,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2023-12-18',
+        },
+        body: JSON.stringify({
+          verification_id: verificationId,
+          document_requested: documentsRequested,
+          redirect_url: redirectUrl,
+          user_flow: userFlow,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        return {
+          success: true,
+          verificationId: data.verification_id || verificationId,
+          referenceId: data.reference_id,
+          url: data.url,
+          status: data.status || 'PENDING',
+          redirectUrl: data.redirect_url || redirectUrl,
+          userFlow: data.user_flow || userFlow,
+          message: 'DigiLocker URL created successfully.',
+        };
+      }
+
+      return {
+        success: false,
+        verificationId,
+        status: data.status || 'FAILED',
+        error: data.code || 'DIGILOCKER_URL_CREATE_FAILED',
+        message:
+          data.message ||
+          'Failed to create DigiLocker URL. Please check your credentials and try again.',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        verificationId,
+        status: 'FAILED',
+        error: 'NETWORK_TIMEOUT',
+        message:
+          'DigiLocker verification service is momentarily unreachable. Please try again in a few moments.',
+      };
+    }
+  }
+
+  /**
+   * Cashfree Secure ID DigiLocker Status API (VRS v2 API)
+   * Endpoint: GET /verification/digilocker
+   * Fetches the current status of a DigiLocker verification request.
+   */
+  async getDigiLockerStatus(
+    params: GetDigiLockerStatusParams
+  ): Promise<GetDigiLockerStatusResponse> {
+    const { verificationId, referenceId } = params;
+
+    if (!verificationId && !referenceId) {
+      return {
+        success: false,
+        status: 'FAILED',
+        error: 'MISSING_PARAM',
+        message: 'Either verification_id or reference_id must be provided to check status.',
+      };
+    }
+
+    if (this.isMockMode()) {
+      let mockStatus: GetDigiLockerStatusResponse['status'] = 'AUTHENTICATED';
+      const vIdUpper = (verificationId || '').toUpperCase();
+      if (vIdUpper.includes('EXPIRED')) mockStatus = 'EXPIRED';
+      else if (vIdUpper.includes('DENIED')) mockStatus = 'CONSENT_DENIED';
+      else if (vIdUpper.includes('PENDING')) mockStatus = 'PENDING';
+
+      return {
+        success: true,
+        status: mockStatus,
+        verificationId: verificationId || 'DGL_MOCK_123',
+        referenceId: referenceId || 12345,
+        userDetails:
+          mockStatus === 'AUTHENTICATED'
+            ? {
+                name: 'Verified Worker Name',
+                dob: '15-06-1995',
+                gender: 'M',
+                eaadhaar: 'Y',
+                mobile: '9999999999',
+              }
+            : {},
+        documentRequested: ['AADHAAR'],
+        documentConsent: mockStatus === 'AUTHENTICATED' ? ['AADHAAR'] : [],
+        message: `DigiLocker verification status is ${mockStatus}.`,
+      };
+    }
+
+    try {
+      const queryParams = new URLSearchParams();
+      if (verificationId) {
+        queryParams.set('verification_id', verificationId);
+      } else if (referenceId) {
+        queryParams.set('reference_id', String(referenceId));
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const response = await fetch(`${this.baseUrl}/digilocker?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'x-client-id': this.clientId,
+          'x-client-secret': this.clientSecret,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2023-12-18',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (response.ok && data.status) {
+        const rawStatus = (data.status || '').toUpperCase();
+        let validStatus: GetDigiLockerStatusResponse['status'] = 'PENDING';
+        if (rawStatus === 'AUTHENTICATED') validStatus = 'AUTHENTICATED';
+        else if (rawStatus === 'EXPIRED') validStatus = 'EXPIRED';
+        else if (rawStatus === 'CONSENT_DENIED') validStatus = 'CONSENT_DENIED';
+        else if (rawStatus === 'PENDING') validStatus = 'PENDING';
+        else validStatus = 'FAILED';
+
+        return {
+          success: true,
+          status: validStatus,
+          verificationId: data.verification_id || verificationId,
+          referenceId: data.reference_id || referenceId,
+          userDetails: data.user_details || undefined,
+          documentRequested: data.document_requested || [],
+          documentConsent: data.document_consent || [],
+          message: `DigiLocker verification status is ${validStatus}.`,
+        };
+      }
+
+      return {
+        success: false,
+        status: 'FAILED',
+        error: data.code || 'STATUS_CHECK_FAILED',
+        message: data.message || 'Failed to retrieve DigiLocker verification status.',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        status: 'FAILED',
+        error: 'NETWORK_TIMEOUT',
+        message: 'DigiLocker verification service is momentarily unreachable. Please try again.',
       };
     }
   }

@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import activeOtps, { tokenToEmail } from '@/lib/otp-store';
 import { generateSecureToken } from '@/lib/tokens';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -190,8 +191,13 @@ export function renderOtpEmailHtml(options: RenderOtpEmailOptions): { html: stri
                 <a href="mailto:help@verifiedlabour.com" style="color: #1464D2; text-decoration: none; font-weight: 600; margin: 0 8px;">Contact Support</a>
               </div>
 
-              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">
                 Support Email: help@verifiedlabour.com | Helpline: +91 9109019090
+              </div>
+
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">
+                <strong>${COMPANY_NAME}</strong><br />
+                Registered Office: ${COMPANY_REGISTERED_ADDRESS}
               </div>
 
               <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">

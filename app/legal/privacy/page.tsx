@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -42,12 +43,16 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-900">4. Grievance Officer</h2>
+            <h2 className="text-lg font-bold text-slate-900">4. Grievance Officer & Corporate Details</h2>
             <p>
-              For privacy inquiries, contact our Data Protection Officer at:
+              For privacy inquiries or data rights requests, contact our Data Protection Officer at:
               <br />
               <strong>Email:</strong> <a href="mailto:help@verifiedlabour.com" className="text-[#1264D6] hover:underline font-bold">help@verifiedlabour.com</a> • <strong>Phone:</strong> <a href="tel:+919109019090" className="text-slate-900 hover:underline font-bold">+91 9109019090</a>
             </p>
+            <div className="mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-slate-900">{COMPANY_NAME}</p>
+              <p className="text-slate-700">Registered Office: {COMPANY_REGISTERED_ADDRESS}</p>
+            </div>
           </section>
         </div>
       </main>

@@ -100,6 +100,12 @@ export default function WorkerOnboardingWizard({
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [maskedAadhaar, setMaskedAadhaar] = useState('');
 
+  // DigiLocker KYC state
+  const [verificationMode, setVerificationMode] = useState<'OTP' | 'DIGILOCKER'>('OTP');
+  const [digiLockerStatus, setDigiLockerStatus] = useState<'IDLE' | 'PENDING' | 'AUTHENTICATED' | 'EXPIRED' | 'CONSENT_DENIED' | 'FAILED' | 'MANUAL_REVIEW'>('IDLE');
+  const [digiLockerUrl, setDigiLockerUrl] = useState<string | null>(null);
+  const [digiLockerMessage, setDigiLockerMessage] = useState<string | null>(null);
+
   // Step 7: Cashfree Bank Account
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -652,6 +658,96 @@ export default function WorkerOnboardingWizard({
       }, 500);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cashfree DigiLocker Start (Step 1)
+  const handleStartDigiLocker = async () => {
+    const workerId = sessionUser?.workerProfile?.id;
+    if (!workerId) {
+      setError('Worker profile session not found.');
+      return;
+    }
+
+    if (aadhaarVerified) {
+      setSuccessMsg('Aadhaar is already verified.');
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+    setDigiLockerMessage(null);
+    try {
+      const res = await fetch('/api/verifications/cashfree/digilocker/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerId, userFlow: 'signup' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Could not create DigiLocker URL');
+
+      setDigiLockerUrl(data.url);
+      setDigiLockerStatus('PENDING');
+      setSuccessMsg('DigiLocker session URL generated! Click the link below to authorize consent.');
+
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setDigiLockerStatus('FAILED');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cashfree DigiLocker Complete (Step 3)
+  const handleCompleteDigiLocker = async () => {
+    const workerId = sessionUser?.workerProfile?.id;
+    if (!workerId || aadhaarVerified) return;
+
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/verifications/cashfree/digilocker/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        if (data.outcome === 'MANUAL_REVIEW') {
+          setDigiLockerStatus('MANUAL_REVIEW');
+          setDigiLockerMessage(data.message || 'Identity details were received and are under manual review.');
+          return;
+        }
+        if (data.outcome === 'EXPIRED') {
+          setDigiLockerStatus('EXPIRED');
+          setDigiLockerMessage('Verification session expired. Please click below to generate a new URL.');
+          return;
+        }
+        if (data.outcome === 'CONSENT_DENIED') {
+          setDigiLockerStatus('CONSENT_DENIED');
+          setDigiLockerMessage('Consent was denied in DigiLocker. Please retry with consent.');
+          return;
+        }
+        throw new Error(data.error || data.message || 'DigiLocker verification check failed.');
+      }
+
+      setAadhaarVerified(true);
+      setMaskedAadhaar(data.maskedAadhaar || 'XXXXXXXX8291');
+      setDigiLockerStatus('AUTHENTICATED');
+      setSuccessMsg('✓ Aadhaar identity verified successfully via Cashfree DigiLocker!');
+
+      setTimeout(() => {
+        setCurrentStep(7);
+      }, 500);
+    } catch (err: any) {
+      setError(err.message);
+      setDigiLockerStatus('FAILED');
     } finally {
       setLoading(false);
     }
@@ -1366,8 +1462,35 @@ export default function WorkerOnboardingWizard({
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 leading-relaxed font-medium">
-              <strong>Security & Privacy Consent:</strong> Aadhaar verification is executed securely via Cashfree. OTP will be sent to your mobile number registered with UIDAI Aadhaar. Your full Aadhaar number is never stored on our servers.
+              <strong>Security & Privacy Consent:</strong> Identity verification is executed securely via Cashfree Secure ID. Your full Aadhaar number is never stored on our servers.
             </div>
+
+            {!aadhaarVerified && (
+              <div className="flex border-b border-slate-200 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setVerificationMode('OTP')}
+                  className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                    verificationMode === 'OTP'
+                      ? 'border-[#079447] text-[#079447]'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Aadhaar OTP Verification
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerificationMode('DIGILOCKER')}
+                  className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                    verificationMode === 'DIGILOCKER'
+                      ? 'border-[#1264D6] text-[#1264D6]'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  DigiLocker KYC (Cashfree)
+                </button>
+              </div>
+            )}
 
             {aadhaarVerified ? (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
@@ -1381,6 +1504,86 @@ export default function WorkerOnboardingWizard({
                     Masked Aadhaar: <span className="font-mono font-bold">{maskedAadhaar}</span>
                   </p>
                 </div>
+              </div>
+            ) : verificationMode === 'DIGILOCKER' ? (
+              <div className="space-y-3.5 bg-blue-50/50 p-4 border border-blue-200/80 rounded-2xl">
+                {digiLockerStatus === 'IDLE' && (
+                  <div className="space-y-3 text-center py-2">
+                    <p className="text-xs text-slate-600 font-medium">
+                      Authenticate with your DigiLocker account via Cashfree to complete identity verification seamlessly.
+                    </p>
+                    <Button
+                      variant="brand"
+                      size="lg"
+                      fullWidth
+                      isLoading={loading}
+                      onClick={handleStartDigiLocker}
+                    >
+                      Connect with DigiLocker via Cashfree
+                    </Button>
+                  </div>
+                )}
+
+                {digiLockerStatus === 'PENDING' && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium">
+                      ⏳ <strong>DigiLocker session active:</strong> Please grant consent in the opened DigiLocker window, then click check status below.
+                    </div>
+                    {digiLockerUrl && (
+                      <a
+                        href={digiLockerUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-center text-xs font-bold text-[#1264D6] underline"
+                      >
+                        Re-open DigiLocker Link
+                      </a>
+                    )}
+                    <Button
+                      variant="brand"
+                      size="lg"
+                      fullWidth
+                      isLoading={loading}
+                      onClick={handleCompleteDigiLocker}
+                    >
+                      Check DigiLocker Verification Status
+                    </Button>
+                  </div>
+                )}
+
+                {digiLockerStatus === 'MANUAL_REVIEW' && (
+                  <div className="space-y-3">
+                    <div className="p-3.5 bg-blue-100 border border-blue-300 rounded-xl text-xs text-blue-950 font-medium">
+                      📋 <strong>Manual Review Required:</strong> {digiLockerMessage || 'Your identity details were received and are under review by administration.'}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      fullWidth
+                      isLoading={loading}
+                      onClick={handleCompleteDigiLocker}
+                    >
+                      Re-check Review Status
+                    </Button>
+                  </div>
+                )}
+
+                {(digiLockerStatus === 'EXPIRED' || digiLockerStatus === 'CONSENT_DENIED' || digiLockerStatus === 'FAILED') && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-900 font-medium">
+                      ⚠️ {digiLockerMessage || 'DigiLocker verification could not be completed.'}
+                    </div>
+                    <Button
+                      variant="brand"
+                      size="lg"
+                      fullWidth
+                      isLoading={loading}
+                      onClick={handleStartDigiLocker}
+                    >
+                      Start New DigiLocker Session
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : !aadhaarRefId ? (
               <div className="space-y-3.5">

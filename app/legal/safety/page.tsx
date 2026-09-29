@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function SafetyGuidelinesPage() {
   return (
@@ -26,6 +27,18 @@ export default function SafetyGuidelinesPage() {
               In the event of an emergency or severe misconduct, immediately dial 112 (National Emergency Number)
               and report the incident to our 24/7 trust team at <a href="mailto:help@verifiedlabour.com" className="font-bold text-[#1264D6] hover:underline">help@verifiedlabour.com</a>.
             </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-bold text-slate-900">3. Grievance Redressal Office</h2>
+            <p>
+              Written notices or formal complaints can be sent to our Grievance Desk at:
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-slate-900">{COMPANY_NAME}</p>
+              <p className="text-slate-700">Registered Office: {COMPANY_REGISTERED_ADDRESS}</p>
+              <p className="text-slate-600 font-medium">Email: help@verifiedlabour.com | Phone: +91 9109019090</p>
+            </div>
           </section>
         </div>
       </main>

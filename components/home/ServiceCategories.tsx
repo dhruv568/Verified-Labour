@@ -177,6 +177,54 @@ export default function ServiceCategories({
   onViewAll,
 }: ServiceCategoriesProps) {
   const { isHindi } = useLanguage();
+  const [categoriesList, setCategoriesList] = React.useState<any[]>(CATEGORY_ITEMS);
+
+  const fetchCategories = React.useCallback(async () => {
+    try {
+      const res = await fetch(`/api/categories?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
+        const merged = data.categories.map((cat: any) => {
+          const matched = CATEGORY_ITEMS.find((c) => c.slug === cat.slug);
+          return {
+            title: cat.name,
+            hindiTitle: cat.nameHi || matched?.hindiTitle || cat.name,
+            slug: cat.slug,
+            image: cat.iconUrl || matched?.image || '/images/services/others.jpg',
+            pillColor: matched?.pillColor || 'bg-[#082B66]',
+            priority: matched?.priority ?? false,
+            objectPosition: matched?.objectPosition ?? 'center 4%',
+          };
+        });
+        setCategoriesList(merged);
+      }
+    } catch (err) {
+      // Keep static default CATEGORY_ITEMS on error
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchCategories();
+
+    const handleUpdate = () => {
+      fetchCategories();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('categories-updated', handleUpdate);
+      window.addEventListener('site-content-updated', handleUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('categories-updated', handleUpdate);
+        window.removeEventListener('site-content-updated', handleUpdate);
+      }
+    };
+  }, [fetchCategories]);
 
   return (
     <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
@@ -199,9 +247,9 @@ export default function ServiceCategories({
 
         {/* Responsive Grid: 2 cols on phone, 3 on sm, 4 on md, 6 on lg, 9 on xl */}
         <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
-          {CATEGORY_ITEMS.map((item) => (
+          {categoriesList.map((item) => (
             <ServiceCard
-              key={item.title}
+              key={item.slug || item.title}
               title={item.title}
               hindiTitle={item.hindiTitle}
               slug={item.slug}

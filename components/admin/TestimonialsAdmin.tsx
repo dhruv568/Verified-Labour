@@ -55,6 +55,8 @@ export default function TestimonialsAdmin() {
 
   // Preview data URLs for uploaded files before saving
   const [imagePreviews, setImagePreviews] = useState<Record<number, string>>({});
+  // UI load error tracking (prevents mutating card.imageUrl state when images fail to render)
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   const fetchAdminTestimonials = async () => {
     setLoading(true);
@@ -66,6 +68,7 @@ export default function TestimonialsAdmin() {
       const data = await res.json();
       if (data.success) {
         setImagePreviews({});
+        setImageErrors({});
         if (typeof data.count === 'number') {
           setTestimonialCount(data.count);
         }
@@ -137,6 +140,10 @@ export default function TestimonialsAdmin() {
         type: 'success',
         message: `Number of testimonials updated to ${data.count}. Website display synced!`,
       });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('testimonials-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
       await fetchAdminTestimonials();
     } catch (err: any) {
       setFeedback({
@@ -187,6 +194,9 @@ export default function TestimonialsAdmin() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input value so re-selecting same file triggers change event
+    e.target.value = '';
+
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setFeedback({
@@ -208,6 +218,11 @@ export default function TestimonialsAdmin() {
 
     const previewUrl = URL.createObjectURL(file);
     setImagePreviews((prev) => ({ ...prev, [slot]: previewUrl }));
+    setImageErrors((prev) => {
+      const next = { ...prev };
+      delete next[slot];
+      return next;
+    });
 
     setUploadingSlot(slot);
     setFeedback(null);
@@ -229,6 +244,12 @@ export default function TestimonialsAdmin() {
           type: 'error',
           message: data.error || 'Failed to upload image',
         });
+        setImagePreviews((prev) => {
+          const next = { ...prev };
+          delete next[slot];
+          return next;
+        });
+        URL.revokeObjectURL(previewUrl);
         return;
       }
 
@@ -245,12 +266,23 @@ export default function TestimonialsAdmin() {
         type: 'success',
         message: 'Image uploaded and saved! Adjust framing or zoom below.',
       });
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('testimonials-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
     } catch (err: any) {
       setFeedback({
         slot,
         type: 'error',
         message: 'Upload error: ' + err.message,
       });
+      setImagePreviews((prev) => {
+        const next = { ...prev };
+        delete next[slot];
+        return next;
+      });
+      URL.revokeObjectURL(previewUrl);
     } finally {
       setUploadingSlot(null);
     }
@@ -300,6 +332,10 @@ export default function TestimonialsAdmin() {
         delete next[slot];
         return next;
       });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('testimonials-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
       await fetchAdminTestimonials();
     } catch (err: any) {
       setFeedback({
@@ -338,6 +374,10 @@ export default function TestimonialsAdmin() {
         type: 'success',
         message: `Testimonial Card ${slot} deleted successfully.`,
       });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('testimonials-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
       await fetchAdminTestimonials();
     } catch (err: any) {
       setFeedback({
@@ -526,7 +566,8 @@ export default function TestimonialsAdmin() {
           const isDeleting = deletingSlot === slotNum;
           const isDragging = draggingSlot === slotNum;
           const slotFeedback = feedback?.slot === slotNum ? feedback : null;
-          const currentPreview = imagePreviews[slotNum] || card.imageUrl;
+          const fallbackUrl = `/images/testimonials/testimonial-${((slotNum - 1) % 2) + 1}.jpg`;
+          const currentPreview = imagePreviews[slotNum] || (imageErrors[slotNum] ? fallbackUrl : card.imageUrl);
 
           const zoomVal = card.imageZoom ?? 1.0;
           const offsetXVal = card.imageOffsetX ?? 0.0;
@@ -686,10 +727,7 @@ export default function TestimonialsAdmin() {
                     }}
                     unoptimized={true}
                     onError={() => {
-                      const fallback = `/images/testimonials/testimonial-${((slotNum - 1) % 2) + 1}.jpg`;
-                      if (currentPreview !== fallback) {
-                        handleFieldChange(slotNum, 'imageUrl', fallback);
-                      }
+                      setImageErrors((prev) => ({ ...prev, [slotNum]: true }));
                     }}
                   />
 

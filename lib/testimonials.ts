@@ -216,10 +216,10 @@ export async function updateTestimonialSlot(
   slot: number,
   data: Partial<TestimonialData>
 ): Promise<TestimonialData> {
-  const target: 'DESKTOP' | 'MOBILE' | 'BOTH' =
+  const displayTargetUpdate =
     data.displayTarget === 'DESKTOP' || data.displayTarget === 'MOBILE' || data.displayTarget === 'BOTH'
       ? data.displayTarget
-      : 'BOTH';
+      : undefined;
 
   const updated = await prisma.testimonial.upsert({
     where: { slot },
@@ -230,7 +230,7 @@ export async function updateTestimonialSlot(
       testimonialText: data.testimonialText !== undefined ? data.testimonialText : undefined,
       rating: typeof data.rating === 'number' ? data.rating : undefined,
       isActive: data.isActive !== undefined ? data.isActive : undefined,
-      displayTarget: target,
+      displayTarget: displayTargetUpdate,
       imageUrl: data.imageUrl !== undefined ? data.imageUrl : undefined,
       imageZoom: typeof data.imageZoom === 'number' ? data.imageZoom : undefined,
       imageOffsetX: typeof data.imageOffsetX === 'number' ? data.imageOffsetX : undefined,
@@ -244,7 +244,7 @@ export async function updateTestimonialSlot(
       testimonialText: data.testimonialText || null,
       rating: data.rating ?? 5,
       isActive: data.isActive ?? true,
-      displayTarget: target,
+      displayTarget: displayTargetUpdate || 'BOTH',
       imageUrl: data.imageUrl || `/images/testimonials/testimonial-${((slot - 1) % 2) + 1}.jpg`,
       imageZoom: data.imageZoom ?? 1.0,
       imageOffsetX: data.imageOffsetX ?? 0.0,

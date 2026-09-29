@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function CancellationRefundPage() {
   return (
@@ -28,6 +29,18 @@ export default function CancellationRefundPage() {
               payment settlement is placed ON_HOLD. An administrative arbitrator reviews message history, photos,
               and evidence to grant a partial or full refund where justified within 3-5 business days.
             </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-bold text-slate-900">3. Corporate Entity & Support Address</h2>
+            <p>
+              Refund requests and billing disputes are managed by:
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-slate-900">{COMPANY_NAME}</p>
+              <p className="text-slate-700">Registered Office: {COMPANY_REGISTERED_ADDRESS}</p>
+              <p className="text-slate-600 font-medium">Email: help@verifiedlabour.com | Phone: +91 9109019090</p>
+            </div>
           </section>
         </div>
       </main>

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getServiceHindiName } from '@/lib/service-translations';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const rawCategories = await prisma.category.findMany({
@@ -19,14 +22,22 @@ export async function GET(req: NextRequest) {
       ...cat,
       services: cat.services.map((svc) => ({
         ...svc,
-        nameHi: getServiceHindiName(svc),
+        nameHi: svc.nameHi || getServiceHindiName(svc),
       })),
     }));
 
-    return NextResponse.json({
-      success: true,
-      categories,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        categories,
+        total: categories.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch categories: ' + err.message },

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { useContent } from '@/context/ContentContext';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 import {
   ShieldCheck,
   Users,
@@ -19,6 +20,7 @@ import {
   ArrowRight,
   HeartHandshake,
   Award,
+  Building2,
 } from 'lucide-react';
 
 export default function AboutPage() {
@@ -191,6 +193,28 @@ export default function AboutPage() {
           <p className="text-sm leading-relaxed text-slate-100 font-medium font-devanagari">
             {visionText}
           </p>
+        </div>
+
+        {/* 6. REGISTERED OFFICE & CORPORATE DETAILS */}
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 text-[#1264D6]">
+            <Building2 className="w-6 h-6 shrink-0 text-[#1264D6]" />
+            <h2 className="text-xl sm:text-2xl font-black text-[#082B66] font-devanagari">
+              {isHindi ? 'कॉर्पोरेट जानकारी और पंजीकृत कार्यालय' : 'Corporate Information & Registered Office'}
+            </h2>
+          </div>
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2 text-sm text-slate-700">
+            <p className="font-extrabold text-[#082B66] text-base">
+              {COMPANY_NAME}
+            </p>
+            <p className="font-semibold text-slate-800 leading-relaxed">
+              <span className="font-bold text-slate-900">Registered Office: </span>
+              {COMPANY_REGISTERED_ADDRESS}
+            </p>
+            <p className="text-xs text-slate-500 pt-1">
+              Official Registered Entity operating India's trusted on-demand local skilled labour marketplace.
+            </p>
+          </div>
         </div>
 
         {/* 6. CTA SECTION */}

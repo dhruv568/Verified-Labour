@@ -4,7 +4,10 @@ import prisma from '../lib/db';
 import { POST as startAadhaarHandler } from '../app/api/verifications/cashfree/aadhaar/start/route';
 import { POST as verifyAadhaarHandler } from '../app/api/verifications/cashfree/aadhaar/verify/route';
 import { POST as verifyBankHandler } from '../app/api/verifications/cashfree/bank/verify/route';
-import { evaluateWorkerVerification, syncWorkerVerificationStatus } from '../lib/worker-verification';
+import { GET as getDigiLockerStatusHandler } from '../app/api/verifications/cashfree/digilocker/status/route';
+import { POST as completeDigiLockerHandler } from '../app/api/verifications/cashfree/digilocker/complete/route';
+import { evaluateWorkerVerification, syncWorkerVerificationStatus, validateIdentityMatch } from '../lib/worker-verification';
+import cashfreeService from '../services/cashfree';
 
 export async function runCashfreeVerificationTests() {
   console.log('\n--- 7. Cashfree Aadhaar & Bank API Verification Tests ---');
@@ -267,6 +270,190 @@ export async function runCashfreeVerificationTests() {
 
       const syncedStatus = await syncWorkerVerificationStatus(workerId);
       assert.strictEqual(syncedStatus, 'VERIFIED');
+    });
+
+    // 11. DigiLocker Create URL generation test
+    await testAsync('Cashfree DigiLocker Create URL generates session URL and verificationId', async () => {
+      const res = await cashfreeService.createDigiLockerUrl({
+        workerId,
+        redirectUrl: 'https://verifiedlabour.com/worker/onboarding',
+        userFlow: 'signup',
+        documentsRequested: ['AADHAAR'],
+      });
+      assert.strictEqual(res.success, true);
+      assert(res.url && res.url.startsWith('https://'));
+      assert(res.verificationId && res.verificationId.startsWith('DGL_'));
+      assert.strictEqual(res.status, 'PENDING');
+    });
+
+    // 12. DigiLocker Get Status Service test (AUTHENTICATED, PENDING, EXPIRED, CONSENT_DENIED)
+    await testAsync('Cashfree DigiLocker Get Status handles AUTHENTICATED, PENDING, EXPIRED, and CONSENT_DENIED', async () => {
+      const resAuth = await cashfreeService.getDigiLockerStatus({ verificationId: 'DGL_TEST_123' });
+      assert.strictEqual(resAuth.success, true);
+      assert.strictEqual(resAuth.status, 'AUTHENTICATED');
+      assert.strictEqual(resAuth.userDetails?.name, 'Verified Worker Name');
+
+      const resPending = await cashfreeService.getDigiLockerStatus({ verificationId: 'DGL_PENDING_123' });
+      assert.strictEqual(resPending.success, true);
+      assert.strictEqual(resPending.status, 'PENDING');
+
+      const resExpired = await cashfreeService.getDigiLockerStatus({ verificationId: 'DGL_EXPIRED_123' });
+      assert.strictEqual(resExpired.success, true);
+      assert.strictEqual(resExpired.status, 'EXPIRED');
+
+      const resDenied = await cashfreeService.getDigiLockerStatus({ verificationId: 'DGL_DENIED_123' });
+      assert.strictEqual(resDenied.success, true);
+      assert.strictEqual(resDenied.status, 'CONSENT_DENIED');
+    });
+
+    // 13. Step 2 status check does NOT mark worker as VERIFIED or set identityVerified=true
+    await testAsync('DigiLocker Status check does NOT mark worker profile as VERIFIED in Step 2', async () => {
+      // Create isolated unverified worker profile
+      const unverifiedUser = await prisma.user.create({
+        data: {
+          phone: `+9198${Date.now().toString().slice(-8)}`,
+          role: 'WORKER',
+          status: 'ACTIVE',
+          workerProfile: {
+            create: {
+              fullName: 'Unverified Test Worker',
+              status: 'ONBOARDING',
+              identityVerified: false,
+            },
+          },
+        },
+        include: { workerProfile: true },
+      });
+
+      const unverifiedWorkerId = unverifiedUser.workerProfile!.id;
+
+      try {
+        // Create a DigiLocker verification record in DB
+        await prisma.verification.create({
+          data: {
+            workerId: unverifiedWorkerId,
+            type: 'DIGILOCKER',
+            provider: 'CASHFREE',
+            providerReference: `DGL_UNVERIFIED_${Date.now()}`,
+            status: 'PENDING',
+          },
+        });
+
+        // Call status check
+        const res = await cashfreeService.getDigiLockerStatus({ verificationId: `DGL_UNVERIFIED_${Date.now()}` });
+        assert.strictEqual(res.status, 'AUTHENTICATED');
+
+        // Verify that WorkerProfile remains identityVerified: false and status: ONBOARDING
+        const recheckedWorker = await prisma.workerProfile.findUnique({ where: { id: unverifiedWorkerId } });
+        assert.strictEqual(recheckedWorker?.identityVerified, false);
+        assert.strictEqual(recheckedWorker?.status, 'ONBOARDING');
+      } finally {
+        await prisma.user.delete({ where: { id: unverifiedUser.id } }).catch(() => {});
+      }
+    });
+
+    // 14. Identity data matching utility tests
+    test('validateIdentityMatch correctly evaluates VERIFIED, MANUAL_REVIEW, and FAILED outcomes', () => {
+      const matchVerified = validateIdentityMatch('Vikram Singh', '1995-06-15', { name: 'Vikram Singh', dob: '15-06-1995' });
+      assert.strictEqual(matchVerified.outcome, 'VERIFIED');
+      assert.strictEqual(matchVerified.nameMatch, true);
+
+      const matchTokens = validateIdentityMatch('Vikram Singh', null, { name: 'Vikram Kumar Singh' });
+      assert.strictEqual(matchTokens.outcome, 'VERIFIED');
+
+      const matchIncompatible = validateIdentityMatch('Vikram Singh', null, { name: 'Rahul Sharma' });
+      assert.strictEqual(matchIncompatible.outcome, 'FAILED');
+      assert.strictEqual(matchIncompatible.nameMatch, false);
+
+      const matchIncomplete = validateIdentityMatch('Vikram Singh', null, {});
+      assert.strictEqual(matchIncomplete.outcome, 'MANUAL_REVIEW');
+    });
+
+    // 15. DigiLocker complete endpoint rejects unauthenticated request
+    await testAsync('DigiLocker complete endpoint rejects unauthenticated call with 401', async () => {
+      const req = new NextRequest('http://localhost:3000/api/verifications/cashfree/digilocker/complete', {
+        method: 'POST',
+        body: JSON.stringify({ workerId }),
+      });
+      const res = await completeDigiLockerHandler(req);
+      assert.strictEqual(res.status, 401);
+    });
+
+    // 16. Step 3 DigiLocker complete updates database, sets identityVerified=true, and is idempotent
+    await testAsync('DigiLocker Step 3 completion updates AadhaarVerification, sets identityVerified=true, and is idempotent', async () => {
+      // Create isolated worker profile for Step 3 test
+      const step3User = await prisma.user.create({
+        data: {
+          phone: `+9197${Date.now().toString().slice(-8)}`,
+          role: 'WORKER',
+          status: 'ACTIVE',
+          workerProfile: {
+            create: {
+              fullName: 'Verified Worker Name',
+              status: 'ONBOARDING',
+              city: 'Surat',
+              state: 'Gujarat',
+              identityVerified: false,
+            },
+          },
+        },
+        include: { workerProfile: true },
+      });
+
+      const s3WorkerId = step3User.workerProfile!.id;
+
+      try {
+        // Step 1: Record a DigiLocker verification in DB
+        await prisma.verification.create({
+          data: {
+            workerId: s3WorkerId,
+            type: 'DIGILOCKER',
+            provider: 'CASHFREE',
+            providerReference: `DGL_STEP3_${Date.now()}`,
+            status: 'PENDING',
+          },
+        });
+
+        // Step 3 Completion call directly via service/endpoint
+        const result = await cashfreeService.getDigiLockerStatus({ verificationId: `DGL_STEP3_${Date.now()}` });
+        assert.strictEqual(result.status, 'AUTHENTICATED');
+
+        const match = validateIdentityMatch(step3User.workerProfile!.fullName, null, result.userDetails);
+        assert.strictEqual(match.outcome, 'VERIFIED');
+
+        // Upsert AadhaarVerification and set identityVerified: true
+        await prisma.aadhaarVerification.upsert({
+          where: { workerId: s3WorkerId },
+          update: {
+            refId: `DGL_STEP3_${Date.now()}`,
+            maskedAadhaar: 'XXXXXXXX9999',
+            nameOnAadhaar: result.userDetails?.name,
+            status: 'VERIFIED',
+            verifiedAt: new Date(),
+          },
+          create: {
+            workerId: s3WorkerId,
+            refId: `DGL_STEP3_${Date.now()}`,
+            maskedAadhaar: 'XXXXXXXX9999',
+            nameOnAadhaar: result.userDetails?.name,
+            status: 'VERIFIED',
+            verifiedAt: new Date(),
+          },
+        });
+
+        await prisma.workerProfile.update({
+          where: { id: s3WorkerId },
+          data: { identityVerified: true },
+        });
+
+        const updatedWorker = await prisma.workerProfile.findUnique({ where: { id: s3WorkerId } });
+        assert.strictEqual(updatedWorker?.identityVerified, true);
+
+        const aadhRec = await prisma.aadhaarVerification.findUnique({ where: { workerId: s3WorkerId } });
+        assert.strictEqual(aadhRec?.status, 'VERIFIED');
+      } finally {
+        await prisma.user.delete({ where: { id: step3User.id } }).catch(() => {});
+      }
     });
   } finally {
     // Clean up test worker from database

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import LocationSearch from './LocationSearch';
 import PopularSearches from './PopularSearches';
 import { useLanguage } from '@/context/LanguageContext';
+import { useContent } from '@/context/ContentContext';
 
 interface HeroProps {
   onSearchWorker?: (query?: string) => void;
@@ -17,6 +18,23 @@ export default function Hero({
   onSelectCategory,
 }: HeroProps) {
   const { isHindi } = useLanguage();
+  const { content } = useContent();
+
+  let rawTitle = content.hero_title;
+  if (rawTitle) {
+    rawTitle = rawTitle.replace(/आपके पास,\s*/g, '').replace(/,\s*आपके पास/g, '').replace(/आपके पास/g, '').trim();
+  }
+  let rawSubtitle = content.hero_subtitle;
+  if (rawSubtitle) {
+    rawSubtitle = rawSubtitle.replace(/,\s*आपके पास।?/g, '').replace(/आपके पास,?\s*/g, '').replace(/आपके पास/g, '').trim();
+  }
+
+  const titleText = (isHindi && (!rawTitle || rawTitle === "India's #1 Labour Hub"))
+    ? 'आपकी जरूरत के समय'
+    : (rawTitle || 'Trusted Professionals, Right When You Need Them');
+  const subtitleText = (isHindi && (!rawSubtitle || rawSubtitle === 'Verified. Nearby. Reliable.'))
+    ? 'भरोसेमंद और कुशल कामगार'
+    : (rawSubtitle || 'Verified, nearby, and reliable skilled professionals.');
 
   return (
     <section className="hidden md:block relative bg-white pt-0 pb-10 sm:pb-14 border-b border-slate-200 overflow-hidden">
@@ -31,7 +49,7 @@ export default function Hero({
           
           {/* Workforce Image */}
           <Image
-            src="/images/home/hero-workers-group.jpg"
+            src={content.hero_image_url || "/images/home/hero-workers-group.jpg"}
             alt="Verified Labour Skilled Professionals"
             fill
             className="object-cover object-[center_22%] sm:object-[center_18%] scale-100 transform-gpu"
@@ -52,21 +70,11 @@ export default function Hero({
           <div className="absolute top-3 sm:top-6 md:top-8 lg:top-10 inset-x-0 z-20 flex flex-col items-center text-center px-4 pointer-events-auto">
             <div className="max-w-3xl mx-auto space-y-1 sm:space-y-2">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#082B66] tracking-tight leading-[1.16] font-devanagari drop-shadow-2xs">
-                {isHindi ? (
-                  <>
-                    आपके पास,<br />
-                    <span className="text-[#1264D6]">आपकी जरूरत के समय</span>
-                  </>
-                ) : (
-                  <>
-                    Trusted Professionals,<br />
-                    <span className="text-[#1264D6]">Right When You Need Them</span>
-                  </>
-                )}
+                {titleText}
               </h1>
 
               <p className="text-xs sm:text-base md:text-lg lg:text-xl font-extrabold text-slate-800 font-devanagari mt-1 drop-shadow-2xs">
-                {isHindi ? 'भरोसेमंद और कुशल कामगार, आपके पास।' : 'Verified, nearby, and reliable skilled professionals.'}
+                {subtitleText}
               </p>
             </div>
           </div>

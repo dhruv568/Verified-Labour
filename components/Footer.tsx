@@ -24,6 +24,7 @@ import {
 import Logo from '@/components/Logo';
 import { useContent } from '@/context/ContentContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function Footer() {
   const { content } = useContent();
@@ -257,14 +258,17 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar matching Reference */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3 font-medium text-center sm:text-left">
+        <div className="pt-6 flex flex-col lg:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-medium text-center lg:text-left">
           <p>© 2026 Verified Labour. All rights reserved.</p>
-          <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-xl">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-tight">
-              Parent Company
+              Parent Company & Registered Office
             </span>
             <span className="text-xs sm:text-sm font-extrabold text-slate-700 tracking-tight leading-snug">
-              Shrivastava ProFunnels Ventures Pvt Ltd
+              {COMPANY_NAME}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">
+              Registered Office: {COMPANY_REGISTERED_ADDRESS}
             </span>
           </div>
           <p>

@@ -26,9 +26,13 @@ export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchPublicTestimonials = React.useCallback(() => {
     let isMounted = true;
-    fetchWithTimeout('/api/testimonials', { timeoutMs: 3500 })
+    fetchWithTimeout(`/api/testimonials?t=${Date.now()}`, {
+      timeoutMs: 3500,
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && Array.isArray(data.testimonials)) {
@@ -36,7 +40,7 @@ export default function TestimonialsSection() {
           setTestimonials(activeOnly);
         }
       })
-      .catch((err) => {
+      .catch(() => {
         // Graceful error handle - will finish loading without crash
       })
       .finally(() => {
@@ -47,6 +51,27 @@ export default function TestimonialsSection() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const cleanup = fetchPublicTestimonials();
+
+    const handleUpdate = () => {
+      fetchPublicTestimonials();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('testimonials-updated', handleUpdate);
+      window.addEventListener('site-content-updated', handleUpdate);
+    }
+
+    return () => {
+      cleanup();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('testimonials-updated', handleUpdate);
+        window.removeEventListener('site-content-updated', handleUpdate);
+      }
+    };
+  }, [fetchPublicTestimonials]);
 
   if (!loading && testimonials.length === 0) {
     return null; // Cleanly hide entire section if 0 active testimonials

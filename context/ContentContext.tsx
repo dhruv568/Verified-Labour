@@ -22,7 +22,11 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
 
   const refreshContent = React.useCallback(async () => {
     try {
-      const res = await fetchWithTimeout('/api/content', { timeoutMs: 3000 });
+      const res = await fetchWithTimeout(`/api/content?t=${Date.now()}`, {
+        timeoutMs: 3000,
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.content) {
@@ -38,6 +42,20 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshContent();
+
+    const handleUpdate = () => {
+      refreshContent();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('site-content-updated', handleUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('site-content-updated', handleUpdate);
+      }
+    };
   }, [refreshContent]);
 
   const value = React.useMemo(
@@ -55,3 +73,4 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
 export function useContent() {
   return useContext(ContentContext);
 }
+

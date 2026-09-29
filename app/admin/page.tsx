@@ -105,6 +105,7 @@ export default function AdminPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [allServices, setAllServices] = useState<any[]>([]);
   const [disputes, setDisputes] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, string>>({});
@@ -132,9 +133,24 @@ export default function AdminPage() {
   const [contentSubTab, setContentSubTab] = useState<'hero' | 'about' | 'testimonials' | 'contact' | 'footer' | 'announcement'>('hero');
   const [savingContent, setSavingContent] = useState(false);
 
-  // Add Category Form State
+  // Category Management Form State
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
+  const [newCatNameHi, setNewCatNameHi] = useState('');
   const [newCatSlug, setNewCatSlug] = useState('');
+  const [newCatSortOrder, setNewCatSortOrder] = useState<number>(0);
+  const [newCatIsActive, setNewCatIsActive] = useState<boolean>(true);
+
+  // Service Management Form State
+  const [editingSvcId, setEditingSvcId] = useState<string | null>(null);
+  const [svcCatId, setSvcCatId] = useState<string>('');
+  const [svcName, setSvcName] = useState('');
+  const [svcNameHi, setSvcNameHi] = useState('');
+  const [svcSlug, setSvcSlug] = useState('');
+  const [svcBasePrice, setSvcBasePrice] = useState<number | ''>(350);
+  const [svcPriceUnit, setSvcPriceUnit] = useState('per job');
+  const [svcIsActive, setSvcIsActive] = useState<boolean>(true);
+  const [svcFilterCat, setSvcFilterCat] = useState<string>('ALL');
 
   // 1. Initial Session Check
   const checkSession = async () => {
@@ -210,25 +226,27 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     setLoadingData(true);
     try {
-      const [mRes, uRes, wRes, jRes, pRes, cRes, dRes, aRes, cntRes] = await Promise.all([
+      const [mRes, uRes, wRes, jRes, pRes, cRes, sRes, dRes, aRes, cntRes] = await Promise.all([
         fetch('/api/admin/metrics'),
         fetch('/api/admin/users'),
         fetch('/api/admin/workers'),
         fetch('/api/admin/jobs'),
         fetch('/api/admin/payments'),
         fetch('/api/admin/categories'),
+        fetch('/api/admin/services'),
         fetch('/api/admin/disputes'),
         fetch('/api/admin/audit-logs'),
         fetch('/api/admin/content'),
       ]);
 
-      const [mData, uData, wData, jData, pData, cData, dData, aData, cntData] = await Promise.all([
+      const [mData, uData, wData, jData, pData, cData, sData, dData, aData, cntData] = await Promise.all([
         mRes.json(),
         uRes.json(),
         wRes.json(),
         jRes.json(),
         pRes.json(),
         cRes.json(),
+        sRes.json(),
         dRes.json(),
         aRes.json(),
         cntRes.json(),
@@ -240,6 +258,7 @@ export default function AdminPage() {
       if (jData.success) setJobs(jData.jobs || []);
       if (pData.success) setPayments(pData.payments || []);
       if (cData.success) setCategories(cData.categories || []);
+      if (sData.success) setAllServices(sData.services || []);
       if (dData.success) setDisputes(dData.disputes || []);
       if (aData.success) setAuditLogs(aData.logs || []);
       if (cntData.success && cntData.content) {
@@ -450,6 +469,9 @@ export default function AdminPage() {
       }
 
       setSiteContent(data.content);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
       setActionMessage({
         type: 'success',
         msg: 'Website content updated! Changes appear on public website immediately.',
@@ -499,8 +521,8 @@ export default function AdminPage() {
     }
   };
 
-  // Add Category
-  const handleAddCategory = async (e: React.FormEvent) => {
+  // Handle Category Add / Update
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
 
@@ -509,20 +531,142 @@ export default function AdminPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newCatName,
-          slug: newCatSlug.trim().toLowerCase().replace(/\s+/g, '-') || newCatName.toLowerCase().replace(/\s+/g, '-'),
+          id: editingCatId || undefined,
+          name: newCatName.trim(),
+          nameHi: newCatNameHi.trim() || undefined,
+          slug: newCatSlug.trim().toLowerCase().replace(/\s+/g, '-') || newCatName.trim().toLowerCase().replace(/\s+/g, '-'),
+          sortOrder: newCatSortOrder,
+          isActive: newCatIsActive,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        alert(data.error || 'Failed to create category');
+        setActionMessage({ type: 'error', msg: data.error || 'Failed to save category' });
         return;
       }
+      setEditingCatId(null);
       setNewCatName('');
+      setNewCatNameHi('');
       setNewCatSlug('');
+      setNewCatSortOrder(0);
+      setNewCatIsActive(true);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('categories-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
+      setActionMessage({
+        type: 'success',
+        msg: editingCatId ? `Category "${data.category?.name}" updated!` : `Category "${data.category?.name}" created!`,
+      });
       fetchAdminData();
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      setActionMessage({ type: 'error', msg: err.message });
+    }
+  };
+
+  // Toggle Category Active State (Deactivate / Reactivate)
+  const handleToggleCategoryActive = async (catId: string, currentActive: boolean) => {
+    try {
+      const res = await fetch('/api/admin/categories', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: catId, isActive: !currentActive }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionMessage({ type: 'error', msg: data.error || 'Failed to toggle category state' });
+        return;
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('categories-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
+      setActionMessage({
+        type: 'success',
+        msg: `Category ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+      });
+      fetchAdminData();
+    } catch (err: any) {
+      setActionMessage({ type: 'error', msg: err.message });
+    }
+  };
+
+  // Handle Service Add / Update
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!svcCatId || !svcName.trim()) {
+      setActionMessage({ type: 'error', msg: 'Please select a Category and enter a Service Name' });
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingSvcId || undefined,
+          categoryId: svcCatId,
+          name: svcName.trim(),
+          nameHi: svcNameHi.trim() || undefined,
+          slug: svcSlug.trim() || undefined,
+          basePrice: typeof svcBasePrice === 'number' ? svcBasePrice : 300,
+          priceUnit: svcPriceUnit || 'per job',
+          isActive: svcIsActive,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionMessage({ type: 'error', msg: data.error || 'Failed to save service' });
+        return;
+      }
+
+      setEditingSvcId(null);
+      setSvcName('');
+      setSvcNameHi('');
+      setSvcSlug('');
+      setSvcBasePrice(350);
+      setSvcPriceUnit('per job');
+      setSvcIsActive(true);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('categories-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
+      setActionMessage({
+        type: 'success',
+        msg: editingSvcId ? `Service "${data.service?.name}" updated!` : `Service "${data.service?.name}" created!`,
+      });
+      fetchAdminData();
+    } catch (err: any) {
+      setActionMessage({ type: 'error', msg: err.message });
+    }
+  };
+
+  // Toggle Service Active State (Deactivate / Reactivate)
+  const handleToggleServiceActive = async (svcId: string, currentActive: boolean) => {
+    try {
+      const res = await fetch('/api/admin/services', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: svcId, isActive: !currentActive }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionMessage({ type: 'error', msg: data.error || 'Failed to toggle service state' });
+        return;
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('categories-updated'));
+        window.dispatchEvent(new Event('site-content-updated'));
+      }
+      setActionMessage({
+        type: 'success',
+        msg: `Service ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+      });
+      fetchAdminData();
+    } catch (err: any) {
+      setActionMessage({ type: 'error', msg: err.message });
     }
   };
 
@@ -1737,47 +1881,386 @@ export default function AdminPage() {
             <TestimonialsAdmin />
           )}
 
-          {/* TAB 7: CATEGORIES */}
+          {/* TAB 7: CATEGORIES & SERVICES MANAGEMENT (SINGLE SOURCE OF TRUTH) */}
           {activeTab === 'categories' && (
             <div className="space-y-6">
-              <Card variant="default" padding="lg">
-                <h3 className="font-black text-slate-900 text-base mb-3">Add Service Category</h3>
-                <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Category Name"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    className="px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Slug"
-                    value={newCatSlug}
-                    onChange={(e) => setNewCatSlug(e.target.value)}
-                    className="px-3.5 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
-                  />
-                  <Button type="submit" variant="brand" size="md" icon={<Plus className="w-4 h-4" />}>
-                    Add Category
-                  </Button>
+              {/* SECTION 1: CATEGORIES MANAGEMENT */}
+              <Card variant="default" padding="lg" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div>
+                    <h3 className="font-black text-slate-900 text-base">
+                      {editingCatId ? 'Edit Service Category' : 'Add Service Category'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Top-level trade categories (e.g. Electrical, Plumbing, Construction).
+                    </p>
+                  </div>
+                  {editingCatId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingCatId(null);
+                        setNewCatName('');
+                        setNewCatNameHi('');
+                        setNewCatSlug('');
+                        setNewCatSortOrder(0);
+                        setNewCatIsActive(true);
+                      }}
+                      className="text-xs text-red-600 font-bold hover:underline"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
+
+                <form onSubmit={handleSaveCategory} className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Category Name (EN) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Solar Tech"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Hindi Name (HI)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. सोलर तकनीशियन"
+                      value={newCatNameHi}
+                      onChange={(e) => setNewCatNameHi(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-devanagari"
+                    />
+                  </div>
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Slug</label>
+                    <input
+                      type="text"
+                      placeholder="solar-tech"
+                      value={newCatSlug}
+                      onChange={(e) => setNewCatSlug(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
+                    />
+                  </div>
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Sort Order</label>
+                    <input
+                      type="number"
+                      value={newCatSortOrder}
+                      onChange={(e) => setNewCatSortOrder(parseInt(e.target.value, 10) || 0)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
+                    />
+                  </div>
+                  <div className="sm:col-span-1 flex items-end">
+                    <Button type="submit" variant="brand" size="md" className="w-full justify-center" icon={<Plus className="w-4 h-4" />}>
+                      {editingCatId ? 'Update Category' : 'Add Category'}
+                    </Button>
+                  </div>
                 </form>
               </Card>
 
-              <Card variant="default" padding="lg">
-                <h3 className="font-black text-slate-900 text-base mb-4">
-                  Active Marketplace Categories ({categories.length})
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {/* CATEGORIES GRID */}
+              <Card variant="default" padding="lg" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h3 className="font-black text-slate-900 text-base">
+                    Marketplace Categories ({categories.length})
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">Source of truth for all public categories</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                   {categories.map((c) => (
-                    <div key={c.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-                      <span className="font-bold text-slate-900 text-sm block">{c.name}</span>
-                      <span className="text-[11px] font-mono text-slate-400">slug: {c.slug}</span>
-                      <span className="block text-[11px] text-slate-500 mt-1">
-                        {c.services?.length || 0} sub-services configured
-                      </span>
+                    <div
+                      key={c.id}
+                      className={`p-4 rounded-2xl border text-xs space-y-2 flex flex-col justify-between transition-all ${
+                        c.isActive ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-100 border-slate-300 opacity-70'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-slate-900 text-sm block">{c.name}</span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              c.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {c.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        {c.nameHi && (
+                          <span className="block text-xs font-medium text-slate-600 font-devanagari">
+                            {c.nameHi}
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                          <span>slug: {c.slug}</span>
+                          <span>Order: {c.sortOrder}</span>
+                        </div>
+                        <span className="block text-[11px] font-bold text-brand-700">
+                          {c.services?.length || 0} sub-services configured
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCatId(c.id);
+                            setNewCatName(c.name);
+                            setNewCatNameHi(c.nameHi || '');
+                            setNewCatSlug(c.slug);
+                            setNewCatSortOrder(c.sortOrder || 0);
+                            setNewCatIsActive(c.isActive);
+                          }}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCategoryActive(c.id, c.isActive)}
+                          className={`px-2.5 py-1 font-bold rounded-lg text-[11px] transition-colors ${
+                            c.isActive
+                              ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {c.isActive ? 'Deactivate' : 'Reactivate'}
+                        </button>
+                      </div>
                     </div>
                   ))}
+                </div>
+              </Card>
+
+              {/* SECTION 2: SERVICES MANAGEMENT (SUB-SERVICES SOURCE OF TRUTH) */}
+              <Card variant="default" padding="lg" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div>
+                    <h3 className="font-black text-slate-900 text-base">
+                      {editingSvcId ? 'Edit Specific Service' : 'Add New Specific Service'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Specific work/services selected by customers in "Main Category" dropdowns (e.g. Fan Fitting, AC Repair, RO Technician).
+                    </p>
+                  </div>
+                  {editingSvcId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingSvcId(null);
+                        setSvcName('');
+                        setSvcNameHi('');
+                        setSvcSlug('');
+                        setSvcBasePrice(350);
+                        setSvcPriceUnit('per job');
+                        setSvcIsActive(true);
+                      }}
+                      className="text-xs text-red-600 font-bold hover:underline"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
+
+                <form onSubmit={handleSaveService} className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Main Category *</label>
+                    <select
+                      required
+                      value={svcCatId}
+                      onChange={(e) => setSvcCatId(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none bg-white font-bold"
+                    >
+                      <option value="">Select Main Category...</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nameHi ? `${c.name} (${c.nameHi})` : c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Service Name (EN) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. RO Water Purifier Repair"
+                      value={svcName}
+                      onChange={(e) => setSvcName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Hindi Name (HI)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. आर.ओ. वॉटर प्यूरीफायर रिपेयर"
+                      value={svcNameHi}
+                      onChange={(e) => setSvcNameHi(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-devanagari"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Service Slug</label>
+                    <input
+                      type="text"
+                      placeholder="ro-purifier-repair"
+                      value={svcSlug}
+                      onChange={(e) => setSvcSlug(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Base Price (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      placeholder="350"
+                      value={svcBasePrice}
+                      onChange={(e) => setSvcBasePrice(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Price Unit</label>
+                    <select
+                      value={svcPriceUnit}
+                      onChange={(e) => setSvcPriceUnit(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 outline-none bg-white"
+                    >
+                      <option value="per job">per job</option>
+                      <option value="per visit">per visit</option>
+                      <option value="per day">per day</option>
+                      <option value="per hour">per hour</option>
+                      <option value="per item">per item</option>
+                      <option value="per sq ft">per sq ft</option>
+                      <option value="per month">per month</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-1 flex items-end">
+                    <Button type="submit" variant="brand" size="md" className="w-full justify-center" icon={<Plus className="w-4 h-4" />}>
+                      {editingSvcId ? 'Update Service' : 'Add Service'}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+
+              {/* SERVICES LIST TABLE */}
+              <Card variant="default" padding="none" className="overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-black text-slate-900 text-base">
+                      Configured Services ({allServices.length})
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Services automatically load into Customer Request Worker dropdown & Worker Skills.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600">Filter Category:</span>
+                    <select
+                      value={svcFilterCat}
+                      onChange={(e) => setSvcFilterCat(e.target.value)}
+                      className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 outline-none bg-white font-bold"
+                    >
+                      <option value="ALL">All Categories ({allServices.length} Services)</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Service Name</th>
+                        <th className="py-3 px-4">Main Category</th>
+                        <th className="py-3 px-4">Slug</th>
+                        <th className="py-3 px-4">Base Price</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {allServices
+                        .filter((s) => svcFilterCat === 'ALL' || s.categoryId === svcFilterCat)
+                        .map((s) => (
+                          <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-4 font-bold text-slate-900">
+                              <span>{s.name}</span>
+                              {s.nameHi && (
+                                <span className="block text-xs font-normal text-slate-500 font-devanagari">
+                                  {s.nameHi}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="px-2.5 py-1 bg-blue-50 text-blue-800 rounded-lg font-bold text-[11px]">
+                                {s.category?.name || 'Unassigned'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-slate-500">{s.slug}</td>
+                            <td className="py-3 px-4 font-bold text-slate-900 font-mono">
+                              ₹{s.basePrice} <span className="text-[10px] text-slate-500 font-sans">{s.priceUnit}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  s.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {s.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingSvcId(s.id);
+                                  setSvcCatId(s.categoryId);
+                                  setSvcName(s.name);
+                                  setSvcNameHi(s.nameHi || '');
+                                  setSvcSlug(s.slug);
+                                  setSvcBasePrice(s.basePrice);
+                                  setSvcPriceUnit(s.priceUnit || 'per job');
+                                  setSvcIsActive(s.isActive);
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[11px] transition-colors"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleServiceActive(s.id, s.isActive)}
+                                className={`px-2.5 py-1 font-bold rounded-lg text-[11px] transition-colors ${
+                                  s.isActive
+                                    ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                }`}
+                              >
+                                {s.isActive ? 'Deactivate' : 'Reactivate'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               </Card>
             </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 
 export default function TermsPage() {
   return (
@@ -35,6 +36,18 @@ export default function TermsPage() {
               All online bookings must be settled via the integrated Cashfree Payments gateway upon completion
               of work. Verified Labour charges a transparent platform facilitation fee (10% standard commission).
             </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-bold text-slate-900">4. Legal Contracting Entity & Registered Office</h2>
+            <p>
+              This platform is owned and operated by:
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-slate-900">{COMPANY_NAME}</p>
+              <p className="text-slate-700">Registered Office: {COMPANY_REGISTERED_ADDRESS}</p>
+              <p className="text-slate-600 font-medium">Contact Email: help@verifiedlabour.com | Phone: +91 9109019090</p>
+            </div>
           </section>
         </div>
       </main>

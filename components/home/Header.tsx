@@ -14,6 +14,7 @@ import LocationSelector from '@/components/LocationSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import Logo from '@/components/Logo';
 import { useLanguage } from '@/context/LanguageContext';
+import { useContent } from '@/context/ContentContext';
 
 import { fetchWithTimeout } from '@/lib/fetch-utils';
 
@@ -28,6 +29,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { content } = useContent();
   const [sessionUser, setSessionUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -94,6 +96,11 @@ export default function Header({ onOpenAuth }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+      {content.announcement_enabled === 'true' && content.announcement_text && (
+        <div className="bg-gradient-to-r from-[#082B66] via-[#1264D6] to-[#082B66] text-white py-2 px-4 text-center text-xs font-bold flex items-center justify-center gap-2 border-b border-blue-900 shadow-inner">
+          <span>{content.announcement_text}</span>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 lg:h-22 gap-4 lg:gap-6">
           {/* Left: Transparent Verified Labour Logo */}

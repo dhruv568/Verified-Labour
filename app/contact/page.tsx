@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { useContent } from '@/context/ContentContext';
+import { COMPANY_NAME, COMPANY_REGISTERED_ADDRESS } from '@/lib/company-info';
 import { Mail, Phone, MapPin, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function ContactPage() {
@@ -130,11 +131,11 @@ export default function ContactPage() {
                   <MapPin className="w-5 h-5 text-[#1264D6] shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-slate-500 block text-[11px] uppercase">
-                      Corporate Address / कॉर्पोरेट पता
+                      Registered Office / पंजीकृत कार्यालय
                     </span>
-                    <span className="font-semibold text-slate-800">
-                      Shrivastava ProFunnels Ventures Pvt Ltd<br />
-                      Surat, Gujarat, India - 395007
+                    <span className="font-semibold text-slate-800 leading-relaxed block">
+                      <strong className="block text-slate-900">{COMPANY_NAME}</strong>
+                      Registered Office: {COMPANY_REGISTERED_ADDRESS}
                     </span>
                   </div>
                 </div>
