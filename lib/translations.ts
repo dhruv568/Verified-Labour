@@ -10,7 +10,7 @@ export const translations = {
     brandName: 'वेरिफाइड लेबर',
     tagline: 'काम चाहिए? कामगार चाहिए? दोनों एक जगह।',
     verifiedNearbyOnDemand: '✓ सत्यापित • पास में • ऑन-डिमांड',
-    heroTitle: 'आपकी जरूरत के समय',
+    heroTitle: 'आपकी जरूरत के समय कुशल लोग',
     heroSubtitle: 'भरोसेमंद और कुशल कामगार',
     heroDescription:
       'इलेक्ट्रीशियन से लेकर कुक तक, केयरटेकर से लेकर ऑफिस बॉय तक — अपने पास के सत्यापित कामगार खोजें।',
@@ -74,8 +74,8 @@ export const translations = {
     brandName: 'Verified Labour',
     tagline: 'Need work? Need workers? Both in one place.',
     verifiedNearbyOnDemand: '✓ VERIFIED • NEARBY • ON-DEMAND',
-    heroTitle: 'Trusted Professionals Right When You Need Them',
-    heroSubtitle: 'Verified and skilled professionals near you.',
+    heroTitle: 'Skilled People When You Need Them',
+    heroSubtitle: 'Verified. Nearby. Reliable.',
     heroDescription:
       'From electricians to cooks, from house caretakers to office boys — find verified workers near you instantly.',
     home: 'Home',

@@ -17,7 +17,7 @@ export default function Hero({
   onSearchWorker,
   onSelectCategory,
 }: HeroProps) {
-  const { isHindi } = useLanguage();
+  const { isHindi, t } = useLanguage();
   const { content } = useContent();
 
   let rawTitle = content.hero_title;
@@ -29,12 +29,27 @@ export default function Hero({
     rawSubtitle = rawSubtitle.replace(/,\s*आपके पास।?/g, '').replace(/आपके पास,?\s*/g, '').replace(/आपके पास/g, '').trim();
   }
 
-  const titleText = (isHindi && (!rawTitle || rawTitle === "India's #1 Labour Hub"))
-    ? 'आपकी जरूरत के समय'
-    : (rawTitle || 'Trusted Professionals, Right When You Need Them');
-  const subtitleText = (isHindi && (!rawSubtitle || rawSubtitle === 'Verified. Nearby. Reliable.'))
-    ? 'भरोसेमंद और कुशल कामगार'
-    : (rawSubtitle || 'Verified, nearby, and reliable skilled professionals.');
+  const isDefaultOrLegacyTitle =
+    !rawTitle ||
+    rawTitle === "India's #1 Labour Hub" ||
+    rawTitle === "Trusted Professionals, Right When You Need Them" ||
+    rawTitle === "आपकी जरूरत के समय" ||
+    rawTitle === "आपकी जरूरत के समय कुशल लोग" ||
+    rawTitle === "Skilled People When You Need Them";
+
+  const isDefaultOrLegacySubtitle =
+    !rawSubtitle ||
+    rawSubtitle === "Verified. Nearby. Reliable." ||
+    rawSubtitle === "Verified, nearby, and reliable skilled professionals." ||
+    rawSubtitle === "भरोसेमंद और कुशल कामगार";
+
+  const titleText = isHindi
+    ? t.heroTitle
+    : (isDefaultOrLegacyTitle ? t.heroTitle : rawTitle);
+
+  const subtitleText = isHindi
+    ? t.heroSubtitle
+    : (isDefaultOrLegacySubtitle ? (rawSubtitle || t.heroSubtitle) : rawSubtitle);
 
   return (
     <section className="hidden md:block relative bg-white pt-0 pb-10 sm:pb-14 border-b border-slate-200 overflow-hidden">

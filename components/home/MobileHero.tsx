@@ -12,16 +12,43 @@ interface MobileHeroProps {
 }
 
 export default function MobileHero({ onSearchWorker }: MobileHeroProps) {
-  const { isHindi } = useLanguage();
+  const { isHindi, t } = useLanguage();
   const { content: siteContent } = useContent();
   const [imgError, setImgError] = React.useState(false);
+
+  let rawTitle = siteContent.hero_title;
+  let rawSubtitle = siteContent.hero_subtitle;
+
+  const isDefaultOrLegacyTitle =
+    !rawTitle ||
+    rawTitle === "India's #1 Labour Hub" ||
+    rawTitle === "Trusted Workers For" ||
+    rawTitle === "Trusted Professionals, Right When You Need Them" ||
+    rawTitle === "आपकी जरूरत के समय" ||
+    rawTitle === "आपकी जरूरत के समय कुशल लोग" ||
+    rawTitle === "Skilled People When You Need Them";
+
+  const isDefaultOrLegacySubtitle =
+    !rawSubtitle ||
+    rawSubtitle === "Your Home & Business" ||
+    rawSubtitle === "Verified. Nearby. Reliable." ||
+    rawSubtitle === "Verified, nearby, and reliable skilled professionals." ||
+    rawSubtitle === "भरोसेमंद और कुशल कामगार";
+
+  const titleText = isHindi
+    ? t.heroTitle
+    : (isDefaultOrLegacyTitle ? t.heroTitle : rawTitle);
+
+  const subtitleText = isHindi
+    ? t.heroSubtitle
+    : (isDefaultOrLegacySubtitle ? (rawSubtitle || t.heroSubtitle) : rawSubtitle);
 
   // Dynamic Content Data Structure based on active language & siteContent
   const content = {
     brandTagline: isHindi ? '✓ काम के लिए भरोसेमंद लोग' : '✓ Trusted Skilled Workers',
     badgeText: isHindi ? 'सत्यापित कामगार' : 'Verified Workers',
-    headlineLine1: siteContent.hero_title || (isHindi ? 'आपके घर और व्यवसाय' : 'Trusted Workers For'),
-    headlineLine2: siteContent.hero_subtitle || (isHindi ? 'के लिए भरोसेमंद कामगार' : 'Your Home & Business'),
+    headlineLine1: titleText,
+    headlineLine2: subtitleText,
     supportingBullets: siteContent.hero_description || (isHindi
       ? 'सत्यापित • अनुभवी • भरोसेमंद'
       : 'Verified • Experienced • Reliable • Near You'),
