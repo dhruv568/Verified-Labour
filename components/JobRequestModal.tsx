@@ -17,6 +17,88 @@ interface JobRequestModalProps {
   onRequireAuth: () => void;
 }
 
+const TRADE_TO_CATEGORY_SLUG: Record<string, string> = {
+  electrician: 'electrical',
+  electrical: 'electrical',
+  plumber: 'plumbing',
+  plumbing: 'plumbing',
+  carpenter: 'carpenter',
+  painter: 'painting',
+  painting: 'painting',
+  cook: 'cook',
+  cleaner: 'cleaning',
+  cleaning: 'cleaning',
+  housekeeper: 'cleaning',
+  driver: 'driver',
+  mason: 'construction',
+  construction: 'construction',
+  mechanic: 'mechanic',
+  'ac technician': 'electrical',
+  'ac-technician': 'electrical',
+  'ac repair': 'electrical',
+  ac: 'electrical',
+  watchman: 'watchman',
+  'security guard': 'watchman',
+  caretaker: 'house-care-taker',
+  'office boy': 'office-boy',
+  washerman: 'washerman',
+};
+
+function findCategoryForWorker(w: WorkerData | null, catList: any[]): any | null {
+  if (!w || !catList || catList.length === 0) return null;
+
+  const pCat = w.primaryCategory;
+  const targetId = typeof pCat === 'object' ? (pCat as any)?.id : (w as any)?.primaryCategoryId || null;
+  const targetSlug = typeof pCat === 'object' ? pCat?.slug : (typeof pCat === 'string' ? pCat : null);
+  const targetName = typeof pCat === 'object' ? pCat?.name : (typeof pCat === 'string' ? pCat : null);
+
+  // 1. Direct ID match
+  if (targetId) {
+    const match = catList.find((c) => c.id === targetId);
+    if (match) return match;
+  }
+
+  // 2. Direct Slug match
+  if (targetSlug) {
+    const match = catList.find((c) => c.slug?.toLowerCase() === String(targetSlug).toLowerCase());
+    if (match) return match;
+  }
+
+  // 3. Direct Name match
+  if (targetName) {
+    const match = catList.find((c) => c.name?.toLowerCase() === String(targetName).toLowerCase());
+    if (match) return match;
+  }
+
+  // 4. Trade alias lookup (e.g. Electrician -> Electrical, AC Technician -> Electrical/AC)
+  const tradeTerm = (targetName || targetSlug || w.bio || '').toLowerCase();
+  for (const [trade, catSlug] of Object.entries(TRADE_TO_CATEGORY_SLUG)) {
+    if (tradeTerm.includes(trade)) {
+      const match = catList.find((c) => c.slug?.toLowerCase() === catSlug || c.name?.toLowerCase().includes(trade));
+      if (match) return match;
+    }
+  }
+
+  // 5. Skill category match
+  if (w.skills && Array.isArray(w.skills) && w.skills.length > 0) {
+    for (const skill of w.skills) {
+      const sCatId = skill.categoryId || skill.category?.id;
+      const sCatSlug = skill.category?.slug;
+      const sCatName = skill.category?.name;
+
+      const match = catList.find(
+        (c) =>
+          (sCatId && c.id === sCatId) ||
+          (sCatSlug && c.slug?.toLowerCase() === String(sCatSlug).toLowerCase()) ||
+          (sCatName && c.name?.toLowerCase() === String(sCatName).toLowerCase())
+      );
+      if (match) return match;
+    }
+  }
+
+  return null;
+}
+
 export default function JobRequestModal({
   isOpen,
   onClose,
@@ -112,33 +194,11 @@ export default function JobRequestModal({
 
       setAllServices(uniqueServices);
 
-      // Match worker category
-      let matchedCat: any = null;
-      if (worker) {
-        const pCat = worker.primaryCategory;
-        const targetSlug = typeof pCat === 'object' ? pCat?.slug : pCat;
-        const targetName = typeof pCat === 'object' ? pCat?.name : pCat;
-        const targetId = typeof pCat === 'object' ? (pCat as any)?.id : null;
-
-        matchedCat = catList.find(
-          (c: any) =>
-            (targetId && c.id === targetId) ||
-            (targetSlug && c.slug?.toLowerCase() === String(targetSlug).toLowerCase()) ||
-            (targetName && c.name?.toLowerCase() === String(targetName).toLowerCase())
-        );
-
-        if (!matchedCat && worker.skills && worker.skills.length > 0) {
-          const skillCatId =
-            worker.skills[0]?.categoryId ||
-            worker.skills[0]?.category?.id ||
-            worker.skills[0]?.category?.slug;
-          matchedCat = catList.find((c: any) => c.id === skillCatId || c.slug === skillCatId);
-        }
-      }
-
+      // Match worker category using IDs, slugs, names, trade aliases, and skills
+      const matchedCat = findCategoryForWorker(worker, catList);
       setWorkerCategory(matchedCat);
 
-      // Determine default selected service
+      // Determine default selected service from worker's category services
       let catServices: ServiceItem[] = [];
       if (matchedCat) {
         catServices = uniqueServices.filter((s) => s.categoryId === matchedCat.id);
@@ -184,12 +244,13 @@ export default function JobRequestModal({
 
   // Compute available services for dropdown based on selected worker's category + "Other" option
   const availableServices = useMemo(() => {
-    let list = allServices;
+    let list: ServiceItem[] = [];
     if (workerCategory) {
-      const catServices = allServices.filter((s) => s.categoryId === workerCategory.id);
-      if (catServices.length > 0) {
-        list = catServices;
-      }
+      list = allServices.filter((s) => s.categoryId === workerCategory.id);
+    }
+
+    if (list.length === 0) {
+      list = allServices;
     }
 
     const otherServiceItem: ServiceItem = {
@@ -222,12 +283,24 @@ export default function JobRequestModal({
     e.preventDefault();
     setError(null);
 
-    const workerCatId = typeof worker.primaryCategory === 'object' ? (worker.primaryCategory as any)?.id : null;
-    const finalCategoryId = workerCategory?.id || workerCatId || selectedService?.categoryId || '';
+    const workerCatId =
+      typeof worker.primaryCategory === 'object'
+        ? (worker.primaryCategory as any)?.id
+        : worker.primaryCategoryId || null;
 
-    if (!finalCategoryId && selectedServiceId !== 'OTHER') {
-      setError('वर्ker की श्रेणी उपलब्ध नहीं है / Worker category unavailable');
-      return;
+    const selectedServiceObj = availableServices.find((s) => s.id === selectedServiceId);
+
+    // Resolve parent category ID:
+    // 1. From selected specific service's categoryId if valid
+    // 2. From workerCategory matching
+    // 3. From worker's primaryCategoryId
+    let finalCategoryId = '';
+    if (selectedServiceObj && selectedServiceObj.categoryId && selectedServiceObj.categoryId !== 'ALL') {
+      finalCategoryId = selectedServiceObj.categoryId;
+    } else if (workerCategory?.id && workerCategory.id !== 'ALL') {
+      finalCategoryId = workerCategory.id;
+    } else if (workerCatId && workerCatId !== 'ALL') {
+      finalCategoryId = workerCatId;
     }
 
     if (!selectedServiceId) {
@@ -273,7 +346,7 @@ export default function JobRequestModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workerId: worker.id,
-          categoryId: finalCategoryId || 'ALL',
+          categoryId: finalCategoryId,
           serviceId: selectedServiceId,
           customService: selectedServiceId === 'OTHER' ? customWork.trim() : undefined,
           description,

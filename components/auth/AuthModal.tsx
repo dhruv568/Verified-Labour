@@ -528,15 +528,12 @@ export default function AuthModal({
         {/* Header */}
         <AuthHeader
           title={
-            tab === 'register'
-              ? 'अपना Verified Labour खाता बनाएं / Create account'
-              : tab === 'email-otp'
+            tab === 'email-otp'
               ? 'ईमेल सत्यापित करें / Verify Email'
               : tab === 'otp'
               ? 'मोबाइल OTP से लॉगिन करें / Login with OTP'
-              : 'Verified Labour लॉगिन / Login'
+              : undefined
           }
-          subtitle="सत्यापित • पास में • भरोसेमंद (Verified. Nearby. Reliable.)"
           onClose={onClose}
           tab={tab === 'register' ? 'register' : 'login'}
           onTabChange={(newTab) => {

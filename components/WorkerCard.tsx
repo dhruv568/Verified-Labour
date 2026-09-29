@@ -13,7 +13,8 @@ export interface WorkerData {
   isAvailable: boolean;
   hourlyRate?: number;
   city?: string;
-  primaryCategory?: { name: string; slug: string };
+  primaryCategoryId?: string;
+  primaryCategory?: { id?: string; name: string; slug: string };
   skills?: any[];
   serviceAreas?: string[];
   distanceKm?: number | null;

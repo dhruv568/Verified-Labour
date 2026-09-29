@@ -9,7 +9,7 @@ const createJobSchema = z
   .object({
     workerId: z.string(),
     serviceId: z.string(),
-    categoryId: z.string(),
+    categoryId: z.string().optional(),
     customService: z.string().optional(),
     description: z.string().optional().default(''),
     voiceNoteUrl: z.string().optional().nullable(),
@@ -88,7 +88,15 @@ export async function POST(req: NextRequest) {
     // SECTION 65: Re-check worker state at booking time
     const worker = await prisma.workerProfile.findUnique({
       where: { id: data.workerId },
-      include: { user: true },
+      include: {
+        user: true,
+        primaryCategory: true,
+        skills: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
 
     if (!worker) {
@@ -164,14 +172,103 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve fallback serviceId for Job model relation if OTHER was selected
+    // Resolve & Validate Category ID for JobRequest strictly from selected worker record (Requirements #7 & #8)
+    let resolvedCategoryId: string | null = null;
+    let selectedServiceObj = null;
+
+    if (data.serviceId && data.serviceId !== 'OTHER') {
+      selectedServiceObj = await prisma.service.findUnique({
+        where: { id: data.serviceId },
+      });
+    }
+
+    // 1. Worker's primary category ID or relation
+    if (worker.primaryCategoryId) {
+      resolvedCategoryId = worker.primaryCategoryId;
+    } else if (worker.primaryCategory?.id) {
+      resolvedCategoryId = worker.primaryCategory.id;
+    }
+
+    // 2. Check worker's skills
+    if (!resolvedCategoryId && worker.skills && worker.skills.length > 0) {
+      for (const skill of worker.skills) {
+        const skillCatId = skill.categoryId || skill.category?.id;
+        if (skillCatId) {
+          resolvedCategoryId = skillCatId;
+          break;
+        }
+      }
+    }
+
+    // 3. Check selected service's category ID if worker has no primary category/skills
+    if (!resolvedCategoryId && selectedServiceObj?.categoryId) {
+      resolvedCategoryId = selectedServiceObj.categoryId;
+    }
+
+    // 4. Try matching worker's primary category slug / name with Category table
+    if (!resolvedCategoryId && worker.primaryCategory) {
+      const targetSlug = typeof worker.primaryCategory === 'object' ? worker.primaryCategory.slug : null;
+      const targetName = typeof worker.primaryCategory === 'object' ? worker.primaryCategory.name : String(worker.primaryCategory);
+      if (targetSlug || targetName) {
+        const catMatch = await prisma.category.findFirst({
+          where: {
+            OR: [
+              { slug: targetSlug || '' },
+              { name: targetName || '' },
+            ],
+          },
+          select: { id: true },
+        });
+        if (catMatch) {
+          resolvedCategoryId = catMatch.id;
+        }
+      }
+    }
+
+    // 5. Fallback if frontend passed a valid category ID
+    if (!resolvedCategoryId && data.categoryId && data.categoryId !== 'ALL' && data.categoryId !== 'OTHER') {
+      const catCheck = await prisma.category.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true },
+      });
+      if (catCheck) {
+        resolvedCategoryId = catCheck.id;
+      }
+    }
+
+    // 6. Final fallback: pick any active Category from DB
+    if (!resolvedCategoryId) {
+      const defaultCat = await prisma.category.findFirst({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } });
+      if (defaultCat) {
+        resolvedCategoryId = defaultCat.id;
+      }
+    }
+
+    // Server-Side Verification: Ensure resolvedCategoryId exists in Category table
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: resolvedCategoryId! },
+      select: { id: true },
+    });
+
+    if (!categoryExists) {
+      const fallbackCat = await prisma.category.findFirst({ where: { isActive: true } });
+      if (!fallbackCat) {
+        return NextResponse.json(
+          { success: false, error: 'System contains no active service categories.' },
+          { status: 500 }
+        );
+      }
+      resolvedCategoryId = fallbackCat.id;
+    }
+
+    // Resolve fallback serviceId for Job model relation if OTHER was selected or serviceId was custom
     let serviceIdToUse = data.serviceId;
     let serviceNameForNotification = 'Home Service';
     let basePrice = worker.hourlyRate || 350.0;
 
-    if (data.serviceId === 'OTHER' || data.customService) {
+    if (data.serviceId === 'OTHER' || data.customService || !selectedServiceObj) {
       const catService = await prisma.service.findFirst({
-        where: { categoryId: data.categoryId, isActive: true },
+        where: { categoryId: resolvedCategoryId, isActive: true },
       });
       if (catService) {
         serviceIdToUse = catService.id;
@@ -189,11 +286,8 @@ export async function POST(req: NextRequest) {
         serviceNameForNotification = `Custom Work: ${data.customService.trim()}`;
       }
     } else {
-      const service = await prisma.service.findUnique({ where: { id: data.serviceId } });
-      if (service) {
-        basePrice = service.basePrice;
-        serviceNameForNotification = service.name;
-      }
+      basePrice = selectedServiceObj.basePrice || basePrice;
+      serviceNameForNotification = selectedServiceObj.name;
     }
 
     const finalAmount = data.budget || basePrice;
@@ -213,8 +307,8 @@ export async function POST(req: NextRequest) {
       const jobRequest = await tx.jobRequest.create({
         data: {
           customerId: customerProfileId,
-          categoryId: data.categoryId,
-          serviceId: data.serviceId === 'OTHER' ? null : data.serviceId,
+          categoryId: resolvedCategoryId,
+          serviceId: selectedServiceObj ? selectedServiceObj.id : null,
           description: fullDescription,
           voiceNoteUrl: data.voiceNoteUrl || null,
           voiceNoteDuration: data.voiceNoteDuration || null,
