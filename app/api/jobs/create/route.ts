@@ -48,12 +48,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const customerProfileId = sessionUser.customerProfile?.id;
+    let customerProfileId = sessionUser.customerProfile?.id;
     if (!customerProfileId) {
-      return NextResponse.json(
-        { success: false, error: 'Customer profile record missing' },
-        { status: 400 }
-      );
+      const newCustomerProfile = await prisma.customerProfile.upsert({
+        where: { userId: sessionUser.id },
+        update: {},
+        create: {
+          userId: sessionUser.id,
+          fullName: sessionUser.businessProfile?.contactPerson || 'Verified Customer',
+          email: sessionUser.email || undefined,
+        },
+      });
+      customerProfileId = newCustomerProfile.id;
     }
 
     const body = await req.json();
@@ -118,19 +124,30 @@ export async function POST(req: NextRequest) {
     const existingConflict = await prisma.job.findFirst({
       where: {
         workerId: data.workerId,
-        status: { in: ['ACCEPTED', 'SCHEDULED', 'WORKER_ON_THE_WAY', 'ARRIVED', 'WORK_STARTED'] },
+        status: { in: ['REQUESTED', 'ACCEPTED', 'SCHEDULED', 'WORKER_ON_THE_WAY', 'ARRIVED', 'WORK_STARTED'] },
         jobRequest: {
           preferredDate: data.preferredDate,
           preferredTime: data.preferredTime,
         },
       },
+      include: {
+        jobRequest: true,
+      },
     });
 
     if (existingConflict) {
+      const isSameCustomer = existingConflict.customerId === customerProfileId;
+      const isPending = existingConflict.status === 'REQUESTED';
+      const statusLabel = isPending ? 'pending request' : 'confirmed booking';
+
+      const userErrorMessage = isSameCustomer
+        ? `You already have a ${statusLabel} with this worker for ${data.preferredDate} at ${data.preferredTime}. Please check your active bookings.`
+        : `This worker already has a ${statusLabel} for ${data.preferredDate} at ${data.preferredTime}. Please select another time slot or worker.`;
+
       return NextResponse.json(
         {
           success: false,
-          error: `The worker already has a confirmed booking for ${data.preferredDate} at ${data.preferredTime}. Please choose another time slot or another worker.`,
+          error: userErrorMessage,
         },
         { status: 409 }
       );

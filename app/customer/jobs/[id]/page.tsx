@@ -17,6 +17,8 @@ import {
   Phone,
 } from 'lucide-react';
 import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
+import LiveJobMap from '@/components/LiveJobMap';
+import { calculateHaversineDistanceKm } from '@/lib/location';
 
 export default function CustomerJobTrackerPage({
   params,
@@ -103,18 +105,22 @@ export default function CustomerJobTrackerPage({
     }
   };
 
+  // Live location tracking state
+  const [liveLocationData, setLiveLocationData] = useState<any>(null);
+
+  const fetchLiveLocation = async () => {
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/location`);
+      const data = await res.json();
+      if (data.success && data.active && data.location) {
+        setLiveLocationData(data);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     fetchJob();
     fetchMessages();
-
-    // Check for Cashfree return redirect with order_id in query params
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const urlOrderId = searchParams.get('order_id');
-      if (urlOrderId) {
-        verifyCashfreePayment(urlOrderId);
-      }
-    }
 
     const interval = setInterval(() => {
       fetchJob();
@@ -122,6 +128,14 @@ export default function CustomerJobTrackerPage({
     }, 5000);
     return () => clearInterval(interval);
   }, [jobId]);
+
+  useEffect(() => {
+    if (job?.status === 'WORKER_ON_THE_WAY') {
+      fetchLiveLocation();
+      const locInterval = setInterval(fetchLiveLocation, 4000);
+      return () => clearInterval(locInterval);
+    }
+  }, [job?.status, jobId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -377,69 +391,54 @@ export default function CustomerJobTrackerPage({
                 </p>
               </div>
 
-              {/* Action Buttons: Pay Now if WORK_COMPLETED or PAYMENT_PENDING */}
-              {['WORK_COMPLETED', 'PAYMENT_PENDING'].includes(job.status) && (
-                <div className="p-4 bg-brand-50 border border-brand-200 rounded-xl space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold text-brand-900">Work Marked Complete!</p>
-                      <p className="text-[11px] text-brand-700">Please pay ₹{job.finalAmount} securely via Cashfree Payments (UPI, Cards, NetBanking).</p>
-                    </div>
-                    <button
-                      onClick={handlePayNow}
-                      disabled={paymentLoading}
-                      className="w-full sm:w-auto px-5 py-3 min-h-[46px] bg-brand-700 hover:bg-brand-800 active:scale-98 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      {paymentLoading ? 'Processing...' : `Proceed to Payment (₹${job.finalAmount})`}
-                    </button>
-                  </div>
+              {/* Live Worker Location Tracking Map when WORKER_ON_THE_WAY */}
+              {job.status === 'WORKER_ON_THE_WAY' && (
+                <LiveJobMap
+                  customerLocation={{
+                    latitude: job.jobRequest.latitude,
+                    longitude: job.jobRequest.longitude,
+                    address: job.jobRequest.formattedAddress,
+                  }}
+                  workerLocation={liveLocationData?.location || null}
+                  workerName={job.worker.fullName}
+                  status={job.status}
+                  distanceKm={
+                    liveLocationData?.location?.latitude && liveLocationData?.location?.longitude
+                      ? calculateHaversineDistanceKm(
+                          job.jobRequest.latitude,
+                          job.jobRequest.longitude,
+                          liveLocationData.location.latitude,
+                          liveLocationData.location.longitude
+                        )
+                      : null
+                  }
+                />
+              )}
 
-                  {/* Cashfree Payment Status Display */}
-                  {paymentStatusState && (
-                    <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs ${
-                      paymentStatusState === 'SUCCESS'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        : paymentStatusState === 'PENDING'
-                        ? 'bg-blue-50 border-blue-200 text-blue-900'
-                        : 'bg-red-50 border-red-200 text-red-900'
-                    }`}>
-                      {paymentStatusState === 'SUCCESS' && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      )}
-                      {paymentStatusState === 'PENDING' && (
-                        <Clock className="w-4 h-4 text-blue-600 animate-spin shrink-0 mt-0.5" />
-                      )}
-                      {paymentStatusState === 'FAILED' && (
-                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      )}
-                      <div className="flex-1">
-                        <p className="font-bold">
-                          {paymentStatusState === 'SUCCESS' && 'Payment Successful'}
-                          {paymentStatusState === 'PENDING' && 'Payment Processing'}
-                          {paymentStatusState === 'FAILED' && 'Payment Failed'}
-                        </p>
-                        <p className="text-[11px] mt-0.5">
-                          {paymentStatusMessage || (
-                            paymentStatusState === 'SUCCESS'
-                              ? 'Your booking has been confirmed.'
-                              : paymentStatusState === 'PENDING'
-                              ? "We're confirming your payment. Please wait."
-                              : 'Please try again.'
-                          )}
-                        </p>
-                      </div>
-                      {paymentStatusState === 'FAILED' && (
-                        <button
-                          type="button"
-                          onClick={handlePayNow}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg transition-colors shrink-0"
-                        >
-                          Try Again
-                        </button>
-                      )}
-                    </div>
-                  )}
+              {/* Worker Arrived Banner */}
+              {job.status === 'ARRIVED' && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-900 text-xs font-bold font-devanagari">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <span>वर्कर आपके स्थान पर पहुंच गए हैं / Worker has arrived at your location</span>
+                    <p className="text-[11px] font-normal text-emerald-700 mt-0.5">Live GPS tracking completed.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Cash Payment Instructions if WORK_COMPLETED or PAYMENT_PENDING */}
+              {['WORK_COMPLETED', 'PAYMENT_PENDING'].includes(job.status) && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-xs text-emerald-950">
+                    <CreditCard className="w-4 h-4 text-emerald-700" />
+                    <span>Cash Payment Required / नकद भुगतान</span>
+                  </div>
+                  <p className="text-xs text-emerald-900 leading-relaxed font-devanagari">
+                    कृपया <strong>₹{job.finalAmount}</strong> सीधे वर्कर (<strong>{job.worker.fullName}</strong>) को नकद भुगतान करें। / Please pay <strong>₹{job.finalAmount}</strong> directly to the worker in cash.
+                  </p>
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    वर्कर द्वारा नकद पुष्टि के बाद आप अपनी रेटिंग और समीक्षा दर्ज कर सकेंगे। / After the worker confirms cash receipt, you can submit your rating & review.
+                  </p>
                 </div>
               )}
 

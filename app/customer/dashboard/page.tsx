@@ -639,16 +639,16 @@ export default function CustomerDashboardPage() {
             <Card variant="default" padding="lg" className="space-y-4">
               <h3 className="text-base font-black text-slate-900">Payment & Invoices</h3>
               <p className="text-xs text-slate-500">
-                Secure payments processed through Cashfree Payments. You only pay when work is verified and marked complete.
+                Verified Labour uses Cash Payment on completion. Pay directly to your verified worker upon job completion.
               </p>
 
-              <div className="p-4 bg-brand-50 border border-brand-200 rounded-2xl text-xs text-brand-900 space-y-1">
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 space-y-1">
                 <span className="font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4 text-brand-600" />
-                  No Upfront Charges Required
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Direct Cash Payment
                 </span>
-                <p className="text-[11px] text-brand-700">
-                  Workers come to your location first. Pay directly via UPI, Card, or Netbanking after the job is finished.
+                <p className="text-[11px] text-emerald-700 font-devanagari">
+                  काम पूरा होने के बाद नकद भुगतान करें। / Pay cash directly to your worker after the work is finished. The worker confirms payment to unlock reviews.
                 </p>
               </div>
 

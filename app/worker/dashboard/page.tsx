@@ -64,6 +64,66 @@ export default function WorkerDashboardPage() {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Worker Live Location Tracking State for WORKER_ON_THE_WAY
+  const [gpsErrorState, setGpsErrorState] = useState<'PERMISSION_DENIED' | 'POSITION_UNAVAILABLE' | null>(null);
+
+  useEffect(() => {
+    // Find active job where status is WORKER_ON_THE_WAY
+    const onTheWayJob = jobs.find((j) => j.status === 'WORKER_ON_THE_WAY');
+    if (!onTheWayJob || typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsErrorState(null);
+      return;
+    }
+
+    let watchId: number | null = null;
+    setGpsErrorState(null);
+
+    const sendLocationUpdate = async (pos: GeolocationPosition) => {
+      try {
+        await fetch(`/api/jobs/${onTheWayJob.id}/location`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy || null,
+          }),
+        });
+        setGpsErrorState(null);
+      } catch (err) {
+        console.error('Failed to post location:', err);
+      }
+    };
+
+    const handleGpsError = (err: GeolocationPositionError) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        setGpsErrorState('PERMISSION_DENIED');
+      } else {
+        setGpsErrorState('POSITION_UNAVAILABLE');
+      }
+    };
+
+    // Initial position fetch
+    navigator.geolocation.getCurrentPosition(sendLocationUpdate, handleGpsError, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 5000,
+    });
+
+    // Start watchPosition for continuous tracking while on the way
+    watchId = navigator.geolocation.watchPosition(sendLocationUpdate, handleGpsError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 5000,
+    });
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [jobs]);
+
   // Profile edit & delete account states
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -575,15 +635,50 @@ export default function WorkerDashboardPage() {
                         )}
 
                         {job.status === 'WORKER_ON_THE_WAY' && (
-                          <Button
-                            variant="primary"
-                            size="md"
-                            isLoading={actionLoading === job.id}
-                            onClick={() => handleJobTransition(job.id, 'ARRIVED')}
-                            icon={<MapPin className="w-4 h-4" />}
-                          >
-                            I Have Arrived at Location
-                          </Button>
+                          <div className="w-full space-y-2">
+                            <Button
+                              variant="primary"
+                              size="md"
+                              isLoading={actionLoading === job.id}
+                              onClick={() => handleJobTransition(job.id, 'ARRIVED')}
+                              icon={<MapPin className="w-4 h-4" />}
+                            >
+                              I Have Arrived at Location
+                            </Button>
+
+                            <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl space-y-1 text-xs">
+                              <div className="flex items-center justify-between font-bold text-brand-900">
+                                <span className="flex items-center gap-1.5">
+                                  <Navigation className="w-4 h-4 text-brand-600 animate-spin" />
+                                  <span>Live GPS Location Sharing Active</span>
+                                </span>
+                                <span className="text-[10px] bg-brand-100 text-brand-800 px-2 py-0.5 rounded-md font-mono">ON THE WAY</span>
+                              </div>
+                              <p className="text-[11px] text-brand-700">
+                                Your location is being shared with the customer while travelling.
+                              </p>
+
+                              {gpsErrorState === 'PERMISSION_DENIED' && (
+                                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-800 text-[11px] font-bold flex items-center justify-between gap-2">
+                                  <span>Location access is required while you are on the way to the customer.</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => fetchWorkerJobs()}
+                                    className="px-2.5 py-1 bg-red-600 text-white rounded-md text-[10px] font-bold shrink-0"
+                                  >
+                                    Retry Location Access
+                                  </button>
+                                </div>
+                              )}
+
+                              {gpsErrorState === 'POSITION_UNAVAILABLE' && (
+                                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-[11px] font-semibold flex items-center gap-2">
+                                  <Clock className="w-3.5 h-3.5 animate-spin text-amber-600 shrink-0" />
+                                  <span>Waiting for location...</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
 
                         {job.status === 'ARRIVED' && (
@@ -604,14 +699,29 @@ export default function WorkerDashboardPage() {
                             isLoading={actionLoading === job.id}
                             onClick={() => handleJobTransition(job.id, 'WORK_COMPLETED')}
                           >
-                            Mark Work Completed (Request Payment)
+                            Mark Work Completed (Request Cash Payment)
                           </Button>
                         )}
 
                         {['WORK_COMPLETED', 'PAYMENT_PENDING'].includes(job.status) && (
-                          <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
-                            Waiting for customer to verify & complete payment (₹{job.finalAmount})...
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                              Cash Payment Pending: ₹{job.finalAmount}
+                            </span>
+                            <Button
+                              variant="brand"
+                              size="md"
+                              isLoading={actionLoading === job.id}
+                              onClick={() => {
+                                if (confirm(`Confirm that you have received ₹${job.finalAmount} cash directly from customer?`)) {
+                                  handleJobTransition(job.id, 'PAID');
+                                }
+                              }}
+                              icon={<CheckCircle2 className="w-4 h-4" />}
+                            >
+                              Confirm Cash Received (₹{job.finalAmount})
+                            </Button>
+                          </div>
                         )}
 
                         {['PAID', 'REVIEWED', 'COMPLETED'].includes(job.status) && (

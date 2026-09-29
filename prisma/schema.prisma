@@ -94,6 +94,7 @@ model WorkerProfile {
   user              User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   serviceAreas      WorkerServiceArea[]
   skills            WorkerSkill[]
+  activeLocations   ActiveJobLocation[]
 }
 
 model BusinessProfile {
@@ -351,6 +352,7 @@ model Job {
   payment            Payment?
   review             Review?
   transaction        Transaction?
+  activeLocation     ActiveJobLocation?
 }
 
 model JobStatusHistory {
@@ -647,4 +649,19 @@ model PasswordResetToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 }
+
+model ActiveJobLocation {
+  id        String   @id @default(uuid())
+  jobId     String   @unique
+  workerId  String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  job    Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
 

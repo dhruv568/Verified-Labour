@@ -72,12 +72,61 @@ export async function POST(
       toStatus: toStatus as JobStatus,
       changedByUserId: sessionUser.id,
       userRole,
-      note,
+      note: note || (toStatus === 'PAID' ? 'Cash payment confirmed by worker' : undefined),
       reason,
     });
 
+    // Handle CASH payment record creation on PAID transition
+    if (toStatus === 'PAID') {
+      const grossAmount = job.finalAmount;
+      const platformFee = Math.round(grossAmount * 0.10 * 100) / 100;
+      const taxAmount = Math.round(platformFee * 0.18 * 100) / 100;
+      const workerAmount = Math.round((grossAmount - platformFee) * 100) / 100;
+
+      await prisma.$transaction([
+        prisma.payment.upsert({
+          where: { jobId },
+          update: {
+            paymentProvider: 'CASH',
+            method: 'CASH',
+            amount: grossAmount,
+            status: 'CAPTURED',
+            failureCode: null,
+            failureDescription: null,
+          },
+          create: {
+            jobId,
+            paymentProvider: 'CASH',
+            method: 'CASH',
+            amount: grossAmount,
+            status: 'CAPTURED',
+          },
+        }),
+        prisma.transaction.upsert({
+          where: { jobId },
+          update: {
+            grossAmount,
+            platformFee,
+            taxAmount,
+            workerAmount,
+            paymentStatus: 'CAPTURED',
+            settlementStatus: 'CASH_SETTLED',
+          },
+          create: {
+            jobId,
+            grossAmount,
+            platformFee,
+            taxAmount,
+            workerAmount,
+            paymentStatus: 'CAPTURED',
+            settlementStatus: 'CASH_SETTLED',
+          },
+        }),
+      ]);
+    }
+
     // Notify counterpart
-    if (['ACCEPTED', 'REJECTED', 'WORKER_ON_THE_WAY', 'ARRIVED', 'WORK_COMPLETED'].includes(toStatus)) {
+    if (['ACCEPTED', 'REJECTED', 'WORKER_ON_THE_WAY', 'ARRIVED', 'WORK_COMPLETED', 'PAID'].includes(toStatus)) {
       await NotificationService.notifyJobEvent({
         customerId: job.customer.user.id,
         workerId: job.worker.user.id,

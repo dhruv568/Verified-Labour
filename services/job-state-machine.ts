@@ -89,6 +89,7 @@ export class JobStateMachine {
         'ARRIVED',
         'WORK_STARTED',
         'WORK_COMPLETED',
+        'PAID',
         'CANCELLED_BY_WORKER',
         'DISPUTED',
       ];

@@ -233,9 +233,9 @@ async function runAllTests() {
     assert.strictEqual(JobStateMachine.isRoleAuthorized('ACCEPTED', 'WORKER_ON_THE_WAY', 'CUSTOMER'), false);
   });
 
-  test('Only Customer or Admin can mark PAID or CANCELLED_BY_CUSTOMER', () => {
+  test('Worker or Customer or Admin can mark PAID upon cash receipt', () => {
     assert.strictEqual(JobStateMachine.isRoleAuthorized('WORK_COMPLETED', 'PAID', 'CUSTOMER'), true);
-    assert.strictEqual(JobStateMachine.isRoleAuthorized('WORK_COMPLETED', 'PAID', 'WORKER'), false);
+    assert.strictEqual(JobStateMachine.isRoleAuthorized('WORK_COMPLETED', 'PAID', 'WORKER'), true);
   });
 
   // 5. CASHFREE PAYMENTS & COMMISSION TESTS
