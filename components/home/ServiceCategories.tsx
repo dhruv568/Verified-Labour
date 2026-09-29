@@ -227,13 +227,13 @@ export default function ServiceCategories({
   }, [fetchCategories]);
 
   return (
-    <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Row: Centered Title */}
+    <section id="services" className="py-8 sm:py-12 bg-[#FAFBFC] border-b border-slate-200">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Row: Centered Verification Badge & Heading */}
         <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
           {/* Trust Micro-badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2.5">
+            <ShieldCheck className="w-4 h-4 text-[#1264D6]" />
             <span>सत्यापित कामगार • 100% Aadhaar Verified</span>
           </div>
 
@@ -245,21 +245,25 @@ export default function ServiceCategories({
           </h2>
         </div>
 
-        {/* Responsive Grid: 2 cols on phone, 3 on sm, 4 on md, 6 on lg, 9 on xl */}
-        <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
+        {/* Centered Responsive Category Cards Container */}
+        <div className="flex flex-wrap justify-center gap-3.5 sm:gap-4 md:gap-5">
           {categoriesList.map((item) => (
-            <ServiceCard
+            <div
               key={item.slug || item.title}
-              title={item.title}
-              hindiTitle={item.hindiTitle}
-              slug={item.slug}
-              image={item.image}
-              pillColor={item.pillColor}
-              isSelected={selectedCategorySlug === item.slug}
-              onClick={() => onSelectCategory?.(item.slug)}
-              priority={item.priority}
-              objectPosition={item.objectPosition}
-            />
+              className="w-[calc(50%-8px)] min-[480px]:w-[calc(33.333%-12px)] sm:w-[calc(25%-14px)] lg:w-[calc(16.666%-16px)] min-w-[145px] max-w-[195px] flex-grow-0 shrink-0"
+            >
+              <ServiceCard
+                title={item.title}
+                hindiTitle={item.hindiTitle}
+                slug={item.slug}
+                image={item.image}
+                pillColor={item.pillColor}
+                isSelected={selectedCategorySlug === item.slug}
+                onClick={() => onSelectCategory?.(item.slug)}
+                priority={item.priority}
+                objectPosition={item.objectPosition}
+              />
+            </div>
           ))}
         </div>
 

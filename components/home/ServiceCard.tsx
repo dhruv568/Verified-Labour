@@ -39,20 +39,20 @@ export default function ServiceCard({
           onClick?.();
         }
       }}
-      className={`group relative flex flex-col justify-between rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none shadow-xs hover:shadow-lg hover:-translate-y-1 active:scale-98 ${
+      className={`group relative flex flex-col justify-between rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer bg-white text-center focus:outline-none shadow-xs hover:shadow-lg hover:-translate-y-1 active:scale-98 h-full ${
         isSelected
           ? 'ring-2 ring-[#1264D6] shadow-md border-[#1264D6]'
           : 'border-slate-200/90 hover:border-slate-300'
       }`}
     >
       {/* Upper Area: Studio Portrait with High-Key Soft Background */}
-      <div className="relative w-full aspect-[4/5] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
+      <div className="relative w-full aspect-[4/5] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center shrink-0">
         <Image
           src={image}
           alt={`${title} (${hindiTitle}) - Verified Labour Professional`}
           fill
           unoptimized
-          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 12vw"
+          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 18vw"
           priority={priority}
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           style={{ objectPosition }}
@@ -72,14 +72,14 @@ export default function ServiceCard({
         )}
       </div>
 
-      {/* Bottom Colorful Category Name Strip matching Reference */}
+      {/* Bottom Colorful Category Name Strip */}
       <div
-        className={`py-2 px-1.5 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[44px] ${pillColor}`}
+        className={`py-2 px-1.5 sm:py-2.5 sm:px-2 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[48px] grow ${pillColor}`}
       >
-        <span className="block font-bold text-xs sm:text-xs tracking-tight leading-snug line-clamp-1 font-devanagari drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-bold text-xs sm:text-sm tracking-tight leading-snug line-clamp-1 font-devanagari drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {hindiTitle}
         </span>
-        <span className="block font-semibold text-[11px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-sans line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-semibold text-[11px] sm:text-xs text-white/95 leading-tight mt-0.5 tracking-normal font-sans line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {title}
         </span>
       </div>
