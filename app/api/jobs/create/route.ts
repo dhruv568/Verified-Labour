@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
 
     if (data.serviceId === 'OTHER' || data.customService || !selectedServiceObj) {
       const catService = await prisma.service.findFirst({
-        where: { categoryId: resolvedCategoryId, isActive: true },
+        where: { categoryId: resolvedCategoryId!, isActive: true },
       });
       if (catService) {
         serviceIdToUse = catService.id;
@@ -307,7 +307,7 @@ export async function POST(req: NextRequest) {
       const jobRequest = await tx.jobRequest.create({
         data: {
           customerId: customerProfileId,
-          categoryId: resolvedCategoryId,
+          categoryId: resolvedCategoryId!,
           serviceId: selectedServiceObj ? selectedServiceObj.id : null,
           description: fullDescription,
           voiceNoteUrl: data.voiceNoteUrl || null,

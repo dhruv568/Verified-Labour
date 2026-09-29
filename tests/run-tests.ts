@@ -17,6 +17,7 @@ import { runAdminPanelTests } from './admin-panel-tests';
 import { runLivePhotoTests } from './live-photo-tests';
 import { runVoiceNoteTests } from './voice-note-tests';
 import { runTestimonialTests } from './testimonial-tests';
+import { runWorkerBookingFlowTests } from './worker-booking-flow-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -307,6 +308,8 @@ async function runAllTests() {
   const testimonialResults = await runTestimonialTests();
   passed += testimonialResults.passed;
   failed += testimonialResults.failed;
+
+  await runWorkerBookingFlowTests();
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);
