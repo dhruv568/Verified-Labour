@@ -4,6 +4,8 @@ import { getSessionUser } from '@/lib/auth';
 import cashfreeService from '@/services/cashfree';
 import { checkRateLimit } from '@/lib/rate-limiter';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const sessionUser = await getSessionUser(req);

@@ -5,6 +5,8 @@ import { getSessionUser } from '@/lib/auth';
 import cashfreeService from '@/services/cashfree';
 import { checkRateLimit } from '@/lib/rate-limiter';
 
+export const dynamic = 'force-dynamic';
+
 const createDigiLockerUrlSchema = z.object({
   workerId: z.string().optional(),
   redirectUrl: z.string().url('redirectUrl must be a valid URL starting with https').optional(),

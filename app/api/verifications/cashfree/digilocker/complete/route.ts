@@ -5,6 +5,8 @@ import cashfreeService from '@/services/cashfree';
 import { validateIdentityMatch, syncWorkerVerificationStatus } from '@/lib/worker-verification';
 import { checkRateLimit } from '@/lib/rate-limiter';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const sessionUser = await getSessionUser(req);
