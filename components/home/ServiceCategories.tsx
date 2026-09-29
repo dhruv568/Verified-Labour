@@ -24,6 +24,33 @@ const CATEGORY_ITEMS = [
     objectPosition: 'center 2%',
   },
   {
+    title: 'AC Technician',
+    hindiTitle: 'एसी तकनीशियन / रिपेयर',
+    slug: 'ac-technician',
+    image: '/images/services/electrician.jpg',
+    pillColor: 'bg-[#0284C7]',
+    priority: true,
+    objectPosition: 'center 2%',
+  },
+  {
+    title: 'Pagadhi Wala',
+    hindiTitle: 'हलवाई / पगड़ी वाला',
+    slug: 'confectioner',
+    image: '/images/services/confectioner.jpg',
+    pillColor: 'bg-[#C026D3]',
+    priority: true,
+    objectPosition: 'center 4%',
+  },
+  {
+    title: 'Child Care Taker',
+    hindiTitle: 'चाइल्ड केयर / घर की देखभाल',
+    slug: 'house-care-taker',
+    image: '/images/services/house-care-taker.jpg',
+    pillColor: 'bg-[#0D9488]',
+    priority: true,
+    objectPosition: 'center 5%',
+  },
+  {
     title: 'Computer Hardware',
     hindiTitle: 'कंप्यूटर हार्डवेयर',
     slug: 'computer-hardware',
@@ -38,15 +65,6 @@ const CATEGORY_ITEMS = [
     slug: 'computer-software',
     image: '/images/services/computer-software.jpg',
     pillColor: 'bg-[#F25C05]',
-    priority: true,
-    objectPosition: 'center 4%',
-  },
-  {
-    title: 'Confectioner',
-    hindiTitle: 'हलवाई / कन्फेक्शनर',
-    slug: 'confectioner',
-    image: '/images/services/confectioner.jpg',
-    pillColor: 'bg-[#C026D3]',
     priority: true,
     objectPosition: 'center 4%',
   },
@@ -77,26 +95,16 @@ const CATEGORY_ITEMS = [
     priority: true,
     objectPosition: 'center 2%',
   },
-  {
-    title: 'House Care Taker',
-    hindiTitle: 'घर की देखभाल',
-    slug: 'house-care-taker',
-    image: '/images/services/house-care-taker.jpg',
-    pillColor: 'bg-[#0D9488]',
-    priority: true,
-    objectPosition: 'center 5%',
-  },
+
+  // --- ROW 2 (9 items) ---
   {
     title: 'Office Boy',
     hindiTitle: 'ऑफिस बॉय',
     slug: 'office-boy',
     image: '/images/services/office-boy.jpg',
     pillColor: 'bg-[#A16207]',
-    priority: true,
     objectPosition: 'center 5%',
   },
-
-  // --- ROW 2 (9 items) ---
   {
     title: 'Cook',
     hindiTitle: 'रसोइया',
@@ -161,14 +169,6 @@ const CATEGORY_ITEMS = [
     pillColor: 'bg-[#059669]',
     objectPosition: 'center 5%',
   },
-  {
-    title: 'Others',
-    hindiTitle: 'अन्य सेवाएं',
-    slug: 'construction',
-    image: '/images/services/others.jpg',
-    pillColor: 'bg-[#0F766E]',
-    objectPosition: 'center 4%',
-  },
 ];
 
 export default function ServiceCategories({
@@ -187,18 +187,38 @@ export default function ServiceCategories({
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
-        const merged = data.categories.map((cat: any) => {
-          const matched = CATEGORY_ITEMS.find((c) => c.slug === cat.slug);
+        // Map database categories by slug for fast lookup
+        const dbCatMap = new Map<string, any>();
+        data.categories.forEach((cat: any) => {
+          if (cat.slug) dbCatMap.set(cat.slug, cat);
+        });
+
+        // Merge DB dynamic metadata into full CATEGORY_ITEMS array (preserving all 18 categories)
+        const merged = CATEGORY_ITEMS.map((item) => {
+          const dbCat = dbCatMap.get(item.slug);
           return {
-            title: cat.name,
-            hindiTitle: cat.nameHi || matched?.hindiTitle || cat.name,
-            slug: cat.slug,
-            image: cat.iconUrl || matched?.image || '/images/services/others.jpg',
-            pillColor: matched?.pillColor || 'bg-[#082B66]',
-            priority: matched?.priority ?? false,
-            objectPosition: matched?.objectPosition ?? 'center 4%',
+            ...item,
+            title: dbCat?.name || item.title,
+            hindiTitle: dbCat?.nameHi || item.hindiTitle,
+            image: dbCat?.iconUrl || item.image,
           };
         });
+
+        // Append any extra DB categories not already in CATEGORY_ITEMS
+        data.categories.forEach((cat: any) => {
+          if (!merged.some((item) => item.slug === cat.slug)) {
+            merged.push({
+              title: cat.name,
+              hindiTitle: cat.nameHi || cat.name,
+              slug: cat.slug,
+              image: cat.iconUrl || '/images/services/others.jpg',
+              pillColor: 'bg-[#082B66]',
+              priority: false,
+              objectPosition: 'center 4%',
+            });
+          }
+        });
+
         setCategoriesList(merged);
       }
     } catch (err) {
@@ -227,43 +247,63 @@ export default function ServiceCategories({
   }, [fetchCategories]);
 
   return (
-    <section id="services" className="py-8 sm:py-12 bg-[#FAFBFC] border-b border-slate-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Row: Centered Verification Badge & Heading */}
-        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-          {/* Trust Micro-badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2.5">
-            <ShieldCheck className="w-4 h-4 text-[#1264D6]" />
-            <span>सत्यापित कामगार • 100% Aadhaar Verified</span>
+    <section id="services" className="py-10 sm:py-16 bg-[#FAFBFC] border-b border-slate-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Row: Title with Hindi Subtitle on Left, View All on Right */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            {/* Trust Micro-badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#1264D6] border border-blue-200/80 mb-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1264D6]" />
+              <span>सत्यापित कामगार • 100% Aadhaar & Skill Verified</span>
+            </div>
+
+            {/* Main Bilingual Heading */}
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight flex flex-wrap items-baseline gap-2 sm:gap-3">
+              <span>Choose a Service</span>
+              <span className="text-lg sm:text-2xl text-slate-500 font-bold font-devanagari">
+                अपनी ज़रूरत का काम चुनें
+              </span>
+            </h2>
+
+            {/* Subtitle with Hindi translation */}
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+              <span>18+ Verified Categories — More Coming Soon!</span>
+              <span className="text-slate-400 font-normal ml-1 sm:ml-2">
+                • 18+ सत्यापित सेवाएं — और भी जल्द!
+              </span>
+            </p>
           </div>
 
-          {/* Main Heading */}
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#082B66] tracking-tight text-center">
-            <span className="font-devanagari font-black">
-              {isHindi ? 'कामगार चुनें' : 'Choose a Worker'}
-            </span>
-          </h2>
+          {/* View All Button */}
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#1264D6] hover:bg-blue-50 border border-[#1264D6] rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 bg-white"
+            >
+              <span>View All</span>
+              <span className="text-[10px] text-blue-500/80 font-normal font-devanagari">/ सभी देखें</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Centered Responsive Category Cards Container */}
-        <div className="flex flex-wrap justify-center gap-3.5 sm:gap-4 md:gap-5">
+        {/* Dense Grid Layout displaying all 18 service cards */}
+        <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 sm:gap-3">
           {categoriesList.map((item) => (
-            <div
+            <ServiceCard
               key={item.slug || item.title}
-              className="w-[calc(50%-8px)] min-[480px]:w-[calc(33.333%-12px)] sm:w-[calc(25%-14px)] lg:w-[calc(16.666%-16px)] min-w-[145px] max-w-[195px] flex-grow-0 shrink-0"
-            >
-              <ServiceCard
-                title={item.title}
-                hindiTitle={item.hindiTitle}
-                slug={item.slug}
-                image={item.image}
-                pillColor={item.pillColor}
-                isSelected={selectedCategorySlug === item.slug}
-                onClick={() => onSelectCategory?.(item.slug)}
-                priority={item.priority}
-                objectPosition={item.objectPosition}
-              />
-            </div>
+              title={item.title}
+              hindiTitle={item.hindiTitle}
+              slug={item.slug}
+              image={item.image}
+              pillColor={item.pillColor}
+              isSelected={selectedCategorySlug === item.slug}
+              onClick={() => onSelectCategory?.(item.slug)}
+              priority={item.priority}
+              objectPosition={item.objectPosition}
+            />
           ))}
         </div>
 

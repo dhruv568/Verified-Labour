@@ -72,15 +72,15 @@ export default function ServiceCard({
         )}
       </div>
 
-      {/* Bottom Colorful Category Name Strip */}
+      {/* Bottom Colorful Category Name Strip matching Reference */}
       <div
-        className={`py-2 px-1.5 sm:py-2.5 sm:px-2 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[48px] grow ${pillColor}`}
+        className={`py-1.5 px-1 sm:py-2 sm:px-1.5 text-center text-white transition-colors select-none flex flex-col justify-center min-h-[46px] sm:min-h-[44px] ${pillColor}`}
       >
-        <span className="block font-bold text-xs sm:text-sm tracking-tight leading-snug line-clamp-1 font-devanagari drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
-          {hindiTitle}
-        </span>
-        <span className="block font-semibold text-[11px] sm:text-xs text-white/95 leading-tight mt-0.5 tracking-normal font-sans line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+        <span className="block font-bold text-[11px] sm:text-xs tracking-tight leading-tight line-clamp-1 font-sans drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
           {title}
+        </span>
+        <span className="block font-semibold text-[9.5px] sm:text-[10px] text-white/95 leading-tight mt-0.5 tracking-normal font-devanagari line-clamp-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+          {hindiTitle}
         </span>
       </div>
     </div>
