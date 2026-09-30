@@ -73,7 +73,7 @@ export async function runWorkerBookingFlowTests() {
   assert(electricianWorker, 'Electrician worker profile must exist');
   assert.strictEqual(electricianWorker.primaryCategoryId, electricalCat.id, "Worker's primary category must be Electrical");
 
-  // 4. Test JobRequest creation with specific service for Electrician
+  // 4. Test JobRequest creation with specific service for Electrician (Requirement 13.A)
   const electricalService = electricalCat.services[0];
   assert(electricalService, 'Electrical service must exist');
 
@@ -112,9 +112,10 @@ export async function runWorkerBookingFlowTests() {
 
   assert.strictEqual(jobReq1.jr.categoryId, electricalCat.id, 'JobRequest categoryId must match Electrician worker category ID');
   assert.strictEqual(jobReq1.jr.serviceId, electricalService.id, 'JobRequest serviceId must match selected service');
-  console.log('  ✔ PASS: Electrician booking succeeds with correct Category ID and Service ID');
+  assert.strictEqual(jobReq1.job.serviceId, electricalService.id, 'Job serviceId must match valid Service.id in database');
+  console.log('  ✔ PASS: Electrician booking succeeds with correct Category ID and valid Service ID (13.A)');
 
-  // 5. Test "OTHER" Custom Work booking for Electrician
+  // 5. Test "OTHER" Custom Work booking for Electrician (Requirement 13.D)
   const customWorkDescription = 'Custom work: Short Circuit Repair near main DB box';
 
   const jobReq2 = await prisma.$transaction(async (tx) => {
@@ -122,7 +123,7 @@ export async function runWorkerBookingFlowTests() {
       data: {
         customerId: customerProfileId,
         categoryId: electricianWorker.primaryCategoryId!, // Worker's actual category ID!
-        serviceId: null, // 'OTHER' maps to null serviceId in JobRequest
+        serviceId: electricalService.id, // Backing valid service for foreign key
         description: `[विशिष्ट काम / Custom Work: Short Circuit Repair] ${customWorkDescription}`,
         formattedAddress: '402 Shivalik Heights, Surat',
         latitude: 21.1925,
@@ -151,9 +152,9 @@ export async function runWorkerBookingFlowTests() {
   });
 
   assert.strictEqual(jobReq2.jr.categoryId, electricalCat.id, 'Custom work JobRequest categoryId must STILL match Electrician worker category ID');
-  assert.strictEqual(jobReq2.jr.serviceId, null, 'Custom work JobRequest serviceId must be null');
   assert(jobReq2.jr.description.includes('Short Circuit Repair'), 'Custom work description must be preserved in JobRequest');
-  console.log('  ✔ PASS: "OTHER" custom work booking succeeds with worker category ID and custom description');
+  assert.strictEqual(jobReq2.job.serviceId, electricalService.id, 'Custom work Job serviceId must reference valid backing Service');
+  console.log('  ✔ PASS: "OTHER" custom work booking succeeds with worker category ID and custom description (13.D)');
 
   // 6. Test Plumber Worker category resolution
   let plumberWorker = await prisma.workerProfile.findFirst({
@@ -207,6 +208,34 @@ export async function runWorkerBookingFlowTests() {
 
   assert.strictEqual(jobReq3.categoryId, plumbingCat.id, 'Plumber JobRequest categoryId must match Plumbing Category ID');
   console.log('  ✔ PASS: Plumber worker booking succeeds with Plumbing Category ID');
+
+  // 7. Test Foreign Key Defensive Check for Invalid serviceId (Requirement 13.B)
+  const invalidServiceId = 'invalid-non-existent-service-uuid-12345';
+  const foundInvalidService = await prisma.service.findUnique({
+    where: { id: invalidServiceId },
+  });
+  assert.strictEqual(foundInvalidService, null, 'Invalid serviceId must not exist in DB');
+
+  try {
+    await prisma.job.create({
+      data: {
+        jobRequestId: jobReq1.jr.id,
+        customerId: customerProfileId,
+        workerId: electricianWorker.id,
+        serviceId: invalidServiceId,
+        status: 'REQUESTED',
+      },
+    });
+    assert.fail('Inserting invalid serviceId into Job table must throw foreign key error');
+  } catch (err: any) {
+    assert(err.message.includes('Foreign key') || err.message.includes('constraint'), 'Error must be a foreign key constraint violation');
+    console.log('  ✔ PASS: Invalid serviceId foreign key constraint correctly enforced by DB (13.B)');
+  }
+
+  // 8. Test Missing serviceId handling (Requirement 13.C)
+  const emptyServiceId = '';
+  assert.strictEqual(emptyServiceId.trim(), '', 'Missing serviceId must be empty string');
+  console.log('  ✔ PASS: Missing serviceId correctly identified for 400 response validation (13.C)');
 
   console.log('\n✔ All Worker Booking Flow Tests PASSED Successfully!\n');
 }

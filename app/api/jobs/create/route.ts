@@ -7,10 +7,10 @@ import { NotificationService } from '@/services/notification';
 
 const createJobSchema = z
   .object({
-    workerId: z.string(),
-    serviceId: z.string(),
-    categoryId: z.string().optional(),
-    customService: z.string().optional(),
+    workerId: z.string().min(1, 'Worker ID is required'),
+    serviceId: z.string().optional().nullable(),
+    categoryId: z.string().optional().nullable(),
+    customService: z.string().optional().nullable(),
     description: z.string().optional().default(''),
     voiceNoteUrl: z.string().optional().nullable(),
     voiceNoteDuration: z.number().optional().nullable(),
@@ -84,6 +84,20 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+
+    // Validate missing serviceId & missing customService (Requirement #13.C)
+    const rawServiceId = (data.serviceId || '').trim();
+    const hasCustomWork = !!(data.customService && data.customService.trim().length >= 1);
+
+    if (!rawServiceId && !hasCustomWork) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected service is unavailable. Please select another service.',
+        },
+        { status: 400 }
+      );
+    }
 
     // SECTION 65: Re-check worker state at booking time
     const worker = await prisma.workerProfile.findUnique({
@@ -172,15 +186,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve & Validate Category ID for JobRequest strictly from selected worker record (Requirements #7 & #8)
-    let resolvedCategoryId: string | null = null;
+    // Step 1: Validate / resolve the submitted service ID
     let selectedServiceObj = null;
 
-    if (data.serviceId && data.serviceId !== 'OTHER') {
+    if (rawServiceId && rawServiceId.toUpperCase() !== 'OTHER') {
+      // 1A. Try direct ID lookup
       selectedServiceObj = await prisma.service.findUnique({
-        where: { id: data.serviceId },
+        where: { id: rawServiceId },
       });
+
+      // 1B. Try slug or name match if rawServiceId is slug/name
+      if (!selectedServiceObj) {
+        selectedServiceObj = await prisma.service.findFirst({
+          where: {
+            OR: [
+              { slug: rawServiceId },
+              { name: rawServiceId },
+            ],
+            isActive: true,
+          },
+        });
+      }
+
+      // If an explicit non-'OTHER' serviceId was supplied but does not exist in the database:
+      // Return a clean 400 response (Requirements #7, #10, #13.B)
+      if (!selectedServiceObj && !hasCustomWork) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Selected service is unavailable. Please select another service.',
+          },
+          { status: 400 }
+        );
+      }
     }
+
+    // Step 2: Resolve & Validate Category ID for JobRequest strictly from selected worker / service / DB
+    let resolvedCategoryId: string | null = null;
 
     // 1. Worker's primary category ID or relation
     if (worker.primaryCategoryId) {
@@ -261,33 +303,59 @@ export async function POST(req: NextRequest) {
       resolvedCategoryId = fallbackCat.id;
     }
 
-    // Resolve fallback serviceId for Job model relation if OTHER was selected or serviceId was custom
-    let serviceIdToUse = data.serviceId;
+    // Step 3: Resolve backing database Service record for Job model relation
+    let serviceIdToUse: string | null = null;
     let serviceNameForNotification = 'Home Service';
     let basePrice = worker.hourlyRate || 350.0;
 
-    if (data.serviceId === 'OTHER' || data.customService || !selectedServiceObj) {
-      const catService = await prisma.service.findFirst({
+    if (selectedServiceObj) {
+      serviceIdToUse = selectedServiceObj.id;
+      basePrice = selectedServiceObj.basePrice || basePrice;
+      serviceNameForNotification = selectedServiceObj.name;
+    } else {
+      // Custom Service or 'OTHER' selection:
+      // Find a valid active Service from resolved category, or fallback to any active Service in DB
+      let backingService = await prisma.service.findFirst({
         where: { categoryId: resolvedCategoryId!, isActive: true },
       });
-      if (catService) {
-        serviceIdToUse = catService.id;
-        basePrice = catService.basePrice || basePrice;
-        serviceNameForNotification = catService.name;
-      } else {
-        const anyService = await prisma.service.findFirst({ where: { isActive: true } });
-        if (anyService) {
-          serviceIdToUse = anyService.id;
-          basePrice = anyService.basePrice || basePrice;
-          serviceNameForNotification = anyService.name;
-        }
+      if (!backingService) {
+        backingService = await prisma.service.findFirst({ where: { isActive: true } });
       }
+
+      if (backingService) {
+        serviceIdToUse = backingService.id;
+        basePrice = backingService.basePrice || basePrice;
+        serviceNameForNotification = backingService.name;
+      }
+
       if (data.customService?.trim()) {
         serviceNameForNotification = `Custom Work: ${data.customService.trim()}`;
       }
-    } else {
-      basePrice = selectedServiceObj.basePrice || basePrice;
-      serviceNameForNotification = selectedServiceObj.name;
+    }
+
+    // Step 4: DEFENSIVE FOREIGN KEY VALIDATION (Requirements #7, #10)
+    if (!serviceIdToUse) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected service is unavailable. Please select another service.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const finalServiceCheck = await prisma.service.findUnique({
+      where: { id: serviceIdToUse },
+    });
+
+    if (!finalServiceCheck) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected service is unavailable. Please select another service.',
+        },
+        { status: 400 }
+      );
     }
 
     const finalAmount = data.budget || basePrice;
@@ -302,13 +370,13 @@ export async function POST(req: NextRequest) {
       fullDescription = 'Voice note requirement attached';
     }
 
-    // Create JobRequest and Job in database
+    // Step 5: Create JobRequest and Job in database transaction
     const result = await prisma.$transaction(async (tx) => {
       const jobRequest = await tx.jobRequest.create({
         data: {
           customerId: customerProfileId,
           categoryId: resolvedCategoryId!,
-          serviceId: selectedServiceObj ? selectedServiceObj.id : null,
+          serviceId: finalServiceCheck.id,
           description: fullDescription,
           voiceNoteUrl: data.voiceNoteUrl || null,
           voiceNoteDuration: data.voiceNoteDuration || null,
@@ -330,7 +398,7 @@ export async function POST(req: NextRequest) {
           jobRequestId: jobRequest.id,
           customerId: customerProfileId,
           workerId: data.workerId,
-          serviceId: serviceIdToUse,
+          serviceId: finalServiceCheck.id,
           status: 'REQUESTED',
           baseAmount: basePrice,
           finalAmount: finalAmount,

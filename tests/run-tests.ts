@@ -22,6 +22,7 @@ import { runAadhaarCertTests } from './aadhaar-cert-tests';
 import { runAadhaarDecoderTests } from './aadhaar-decoder-tests';
 import { runAadhaarScannerUiTests } from './aadhaar-scanner-ui-tests';
 import { runAadhaarOnboardingIntegrationTests } from './aadhaar-onboarding-integration-tests';
+import { runAadhaarDiagnosticTests } from './aadhaar-diagnostic-runner-test';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -330,6 +331,10 @@ async function runAllTests() {
   const integrationResults = await runAadhaarOnboardingIntegrationTests();
   passed += integrationResults.passed;
   failed += integrationResults.failed;
+
+  const diagResults = await runAadhaarDiagnosticTests();
+  passed += diagResults.passed;
+  failed += diagResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);
