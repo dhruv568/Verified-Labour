@@ -18,6 +18,9 @@ import { runLivePhotoTests } from './live-photo-tests';
 import { runVoiceNoteTests } from './voice-note-tests';
 import { runTestimonialTests } from './testimonial-tests';
 import { runWorkerBookingFlowTests } from './worker-booking-flow-tests';
+import { runAadhaarCertTests } from './aadhaar-cert-tests';
+import { runAadhaarDecoderTests } from './aadhaar-decoder-tests';
+import { runAadhaarScannerUiTests } from './aadhaar-scanner-ui-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -310,6 +313,18 @@ async function runAllTests() {
   failed += testimonialResults.failed;
 
   await runWorkerBookingFlowTests();
+
+  const certResults = await runAadhaarCertTests();
+  passed += certResults.passed;
+  failed += certResults.failed;
+
+  const decoderResults = await runAadhaarDecoderTests();
+  passed += decoderResults.passed;
+  failed += decoderResults.failed;
+
+  const uiResults = await runAadhaarScannerUiTests();
+  passed += uiResults.passed;
+  failed += uiResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

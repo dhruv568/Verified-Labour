@@ -53,6 +53,9 @@ public/uploads/*
 *.key
 *.cert
 *.crt
+*.cer
+config/certificates/
+/config/certificates/
 
 # OS metadata
 .DS_Store
