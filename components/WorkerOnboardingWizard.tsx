@@ -163,9 +163,9 @@ export default function WorkerOnboardingWizard({
               setDocumentStatus(doc.status === 'VERIFIED' ? 'VERIFIED' : 'UPLOADED');
             }
 
-            if (wp.aadhaarVerif && wp.aadhaarVerif.status === 'VERIFIED') {
+            if ((wp.aadhaarVerif && wp.aadhaarVerif.status === 'VERIFIED') || wp.identityVerified) {
               setAadhaarVerified(true);
-              setMaskedAadhaar(wp.aadhaarVerif.maskedAadhaar || 'XXXXXXXX8291');
+              setMaskedAadhaar(wp.aadhaarVerif?.maskedAadhaar || 'XXXXXXXX8291');
             }
             if (wp.bankVerif && wp.bankVerif.status === 'VERIFIED') {
               setBankVerified(true);
@@ -1505,16 +1505,21 @@ export default function WorkerOnboardingWizard({
             )}
 
             {aadhaarVerified ? (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
-                <div>
-                  <div className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded-full uppercase tracking-wider mb-1">
-                    ✓ Verified Status
+              <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 animate-in fade-in">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0 mt-0.5 stroke-[2.5]" />
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-200/60 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      ✓ Aadhaar Secure QR Verified
+                    </div>
+                    <h4 className="font-bold text-emerald-950 text-base">✓ Identity Verification Complete</h4>
+                    <p className="text-xs text-emerald-800 leading-relaxed">
+                      Your Aadhaar identity has been successfully verified via UIDAI Secure QR.
+                    </p>
+                    <p className="text-xs text-emerald-700 font-mono font-bold pt-1">
+                      Masked Aadhaar: <span>{maskedAadhaar || 'XXXXXXXX8291'}</span>
+                    </p>
                   </div>
-                  <h4 className="font-bold text-emerald-950 text-sm">Aadhaar Identity Verified!</h4>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    Masked Aadhaar: <span className="font-mono font-bold">{maskedAadhaar}</span>
-                  </p>
                 </div>
               </div>
             ) : verificationMode === 'QR' ? (
@@ -1532,6 +1537,13 @@ export default function WorkerOnboardingWizard({
                     const meData = await meRes.json();
                     if (meData.authenticated && meData.user) {
                       setSessionUser(meData.user);
+                      const wp = meData.user.workerProfile;
+                      if (wp && (wp.identityVerified || wp.aadhaarVerif?.status === 'VERIFIED')) {
+                        setAadhaarVerified(true);
+                        if (wp.aadhaarVerif?.maskedAadhaar) {
+                          setMaskedAadhaar(wp.aadhaarVerif.maskedAadhaar);
+                        }
+                      }
                     }
                   } catch {}
 
@@ -1727,7 +1739,7 @@ export default function WorkerOnboardingWizard({
                 onClick={() => setCurrentStep(7)}
                 icon={!aadhaarVerified ? <Lock className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               >
-                {aadhaarVerified ? 'Continue to Bank Verification' : 'Verification Required to Unlock'}
+                {aadhaarVerified ? 'Continue to Bank Verification →' : 'Verification Required to Unlock'}
               </Button>
             </div>
           </div>

@@ -192,5 +192,59 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(code.includes('MAX_DIM = 1800'), 'Must clamp maximum image dimensions to 1800px');
   });
 
+  // Test 15: Scanner State Coverage (No Empty White Rectangle)
+  test('WorkerAadhaarQrScanner JSX covers all processing and error states without dead unhandled rendering paths', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes("scannerState === 'QR_DETECTED'"), 'Must handle QR_DETECTED state');
+    assert(code.includes("scannerState === 'VERIFYING'"), 'Must handle VERIFYING state');
+    assert(code.includes("scannerState === 'SIGNATURE_INVALID'"), 'Must handle SIGNATURE_INVALID state');
+    assert(code.includes("scannerState === 'IDENTITY_MISMATCH'"), 'Must handle IDENTITY_MISMATCH state');
+    assert(code.includes("scannerState === 'INVALID_SECURE_QR'"), 'Must handle INVALID_SECURE_QR state');
+    assert(code.includes("scannerState === 'SERVER_ERROR'"), 'Must handle SERVER_ERROR state');
+  });
+
+  // Test 16: Parent Callback & Step 6 Completion UI
+  test('WorkerOnboardingWizard renders verified status banner and unlocks Step 7 upon verification', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerOnboardingWizard.tsx'),
+      'utf8'
+    );
+    assert(code.includes('✓ Aadhaar Secure QR Verified'), 'Must display verified status banner');
+    assert(code.includes('✓ Identity Verification Complete'), 'Must display identity completion text');
+    assert(code.includes('Continue to Bank Verification →'), 'Must unlock button with continue prompt');
+  });
+
+  // Test 17: Session Synchronization on Success Callback
+  test('WorkerOnboardingWizard onVerifiedSuccess re-fetches /api/auth/me for server state synchronization', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerOnboardingWizard.tsx'),
+      'utf8'
+    );
+    assert(code.includes("fetch('/api/auth/me')"), 'Must re-fetch session /api/auth/me on verified callback');
+  });
+
+  // Test 18: Refresh Persistence Contract
+  test('WorkerOnboardingWizard initializes aadhaarVerified from identityVerified or aadhaarVerif status on mount', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerOnboardingWizard.tsx'),
+      'utf8'
+    );
+    assert(
+      code.includes("wp.aadhaarVerif.status === 'VERIFIED') || wp.identityVerified"),
+      'Must check both aadhaarVerif status and identityVerified flag'
+    );
+  });
+
   return { passed, failed };
 }

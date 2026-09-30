@@ -238,7 +238,12 @@ export default function WorkerAadhaarQrScanner({
         return;
       }
 
-      if (!data.success || !data.verified) {
+      const isVerifiedSuccess = Boolean(
+        data.success &&
+        (data.verified || data.alreadyVerified || data.status === 'VERIFIED' || data.identityVerified)
+      );
+
+      if (!isVerifiedSuccess) {
         if (mountedRef.current) {
           setScannerState('INVALID_SECURE_QR');
           setErrorMessage(
@@ -259,7 +264,7 @@ export default function WorkerAadhaarQrScanner({
           gender: data.data?.gender,
         });
 
-        setScannerState('SUCCESS');
+        setScannerState('VERIFIED');
         onVerifiedSuccess({ maskedAadhaar: masked, nameOnAadhaar: name });
       }
     } catch (err: any) {
@@ -746,8 +751,8 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 4: PROCESSING */}
-        {scannerState === 'PROCESSING' && (
+        {/* State 4: PROCESSING / QR_DETECTED / VERIFYING */}
+        {(scannerState === 'PROCESSING' || scannerState === 'QR_DETECTED' || scannerState === 'VERIFYING') && (
           <div className="text-center py-8 space-y-3 animate-in zoom-in-95">
             <Loader2 className="w-10 h-10 text-[#1264D6] animate-spin mx-auto" />
             <div>
@@ -795,8 +800,14 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 6: FAILED / ERROR */}
-        {(scannerState === 'FAILED' || scannerState === 'ERROR') && (
+        {/* State 6: FAILED / ERROR / INVALID / SIGNATURE / MISMATCH / SERVER / QR_NOT_FOUND */}
+        {(scannerState === 'FAILED' ||
+          scannerState === 'ERROR' ||
+          scannerState === 'QR_NOT_FOUND' ||
+          scannerState === 'INVALID_SECURE_QR' ||
+          scannerState === 'SIGNATURE_INVALID' ||
+          scannerState === 'IDENTITY_MISMATCH' ||
+          scannerState === 'SERVER_ERROR') && (
           <div className="space-y-4 animate-in fade-in">
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
