@@ -56,9 +56,9 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       'utf8'
     );
     assert(
-      scannerCode.includes("facingMode: { ideal: 'environment' }") ||
-        scannerCode.includes('facingMode: { ideal: "environment" }'),
-      'Scanner must prefer rear camera via ideal environment'
+      scannerCode.includes("facingMode: 'environment'") ||
+        scannerCode.includes('facingMode: "environment"'),
+      'Scanner must prefer rear camera via environment facingMode'
     );
   });
 
@@ -97,7 +97,7 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(!scannerCode.includes('sessionStorage.setItem'), 'Must NOT save payload to sessionStorage');
   });
 
-  // Test 8: Native getUserMedia & Video Ref Integration
+  // Test 8: Native getUserMedia & Synchronous Click Context
   test('WorkerAadhaarQrScanner uses native getUserMedia and videoRef element', () => {
     const component = require('../components/WorkerAadhaarQrScanner');
     assert(component.default !== undefined, 'WorkerAadhaarQrScanner default export must exist');
@@ -110,7 +110,7 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     );
     assert(code.includes('navigator.mediaDevices.getUserMedia'), 'Must use native getUserMedia');
     assert(code.includes('videoRef'), 'Must use videoRef for native HTMLVideoElement');
-    assert(code.includes('playsInline') || code.includes('playsinline'), 'Must enforce playsInline attribute');
+    assert(code.includes('playsinline') || code.includes('playsInline'), 'Must enforce playsinline attribute');
   });
 
   // Test 9: Native jsQR Frame Decoding & Throttled Loop
@@ -121,20 +121,20 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(code.includes("import jsQR from 'jsqr'"), 'Must import jsQR');
+    assert(code.includes("import('jsqr')"), 'Must dynamically import jsQR');
     assert(code.includes('startFrameScanningLoop'), 'Must define startFrameScanningLoop');
     assert(code.includes('jsQR(imageData.data'), 'Must execute jsQR frame decoding');
   });
 
-  // Test 10: 5-Second Startup Timeout Guard
-  test('WorkerAadhaarQrScanner includes 5-second hard startup timeout guard', () => {
+  // Test 10: 5-Second Hard Promise.race Timeout Guard
+  test('WorkerAadhaarQrScanner includes 5-second hard startup timeout guard via Promise.race', () => {
     const fs = require('fs');
     const path = require('path');
     const code = fs.readFileSync(
       path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(code.includes('startupTimeoutRef'), 'Must define startupTimeoutRef');
+    assert(code.includes('Promise.race'), 'Must use Promise.race for hard getUserMedia timeout');
     assert(code.includes('5000'), 'Must set 5-second timeout (5000ms)');
     assert(code.includes('timed out after 5 seconds'), 'Must include 5-second timeout error message');
   });

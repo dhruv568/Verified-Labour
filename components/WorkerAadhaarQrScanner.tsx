@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import jsQR from 'jsqr';
 import {
   Camera,
   StopCircle,
@@ -24,7 +23,6 @@ interface WorkerAadhaarQrScannerProps {
 
 export type ScannerLifecycleState =
   | 'IDLE'
-  | 'REQUESTING'
   | 'STARTING'
   | 'SCANNING'
   | 'PROCESSING'
@@ -65,7 +63,6 @@ export default function WorkerAadhaarQrScanner({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
-  const startupTimeoutRef = useRef<any>(null);
   const isInitializingRef = useRef<boolean>(false);
   const isProcessingScanRef = useRef<boolean>(false);
   const mountedRef = useRef<boolean>(true);
@@ -83,19 +80,11 @@ export default function WorkerAadhaarQrScanner({
   const stopCamera = useCallback(() => {
     isInitializingRef.current = false;
 
-    // 1. Clear scanning loop interval
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
       scanIntervalRef.current = null;
     }
 
-    // 2. Clear 5-second hard startup timeout
-    if (startupTimeoutRef.current) {
-      clearTimeout(startupTimeoutRef.current);
-      startupTimeoutRef.current = null;
-    }
-
-    // 3. Stop all MediaStreamTracks
     if (activeStreamRef.current) {
       try {
         activeStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -103,7 +92,6 @@ export default function WorkerAadhaarQrScanner({
       activeStreamRef.current = null;
     }
 
-    // 4. Detach stream from HTMLVideoElement
     if (videoRef.current) {
       try {
         if (videoRef.current.srcObject) {
@@ -122,13 +110,13 @@ export default function WorkerAadhaarQrScanner({
     };
   }, [stopCamera]);
 
-  // Map browser camera errors safely to clear, actionable messages
+  // Map browser camera errors safely to clear, human-readable messages
   const mapCameraError = (err: any): string => {
     const name = (err?.name || '').toLowerCase();
     const msg = (err?.message || err?.toString() || '').toLowerCase();
 
     if (name.includes('notallowed') || msg.includes('permission') || msg.includes('denied')) {
-      return 'Camera permission is blocked. Please allow camera access for Verified Labour in your browser settings and try again.';
+      return 'Camera permission is blocked. Please allow camera access in your browser settings and try again.';
     }
     if (name.includes('notfound') || msg.includes('no camera') || msg.includes('notfound')) {
       return 'No camera was found on this device.';
@@ -216,7 +204,7 @@ export default function WorkerAadhaarQrScanner({
     }
   };
 
-  // Live Video Frame QR Scanner Loop using jsQR
+  // Live Video Frame QR Scanner Loop using dynamic jsQR import
   const startFrameScanningLoop = useCallback(() => {
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
@@ -224,7 +212,7 @@ export default function WorkerAadhaarQrScanner({
 
     const canvas = document.createElement('canvas');
 
-    scanIntervalRef.current = setInterval(() => {
+    scanIntervalRef.current = setInterval(async () => {
       if (!mountedRef.current || isProcessingScanRef.current || !videoRef.current) return;
 
       const video = videoRef.current;
@@ -239,17 +227,22 @@ export default function WorkerAadhaarQrScanner({
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      });
+      try {
+        const jsQR = (await import('jsqr')).default;
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
 
-      if (code && code.data && code.data.trim()) {
-        sendPayloadToApi(code.data.trim());
+        if (code && code.data && code.data.trim()) {
+          sendPayloadToApi(code.data.trim());
+        }
+      } catch (err) {
+        // Ignore transient frame decode errors
       }
-    }, 180); // Scan frame every 180ms (~5.5 FPS for optimal performance and battery)
+    }, 180);
   }, []);
 
-  // Main Native camera scan startup workflow
+  // Synchronous Click Handler Native Camera Startup with HARD 5-second Promise.race timeout
   const initiateCameraScan = async () => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
@@ -258,7 +251,7 @@ export default function WorkerAadhaarQrScanner({
     setVerifiedDetails(null);
     isProcessingScanRef.current = false;
 
-    // Step 1: Pre-flight security & browser checks
+    // Pre-flight security & browser checks
     if (typeof window === 'undefined') return;
 
     if (!window.isSecureContext) {
@@ -270,7 +263,7 @@ export default function WorkerAadhaarQrScanner({
       return;
     }
 
-    if (!navigator?.mediaDevices || !navigator?.mediaDevices?.getUserMedia) {
+    if (!navigator?.mediaDevices?.getUserMedia) {
       setScannerState('ERROR');
       setErrorMessage(
         'Your browser does not support camera scanning. Please try using the latest Safari or Chrome, or upload a photo of your QR code below.'
@@ -279,139 +272,90 @@ export default function WorkerAadhaarQrScanner({
       return;
     }
 
-    // Step 2: Transition state to REQUESTING
-    setScannerState('REQUESTING');
-  };
+    stopCamera();
+    setScannerState('STARTING');
 
-  // Camera start execution effect when state is REQUESTING
-  useEffect(() => {
-    if (scannerState !== 'REQUESTING') return;
-
-    let isEffectActive = true;
-
-    const startNativeCameraSession = async () => {
-      try {
-        stopCamera();
-
-        // 1. Set state to STARTING to mount <video ref={videoRef} /> in DOM
-        setScannerState('STARTING');
-        await new Promise((resolve) => setTimeout(resolve, 80));
-        if (!isEffectActive || !mountedRef.current) return;
-
-        // 2. Set 5-second hard startup timeout guard
-        startupTimeoutRef.current = setTimeout(() => {
-          if (isEffectActive && mountedRef.current) {
-            stopCamera();
-            setScannerState('ERROR');
-            setErrorMessage('Camera stream startup timed out after 5 seconds. Please try again or upload a photo of your QR code below.');
-          }
-        }, 5000);
-
-        // 3. Obtain native MediaStream via getUserMedia
+    try {
+      // Execute getUserMedia IMMEDIATELY inside the user tap event context
+      const getUserMediaPromise = (async () => {
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
+            video: { facingMode: 'environment' },
             audio: false,
           });
-        } catch (facingErr) {
-          // Fallback to plain video constraints if environment facingMode fails
+        } catch {
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false,
           });
         }
+        return stream;
+      })();
 
-        if (!isEffectActive || !mountedRef.current) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
+      // Hard 5-second timeout guard
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('CAMERA_TIMEOUT'));
+        }, 5000);
+      });
 
-        activeStreamRef.current = stream;
+      const activeStream = await Promise.race([getUserMediaPromise, timeoutPromise]);
 
-        // 4. Attach stream directly to HTMLVideoElement
-        const video = videoRef.current;
-        if (!video) {
-          throw new Error('Video container element was not found in DOM.');
-        }
-
-        video.srcObject = stream;
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('webkit-playsinline', 'true');
-        video.setAttribute('autoplay', 'true');
-        video.muted = true;
-
-        try {
-          await video.play();
-        } catch {}
-
-        // 5. Poll video readiness up to 5 seconds
-        const startTime = Date.now();
-        let isVideoReady = false;
-
-        while (Date.now() - startTime < 4500) {
-          if (!isEffectActive || !mountedRef.current) return;
-
-          if (
-            video.readyState >= 2 &&
-            video.videoWidth > 0 &&
-            video.videoHeight > 0
-          ) {
-            isVideoReady = true;
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 100));
-        }
-
-        if (!isVideoReady) {
-          throw new Error('Camera video stream could not be rendered.');
-        }
-
-        // Clear hard startup timeout guard since stream is verified live
-        if (startupTimeoutRef.current) {
-          clearTimeout(startupTimeoutRef.current);
-          startupTimeoutRef.current = null;
-        }
-
-        if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
-          const track = stream.getVideoTracks()[0];
-          setDiagnostics({
-            isSecureContext: window.isSecureContext,
-            hasMediaDevices: true,
-            videoReadyState: video.readyState,
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            streamActive: stream.active,
-            activeTrackLabel: track?.label || 'Live Camera',
-          });
-        }
-
-        if (isEffectActive && mountedRef.current) {
-          setScannerState('SCANNING');
-          startFrameScanningLoop();
-        }
-      } catch (err: any) {
-        if (!isEffectActive || !mountedRef.current) return;
-        stopCamera();
-        setScannerState('ERROR');
-        setErrorMessage(mapCameraError(err));
-      } finally {
-        isInitializingRef.current = false;
+      if (!mountedRef.current) {
+        activeStream.getTracks().forEach((t) => t.stop());
+        return;
       }
-    };
 
-    startNativeCameraSession();
+      activeStreamRef.current = activeStream;
+      setScannerState('SCANNING');
+    } catch (err: any) {
+      stopCamera();
+      if (mountedRef.current) {
+        setScannerState('ERROR');
+        if (err?.message === 'CAMERA_TIMEOUT') {
+          setErrorMessage('Camera stream startup timed out after 5 seconds. Please try again or upload a photo of your QR code below.');
+        } else {
+          setErrorMessage(mapCameraError(err));
+        }
+      }
+    } finally {
+      isInitializingRef.current = false;
+    }
+  };
 
-    return () => {
-      isEffectActive = false;
-    };
-  }, [scannerState, stopCamera, startFrameScanningLoop]);
+  // Effect when scannerState === 'SCANNING': Attach stream to HTMLVideoElement & start frame loop
+  useEffect(() => {
+    if (scannerState !== 'SCANNING' || !activeStreamRef.current) return;
 
-  // Image Upload Fallback Handler (Client-Side Local QR Scan via jsQR)
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.srcObject = activeStreamRef.current;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('autoplay', '');
+    video.muted = true;
+
+    video.play().catch(() => {});
+
+    if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
+      const track = activeStreamRef.current.getVideoTracks()[0];
+      setDiagnostics({
+        isSecureContext: window.isSecureContext,
+        hasMediaDevices: true,
+        videoReadyState: video.readyState,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        streamActive: activeStreamRef.current.active,
+        activeTrackLabel: track?.label || 'Live Camera',
+      });
+    }
+
+    startFrameScanningLoop();
+  }, [scannerState, startFrameScanningLoop]);
+
+  // Image Upload Fallback Handler (Client-Side Local QR Scan via dynamic jsQR)
   const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -432,7 +376,7 @@ export default function WorkerAadhaarQrScanner({
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
-        img.onload = () => {
+        img.onload = async () => {
           const canvas = document.createElement('canvas');
           canvas.width = img.width;
           canvas.height = img.height;
@@ -445,15 +389,23 @@ export default function WorkerAadhaarQrScanner({
           }
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, img.width, img.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert',
-          });
 
-          if (code && code.data && code.data.trim()) {
-            sendPayloadToApi(code.data.trim());
-          } else {
+          try {
+            const jsQR = (await import('jsqr')).default;
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'dontInvert',
+            });
+
+            if (code && code.data && code.data.trim()) {
+              sendPayloadToApi(code.data.trim());
+            } else {
+              setScannerState('ERROR');
+              setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear and well-lit.');
+              setIsSubmitting(false);
+            }
+          } catch {
             setScannerState('ERROR');
-            setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear and well-lit.');
+            setErrorMessage('QR decoder library loading failed. Please ensure npm dependencies are installed.');
             setIsSubmitting(false);
           }
         };
@@ -549,34 +501,27 @@ export default function WorkerAadhaarQrScanner({
                   onClick={() => fileInputRef.current?.click()}
                   icon={<Upload className="w-4 h-4 text-blue-600" />}
                 >
-                  Upload QR Image
+                  Scan QR from Image
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* State 2 & 3: REQUESTING / STARTING */}
-        {(scannerState === 'REQUESTING' || scannerState === 'STARTING') && (
+        {/* State 2: STARTING */}
+        {scannerState === 'STARTING' && (
           <div className="space-y-3 animate-in fade-in">
             <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] max-w-md mx-auto flex items-center justify-center">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover block bg-black"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm space-y-3 text-white z-10">
+              <div className="flex flex-col items-center justify-center space-y-3 text-white">
                 <Loader2 className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
-                <p className="text-xs font-bold">Starting Camera...</p>
-                <p className="text-[11px] text-slate-400">Requesting native hardware video stream</p>
+                <p className="text-xs font-bold">Requesting Camera Access...</p>
+                <p className="text-[11px] text-slate-400">Opening hardware camera stream</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* State 4: SCANNING (Verified Native Live Stream) */}
+        {/* State 3: SCANNING (Verified Native Live Stream) */}
         {scannerState === 'SCANNING' && (
           <div className="space-y-3 animate-in fade-in">
             <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] max-w-md mx-auto flex items-center justify-center">
@@ -617,7 +562,7 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 5: PROCESSING */}
+        {/* State 4: PROCESSING */}
         {scannerState === 'PROCESSING' && (
           <div className="text-center py-8 space-y-3 animate-in zoom-in-95">
             <Loader2 className="w-10 h-10 text-[#1264D6] animate-spin mx-auto" />
@@ -630,7 +575,7 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 6: SUCCESS */}
+        {/* State 5: SUCCESS */}
         {scannerState === 'SUCCESS' && verifiedDetails && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-3 animate-in fade-in">
             <div className="flex items-center gap-2.5 text-emerald-800 font-bold text-base">
@@ -666,14 +611,14 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 7: FAILED / ERROR */}
+        {/* State 6: FAILED / ERROR */}
         {(scannerState === 'FAILED' || scannerState === 'ERROR') && (
           <div className="space-y-4 animate-in fade-in">
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold block text-sm text-red-900">Verification Failed</strong>
-                <span>{errorMessage || 'QR verification failed. Please try scanning again.'}</span>
+                <strong className="font-bold block text-sm text-red-900">Camera Unavailable</strong>
+                <span>{errorMessage || 'Camera could not be started. Please try again or upload a photo of your QR code below.'}</span>
               </div>
             </div>
 
@@ -684,7 +629,7 @@ export default function WorkerAadhaarQrScanner({
                 onClick={initiateCameraScan}
                 icon={<RefreshCw className="w-4 h-4" />}
               >
-                Try Camera Again
+                Try Again
               </Button>
 
               <Button

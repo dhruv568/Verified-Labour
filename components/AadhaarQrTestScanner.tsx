@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import jsQR from 'jsqr';
 import {
   Camera,
   StopCircle,
@@ -29,7 +28,6 @@ interface VerificationResult {
 
 export type ScannerLifecycleState =
   | 'IDLE'
-  | 'REQUESTING'
   | 'STARTING'
   | 'SCANNING'
   | 'VERIFYING'
@@ -47,7 +45,6 @@ export default function AadhaarQrTestScanner() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
-  const startupTimeoutRef = useRef<any>(null);
   const isInitializingRef = useRef<boolean>(false);
   const isProcessingScanRef = useRef<boolean>(false);
   const mountedRef = useRef<boolean>(true);
@@ -65,11 +62,6 @@ export default function AadhaarQrTestScanner() {
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
       scanIntervalRef.current = null;
-    }
-
-    if (startupTimeoutRef.current) {
-      clearTimeout(startupTimeoutRef.current);
-      startupTimeoutRef.current = null;
     }
 
     if (activeStreamRef.current) {
@@ -173,7 +165,7 @@ export default function AadhaarQrTestScanner() {
 
     const canvas = document.createElement('canvas');
 
-    scanIntervalRef.current = setInterval(() => {
+    scanIntervalRef.current = setInterval(async () => {
       if (!mountedRef.current || isProcessingScanRef.current || !videoRef.current) return;
 
       const video = videoRef.current;
@@ -188,17 +180,20 @@ export default function AadhaarQrTestScanner() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      });
+      try {
+        const jsQR = (await import('jsqr')).default;
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
 
-      if (code && code.data && code.data.trim()) {
-        sendPayloadToApi(code.data.trim());
-      }
+        if (code && code.data && code.data.trim()) {
+          sendPayloadToApi(code.data.trim());
+        }
+      } catch {}
     }, 180);
   }, []);
 
-  const startScanner = async () => {
+  const initiateCameraScan = async () => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
 
@@ -206,38 +201,31 @@ export default function AadhaarQrTestScanner() {
     setResult(null);
     isProcessingScanRef.current = false;
 
-    setScannerState('REQUESTING');
-  };
+    if (typeof window === 'undefined') return;
 
-  useEffect(() => {
-    if (scannerState !== 'REQUESTING') return;
+    if (!window.isSecureContext) {
+      setScannerState('ERROR');
+      setErrorMessage('Camera access requires a secure HTTPS connection.');
+      isInitializingRef.current = false;
+      return;
+    }
 
-    let isEffectActive = true;
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setScannerState('ERROR');
+      setErrorMessage('Your browser does not support camera scanning.');
+      isInitializingRef.current = false;
+      return;
+    }
 
-    const startNativeCameraSession = async () => {
-      try {
-        stopCamera();
+    stopCamera();
+    setScannerState('STARTING');
 
-        setScannerState('STARTING');
-        await new Promise((resolve) => setTimeout(resolve, 80));
-        if (!isEffectActive || !mountedRef.current) return;
-
-        startupTimeoutRef.current = setTimeout(() => {
-          if (isEffectActive && mountedRef.current) {
-            stopCamera();
-            setScannerState('ERROR');
-            setErrorMessage('Camera startup timed out after 5 seconds.');
-          }
-        }, 5000);
-
+    try {
+      const getUserMediaPromise = (async () => {
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
+            video: { facingMode: 'environment' },
             audio: false,
           });
         } catch {
@@ -246,73 +234,54 @@ export default function AadhaarQrTestScanner() {
             audio: false,
           });
         }
+        return stream;
+      })();
 
-        if (!isEffectActive || !mountedRef.current) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('CAMERA_TIMEOUT'));
+        }, 5000);
+      });
 
-        activeStreamRef.current = stream;
+      const activeStream = await Promise.race([getUserMediaPromise, timeoutPromise]);
 
-        const video = videoRef.current;
-        if (!video) throw new Error('Video element missing');
-
-        video.srcObject = stream;
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('webkit-playsinline', 'true');
-        video.setAttribute('autoplay', 'true');
-        video.muted = true;
-
-        try {
-          await video.play();
-        } catch {}
-
-        const startTime = Date.now();
-        let isVideoReady = false;
-
-        while (Date.now() - startTime < 4500) {
-          if (!isEffectActive || !mountedRef.current) return;
-
-          if (
-            video.readyState >= 2 &&
-            video.videoWidth > 0 &&
-            video.videoHeight > 0
-          ) {
-            isVideoReady = true;
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 100));
-        }
-
-        if (!isVideoReady) {
-          throw new Error('Camera video stream could not be rendered.');
-        }
-
-        if (startupTimeoutRef.current) {
-          clearTimeout(startupTimeoutRef.current);
-          startupTimeoutRef.current = null;
-        }
-
-        if (isEffectActive && mountedRef.current) {
-          setScannerState('SCANNING');
-          startFrameScanningLoop();
-        }
-      } catch (err: any) {
-        if (!isEffectActive || !mountedRef.current) return;
-        stopCamera();
-        setScannerState('ERROR');
-        setErrorMessage(mapCameraError(err));
-      } finally {
-        isInitializingRef.current = false;
+      if (!mountedRef.current) {
+        activeStream.getTracks().forEach((t) => t.stop());
+        return;
       }
-    };
 
-    startNativeCameraSession();
+      activeStreamRef.current = activeStream;
+      setScannerState('SCANNING');
+    } catch (err: any) {
+      stopCamera();
+      if (mountedRef.current) {
+        setScannerState('ERROR');
+        if (err?.message === 'CAMERA_TIMEOUT') {
+          setErrorMessage('Camera startup timed out after 5 seconds.');
+        } else {
+          setErrorMessage(mapCameraError(err));
+        }
+      }
+    } finally {
+      isInitializingRef.current = false;
+    }
+  };
 
-    return () => {
-      isEffectActive = false;
-    };
-  }, [scannerState, stopCamera, startFrameScanningLoop]);
+  useEffect(() => {
+    if (scannerState !== 'SCANNING' || !activeStreamRef.current) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.srcObject = activeStreamRef.current;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('autoplay', '');
+    video.muted = true;
+
+    video.play().catch(() => {});
+    startFrameScanningLoop();
+  }, [scannerState, startFrameScanningLoop]);
 
   const handleReset = async () => {
     stopCamera();
@@ -372,7 +341,7 @@ export default function AadhaarQrTestScanner() {
               <Button
                 variant="brand"
                 size="lg"
-                onClick={startScanner}
+                onClick={initiateCameraScan}
                 icon={<Camera className="w-5 h-5" />}
               >
                 Start Camera Scanner
@@ -381,26 +350,19 @@ export default function AadhaarQrTestScanner() {
           </div>
         )}
 
-        {/* State 2 & 3: REQUESTING / STARTING */}
-        {(scannerState === 'REQUESTING' || scannerState === 'STARTING') && (
+        {/* State 2: STARTING */}
+        {scannerState === 'STARTING' && (
           <div className="space-y-4 animate-in fade-in">
             <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] flex items-center justify-center">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover block bg-black"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm space-y-3 text-white z-10">
+              <div className="flex flex-col items-center justify-center space-y-3 text-white">
                 <Loader2 className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
-                <p className="text-xs font-bold">Starting Camera...</p>
+                <p className="text-xs font-bold">Requesting Camera Access...</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* State 4: SCANNING */}
+        {/* State 3: SCANNING */}
         {scannerState === 'SCANNING' && (
           <div className="space-y-4 animate-in fade-in">
             <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] flex items-center justify-center">
@@ -440,7 +402,7 @@ export default function AadhaarQrTestScanner() {
           </div>
         )}
 
-        {/* State 5: VERIFYING */}
+        {/* State 4: VERIFYING */}
         {scannerState === 'VERIFYING' && (
           <div className="text-center py-10 space-y-4 animate-in zoom-in-95">
             <Loader2 className="w-12 h-12 text-[#1264D6] animate-spin mx-auto" />
@@ -453,7 +415,7 @@ export default function AadhaarQrTestScanner() {
           </div>
         )}
 
-        {/* State 6: RESULT */}
+        {/* State 5: RESULT */}
         {scannerState === 'RESULT' && result && (
           <div className="space-y-4 animate-in fade-in">
             {result.verified && result.signatureValid ? (
@@ -513,24 +475,24 @@ export default function AadhaarQrTestScanner() {
           </div>
         )}
 
-        {/* State 7: ERROR */}
+        {/* State 6: ERROR */}
         {scannerState === 'ERROR' && (
           <div className="space-y-4 animate-in fade-in">
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold block text-sm">Scan Error</strong>
-                <span>{errorMessage || 'Unable to scan or verify QR code.'}</span>
+                <strong className="font-bold block text-sm">Camera Unavailable</strong>
+                <span>{errorMessage || 'Unable to access device camera.'}</span>
               </div>
             </div>
 
             <Button
               variant="brand"
               fullWidth
-              onClick={startScanner}
+              onClick={initiateCameraScan}
               icon={<RefreshCw className="w-4 h-4" />}
             >
-              Try Camera Again
+              Try Again
             </Button>
           </div>
         )}
