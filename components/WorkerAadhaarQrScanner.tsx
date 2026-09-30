@@ -12,6 +12,8 @@ import {
   Lock,
   Upload,
   Activity,
+  Zap,
+  ZapOff,
 } from 'lucide-react';
 import Button from './ui/Button';
 
@@ -38,6 +40,8 @@ interface CameraDiagnosticInfo {
   videoHeight: number;
   streamActive: boolean;
   activeTrackLabel: string;
+  framesScanned: number;
+  torchSupported: boolean;
 }
 
 export default function WorkerAadhaarQrScanner({
@@ -58,6 +62,8 @@ export default function WorkerAadhaarQrScanner({
   const [manualPayload, setManualPayload] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [diagnostics, setDiagnostics] = useState<CameraDiagnosticInfo | null>(null);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
 
   // Native DOM & Stream Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -68,6 +74,11 @@ export default function WorkerAadhaarQrScanner({
   const mountedRef = useRef<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Frame counter for diagnostics
+  const frameCountRef = useRef<number>(0);
+  const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   // Lifecycle mount check
   useEffect(() => {
     mountedRef.current = true;
@@ -76,7 +87,7 @@ export default function WorkerAadhaarQrScanner({
     };
   }, []);
 
-  // Complete cleanup of camera stream, timers, and video srcObject
+  // Complete cleanup of camera stream, timers, torch, and video srcObject
   const stopCamera = useCallback(() => {
     isInitializingRef.current = false;
 
@@ -101,6 +112,9 @@ export default function WorkerAadhaarQrScanner({
         }
       } catch {}
     }
+
+    setIsTorchOn(false);
+    setHasTorch(false);
   }, []);
 
   // Auto-cleanup on unmount
@@ -109,6 +123,21 @@ export default function WorkerAadhaarQrScanner({
       stopCamera();
     };
   }, [stopCamera]);
+
+  // Toggle Torch / Flashlight if supported by camera hardware
+  const toggleTorch = async () => {
+    if (!activeStreamRef.current) return;
+    const track = activeStreamRef.current.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      const nextTorchState = !isTorchOn;
+      await track.applyConstraints({
+        advanced: [{ torch: nextTorchState }] as any,
+      });
+      setIsTorchOn(nextTorchState);
+    } catch {}
+  };
 
   // Map browser camera errors safely to clear, human-readable messages
   const mapCameraError = (err: any): string => {
@@ -204,13 +233,13 @@ export default function WorkerAadhaarQrScanner({
     }
   };
 
-  // Live Video Frame QR Scanner Loop using dynamic jsQR import
+  // Dual-Pass Live Video Frame QR Scanner Loop (Center Viewfinder Crop + Full Frame Fallback)
   const startFrameScanningLoop = useCallback(() => {
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
     }
 
-    const canvas = document.createElement('canvas');
+    frameCountRef.current = 0;
 
     scanIntervalRef.current = setInterval(async () => {
       if (!mountedRef.current || isProcessingScanRef.current || !videoRef.current) return;
@@ -218,28 +247,94 @@ export default function WorkerAadhaarQrScanner({
       const video = videoRef.current;
       if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      frameCountRef.current += 1;
 
       try {
         const jsQR = (await import('jsqr')).default;
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        });
+        let code: any = null;
 
-        if (code && code.data && code.data.trim()) {
-          sendPayloadToApi(code.data.trim());
+        // --- Pass 1: Center Viewfinder Crop (High Resolution, Ultra-Fast for Centered QR) ---
+        const cropSize = Math.floor(Math.min(vw, vh) * 0.65);
+        const cropX = Math.floor((vw - cropSize) / 2);
+        const cropY = Math.floor((vh - cropSize) / 2);
+
+        if (!cropCanvasRef.current) {
+          cropCanvasRef.current = document.createElement('canvas');
+        }
+        const cropCanvas = cropCanvasRef.current;
+        cropCanvas.width = cropSize;
+        cropCanvas.height = cropSize;
+        const cropCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
+
+        if (cropCtx) {
+          cropCtx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+          const cropData = cropCtx.getImageData(0, 0, cropSize, cropSize);
+          code = jsQR(cropData.data, cropData.width, cropData.height, {
+            inversionAttempts: 'attemptBoth',
+          });
+        }
+
+        // --- Pass 2: Full Video Frame Fallback (If center crop didn't match) ---
+        if (!code) {
+          if (!fullCanvasRef.current) {
+            fullCanvasRef.current = document.createElement('canvas');
+          }
+          const fullCanvas = fullCanvasRef.current;
+          fullCanvas.width = vw;
+          fullCanvas.height = vh;
+          const fullCtx = fullCanvas.getContext('2d', { willReadFrequently: true });
+
+          if (fullCtx) {
+            fullCtx.drawImage(video, 0, 0, vw, vh);
+            const fullData = fullCtx.getImageData(0, 0, vw, vh);
+            code = jsQR(fullData.data, fullData.width, fullData.height, {
+              inversionAttempts: 'attemptBoth',
+            });
+          }
+        }
+
+        // Diagnostic update in dev mode
+        if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
+          setDiagnostics((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  videoReadyState: video.readyState,
+                  videoWidth: vw,
+                  videoHeight: vh,
+                  framesScanned: frameCountRef.current,
+                }
+              : null
+          );
+        }
+
+        // --- Process QR Payload ---
+        if (code && (code.binaryData?.length > 0 || code.data?.trim())) {
+          let payloadString = '';
+
+          if (code.binaryData && code.binaryData.length > 0) {
+            // Convert byte array to Base64 string for safe HTTP transit to server
+            const bytes = new Uint8Array(code.binaryData);
+            let binary = '';
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            payloadString = btoa(binary);
+          } else if (code.data) {
+            payloadString = code.data.trim();
+          }
+
+          if (payloadString) {
+            sendPayloadToApi(payloadString);
+          }
         }
       } catch (err) {
-        // Ignore transient frame decode errors
+        // Ignore transient decode errors
       }
-    }, 180);
+    }, 150); // Scan frame every 150ms (~6.6 FPS)
   }, []);
 
   // Synchronous Click Handler Native Camera Startup with HARD 5-second Promise.race timeout
@@ -281,10 +376,16 @@ export default function WorkerAadhaarQrScanner({
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              focusMode: { ideal: 'continuous' },
+            } as any,
             audio: false,
           });
         } catch {
+          // Fallback to basic video constraints if 1080p ideal constraints fail
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false,
@@ -308,6 +409,16 @@ export default function WorkerAadhaarQrScanner({
       }
 
       activeStreamRef.current = activeStream;
+
+      // Check for torch capability
+      const track = activeStream.getVideoTracks()[0];
+      if (track && typeof track.getCapabilities === 'function') {
+        const caps = track.getCapabilities() as any;
+        if (caps && caps.torch) {
+          setHasTorch(true);
+        }
+      }
+
       setScannerState('SCANNING');
     } catch (err: any) {
       stopCamera();
@@ -341,6 +452,7 @@ export default function WorkerAadhaarQrScanner({
 
     if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
       const track = activeStreamRef.current.getVideoTracks()[0];
+      const caps = typeof track?.getCapabilities === 'function' ? (track.getCapabilities() as any) : {};
       setDiagnostics({
         isSecureContext: window.isSecureContext,
         hasMediaDevices: true,
@@ -349,6 +461,8 @@ export default function WorkerAadhaarQrScanner({
         videoHeight: video.videoHeight,
         streamActive: activeStreamRef.current.active,
         activeTrackLabel: track?.label || 'Live Camera',
+        framesScanned: 0,
+        torchSupported: !!caps?.torch,
       });
     }
 
@@ -380,7 +494,7 @@ export default function WorkerAadhaarQrScanner({
           const canvas = document.createElement('canvas');
           canvas.width = img.width;
           canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
           if (!ctx) {
             setScannerState('ERROR');
             setErrorMessage('Could not process image file.');
@@ -393,16 +507,32 @@ export default function WorkerAadhaarQrScanner({
           try {
             const jsQR = (await import('jsqr')).default;
             const code = jsQR(imageData.data, imageData.width, imageData.height, {
-              inversionAttempts: 'dontInvert',
+              inversionAttempts: 'attemptBoth',
             });
 
-            if (code && code.data && code.data.trim()) {
-              sendPayloadToApi(code.data.trim());
-            } else {
-              setScannerState('ERROR');
-              setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear and well-lit.');
-              setIsSubmitting(false);
+            if (code && (code.binaryData?.length > 0 || code.data?.trim())) {
+              let payloadString = '';
+              if (code.binaryData && code.binaryData.length > 0) {
+                const bytes = new Uint8Array(code.binaryData);
+                let binary = '';
+                const len = bytes.byteLength;
+                for (let i = 0; i < len; i++) {
+                  binary += String.fromCharCode(bytes[i]);
+                }
+                payloadString = btoa(binary);
+              } else if (code.data) {
+                payloadString = code.data.trim();
+              }
+
+              if (payloadString) {
+                sendPayloadToApi(payloadString);
+                return;
+              }
             }
+
+            setScannerState('ERROR');
+            setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear, well-lit, and unblurred.');
+            setIsSubmitting(false);
           } catch {
             setScannerState('ERROR');
             setErrorMessage('QR decoder library loading failed. Please ensure npm dependencies are installed.');
@@ -535,11 +665,20 @@ export default function WorkerAadhaarQrScanner({
 
               {/* Viewfinder Target Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-56 h-56 border-2 border-emerald-400/90 rounded-2xl shadow-2xl relative">
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 -mt-1 -ml-1 rounded-tl-sm" />
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 -mt-1 -mr-1 rounded-tr-sm" />
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400 -mb-1 -ml-1 rounded-bl-sm" />
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400 -mb-1 -mr-1 rounded-br-sm" />
+                <div className="w-56 h-56 border-2 border-emerald-400/90 rounded-2xl shadow-2xl relative flex flex-col justify-between p-2">
+                  <div className="flex justify-between">
+                    <div className="w-4 h-4 border-t-4 border-l-4 border-emerald-400 -mt-2 -ml-2 rounded-tl-sm" />
+                    <div className="w-4 h-4 border-t-4 border-r-4 border-emerald-400 -mt-2 -mr-2 rounded-tr-sm" />
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-xs">
+                      Place Aadhaar Secure QR here
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="w-4 h-4 border-b-4 border-l-4 border-emerald-400 -mb-2 -ml-2 rounded-bl-sm" />
+                    <div className="w-4 h-4 border-b-4 border-r-4 border-emerald-400 -mb-2 -mr-2 rounded-br-sm" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -550,14 +689,27 @@ export default function WorkerAadhaarQrScanner({
                 <span>Camera Active — Hold QR code in frame</span>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-                icon={<StopCircle className="w-4 h-4 text-red-500" />}
-              >
-                Stop Scanner
-              </Button>
+              <div className="flex items-center gap-2">
+                {hasTorch && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleTorch}
+                    icon={isTorchOn ? <ZapOff className="w-4 h-4 text-amber-500" /> : <Zap className="w-4 h-4 text-amber-400" />}
+                  >
+                    {isTorchOn ? 'Torch Off' : 'Torch On'}
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  icon={<StopCircle className="w-4 h-4 text-red-500" />}
+                >
+                  Stop Scanner
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -617,8 +769,8 @@ export default function WorkerAadhaarQrScanner({
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold block text-sm text-red-900">Camera Unavailable</strong>
-                <span>{errorMessage || 'Camera could not be started. Please try again or upload a photo of your QR code below.'}</span>
+                <strong className="font-bold block text-sm text-red-900">Verification Failed</strong>
+                <span>{errorMessage || 'QR verification failed. Please try scanning again.'}</span>
               </div>
             </div>
 
@@ -669,7 +821,9 @@ export default function WorkerAadhaarQrScanner({
               <div>Ready State: <strong>{diagnostics.videoReadyState}</strong></div>
               <div>Dimensions: <strong>{diagnostics.videoWidth}x{diagnostics.videoHeight}</strong></div>
               <div>Stream Active: <strong>{diagnostics.streamActive ? 'True' : 'False'}</strong></div>
-              <div className="col-span-3 truncate">Track: <strong>{diagnostics.activeTrackLabel}</strong></div>
+              <div>Frames Scanned: <strong>{diagnostics.framesScanned}</strong></div>
+              <div>Torch Available: <strong>{diagnostics.torchSupported ? 'Yes' : 'No'}</strong></div>
+              <div className="col-span-2 truncate">Track: <strong>{diagnostics.activeTrackLabel}</strong></div>
             </div>
           )}
 

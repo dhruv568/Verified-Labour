@@ -49,6 +49,9 @@ export default function AadhaarQrTestScanner() {
   const isProcessingScanRef = useRef<boolean>(false);
   const mountedRef = useRef<boolean>(true);
 
+  const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -163,34 +166,80 @@ export default function AadhaarQrTestScanner() {
       clearInterval(scanIntervalRef.current);
     }
 
-    const canvas = document.createElement('canvas');
-
     scanIntervalRef.current = setInterval(async () => {
       if (!mountedRef.current || isProcessingScanRef.current || !videoRef.current) return;
 
       const video = videoRef.current;
       if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
 
       try {
         const jsQR = (await import('jsqr')).default;
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        });
+        let code: any = null;
 
-        if (code && code.data && code.data.trim()) {
-          sendPayloadToApi(code.data.trim());
+        // --- Pass 1: Center Viewfinder Crop ---
+        const cropSize = Math.floor(Math.min(vw, vh) * 0.65);
+        const cropX = Math.floor((vw - cropSize) / 2);
+        const cropY = Math.floor((vh - cropSize) / 2);
+
+        if (!cropCanvasRef.current) {
+          cropCanvasRef.current = document.createElement('canvas');
+        }
+        const cropCanvas = cropCanvasRef.current;
+        cropCanvas.width = cropSize;
+        cropCanvas.height = cropSize;
+        const cropCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
+
+        if (cropCtx) {
+          cropCtx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+          const cropData = cropCtx.getImageData(0, 0, cropSize, cropSize);
+          code = jsQR(cropData.data, cropData.width, cropData.height, {
+            inversionAttempts: 'attemptBoth',
+          });
+        }
+
+        // --- Pass 2: Full Video Frame Fallback ---
+        if (!code) {
+          if (!fullCanvasRef.current) {
+            fullCanvasRef.current = document.createElement('canvas');
+          }
+          const fullCanvas = fullCanvasRef.current;
+          fullCanvas.width = vw;
+          fullCanvas.height = vh;
+          const fullCtx = fullCanvas.getContext('2d', { willReadFrequently: true });
+
+          if (fullCtx) {
+            fullCtx.drawImage(video, 0, 0, vw, vh);
+            const fullData = fullCtx.getImageData(0, 0, vw, vh);
+            code = jsQR(fullData.data, fullData.width, fullData.height, {
+              inversionAttempts: 'attemptBoth',
+            });
+          }
+        }
+
+        if (code && (code.binaryData?.length > 0 || code.data?.trim())) {
+          let payloadString = '';
+
+          if (code.binaryData && code.binaryData.length > 0) {
+            const bytes = new Uint8Array(code.binaryData);
+            let binary = '';
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            payloadString = btoa(binary);
+          } else if (code.data) {
+            payloadString = code.data.trim();
+          }
+
+          if (payloadString) {
+            sendPayloadToApi(payloadString);
+          }
         }
       } catch {}
-    }, 180);
+    }, 150);
   }, []);
 
   const initiateCameraScan = async () => {
@@ -225,7 +274,11 @@ export default function AadhaarQrTestScanner() {
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
             audio: false,
           });
         } catch {
