@@ -18,10 +18,18 @@ const qrPayloadSchema = z
   });
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[AADHAAR_QR] Request received (${Date.now() - startTime}ms)`);
+  }
+
   try {
     // 1. Session Authentication Check
     const sessionUser = await getSessionUser(req);
     if (!sessionUser) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AADHAAR_QR] Unauthorized session check failed (${Date.now() - startTime}ms)`);
+      }
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Authentication session required' },
         { status: 401 }
@@ -33,6 +41,9 @@ export async function POST(req: NextRequest) {
     const parsed = qrPayloadSchema.safeParse(body);
 
     if (!parsed.success) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AADHAAR_QR] Input validation failed (${Date.now() - startTime}ms)`);
+      }
       return NextResponse.json(
         { success: false, error: parsed.error.errors[0]?.message || 'Invalid payload input' },
         { status: 400 }
@@ -43,8 +54,15 @@ export async function POST(req: NextRequest) {
     const testOnly = parsed.data.testOnly;
     const targetWorkerId = parsed.data.workerId || sessionUser.workerProfile?.id;
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AADHAAR_QR] Payload parsed (${Date.now() - startTime}ms)`);
+    }
+
     // Authorization check
     if (sessionUser.role !== 'ADMIN' && sessionUser.workerProfile?.id !== targetWorkerId) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AADHAAR_QR] Authorization failed (${Date.now() - startTime}ms)`);
+      }
       return NextResponse.json(
         { success: false, error: 'Forbidden: You cannot verify another worker\'s profile' },
         { status: 403 }
@@ -55,6 +73,9 @@ export async function POST(req: NextRequest) {
     const userId = sessionUser.id;
     const rateLimit = checkRateLimit(`qr_decode_${userId}`, 10, 300);
     if (!rateLimit.allowed) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AADHAAR_QR] Rate limit exceeded (${Date.now() - startTime}ms)`);
+      }
       return NextResponse.json(
         {
           success: false,
@@ -73,6 +94,9 @@ export async function POST(req: NextRequest) {
       });
 
       if (worker && (worker.identityVerified || worker.aadhaarVerif?.status === 'VERIFIED')) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[AADHAAR_QR] Already verified idempotency match (${Date.now() - startTime}ms)`);
+        }
         return NextResponse.json({
           success: true,
           alreadyVerified: true,
@@ -89,6 +113,11 @@ export async function POST(req: NextRequest) {
 
     // 5. Server-Side Cryptographic Signature Verification & Decoding
     const result = decodeAndVerifyAadhaarQr(rawInput);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        `[AADHAAR_QR] Signature verification complete: valid=${result.signatureValid} (${Date.now() - startTime}ms)`
+      );
+    }
 
     if (!result.signatureValid || !result.verified || !result.data) {
       return NextResponse.json({
@@ -122,6 +151,12 @@ export async function POST(req: NextRequest) {
       dob: result.data.dob,
       gender: result.data.gender,
     });
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        `[AADHAAR_QR] Identity match complete: outcome=${matchResult.outcome} (${Date.now() - startTime}ms)`
+      );
+    }
 
     if (matchResult.outcome !== 'VERIFIED') {
       return NextResponse.json({
@@ -177,8 +212,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AADHAAR_QR] Database update complete (${Date.now() - startTime}ms)`);
+    }
+
     // 8. Synchronize overall worker eligibility (Bank + Identity + Profile completeness)
     await syncWorkerVerificationStatus(finalWorkerId);
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AADHAAR_QR] Response returned successfully (${Date.now() - startTime}ms)`);
+    }
 
     return NextResponse.json({
       success: true,

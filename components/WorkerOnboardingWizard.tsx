@@ -1526,14 +1526,18 @@ export default function WorkerOnboardingWizard({
               <WorkerAadhaarQrScanner
                 workerId={sessionUser?.workerProfile?.id || ''}
                 workerFullName={fullName}
+                onSwitchToOtp={() => setVerificationMode('OTP')}
                 onVerifiedSuccess={async (data) => {
                   setAadhaarVerified(true);
                   setMaskedAadhaar(data.maskedAadhaar);
                   setSuccessMsg('✓ Aadhaar identity verified successfully via UIDAI Secure QR!');
 
-                  // Re-fetch session to synchronize server-side verified status
+                  // Re-fetch session with 10s timeout to synchronize server-side verified status
                   try {
-                    const meRes = await fetch('/api/auth/me');
+                    const controller = new AbortController();
+                    const meTimeoutId = setTimeout(() => controller.abort(), 10000);
+                    const meRes = await fetch('/api/auth/me', { signal: controller.signal });
+                    clearTimeout(meTimeoutId);
                     const meData = await meRes.json();
                     if (meData.authenticated && meData.user) {
                       setSessionUser(meData.user);

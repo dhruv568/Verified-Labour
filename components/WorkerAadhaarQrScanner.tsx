@@ -21,6 +21,7 @@ interface WorkerAadhaarQrScannerProps {
   workerId: string;
   workerFullName?: string;
   onVerifiedSuccess: (data: { maskedAadhaar: string; nameOnAadhaar: string }) => void;
+  onSwitchToOtp?: () => void;
 }
 
 export type ScannerLifecycleState =
@@ -57,6 +58,7 @@ export default function WorkerAadhaarQrScanner({
   workerId,
   workerFullName,
   onVerifiedSuccess,
+  onSwitchToOtp,
 }: WorkerAadhaarQrScannerProps) {
   const [scannerState, setScannerState] = useState<ScannerLifecycleState>('IDLE');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -174,7 +176,7 @@ export default function WorkerAadhaarQrScanner({
     return 'Camera could not be started. Please try again or upload a photo of your QR code below.';
   };
 
-  // Send detected QR payload ONCE to server-side verification API
+  // Send detected QR payload ONCE to server-side verification API with 15-second hard timeout guard
   const sendPayloadToApi = async (scannedPayload: string) => {
     if (isProcessingScanRef.current) return;
     isProcessingScanRef.current = true;
@@ -183,39 +185,63 @@ export default function WorkerAadhaarQrScanner({
     stopCamera();
 
     if (mountedRef.current) {
-      setScannerState('QR_DETECTED');
+      setScannerState('VERIFYING');
       setIsSubmitting(true);
       setErrorMessage(null);
     }
 
-    // Brief transition to VERIFYING state for clean user feedback
-    setTimeout(() => {
-      if (mountedRef.current) {
-        setScannerState('VERIFYING');
-      }
-    }, 300);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[AADHAAR_QR_CLIENT] QR detected — starting verification API request');
+    }
+
+    // 15-Second Hard Timeout Guard via AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
 
     try {
       const res = await fetch('/api/verifications/aadhaar/secure-qr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payloadBase64: scannedPayload, workerId }),
+        signal: controller.signal,
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AADHAAR_QR_CLIENT] API response status: ${res.status}`);
+      }
 
       if (res.status === 401) {
-        throw new Error('Authentication session required. Please log in to continue.');
+        if (mountedRef.current) {
+          setScannerState('ERROR');
+          setErrorMessage('Authentication session required. Please log in to continue.');
+        }
+        return;
+      }
+
+      if (res.status === 403) {
+        if (mountedRef.current) {
+          setScannerState('ERROR');
+          setErrorMessage(data.error || 'Forbidden: You cannot verify another worker profile.');
+        }
+        return;
       }
 
       if (res.status === 429) {
-        throw new Error(data.error || 'Too many attempts. Please wait a moment before retrying.');
+        if (mountedRef.current) {
+          setScannerState('ERROR');
+          setErrorMessage(data.error || 'Too many attempts. Please retry in a few minutes.');
+        }
+        return;
       }
 
       if (res.status >= 500) {
         if (mountedRef.current) {
           setScannerState('SERVER_ERROR');
-          setErrorMessage(data.error || 'Server error occurred during verification. Please try again.');
+          setErrorMessage(data.error || 'Server error occurred during UIDAI verification. Please try again.');
         }
         return;
       }
@@ -239,6 +265,7 @@ export default function WorkerAadhaarQrScanner({
       }
 
       const isVerifiedSuccess = Boolean(
+        res.ok &&
         data.success &&
         (data.verified || data.alreadyVerified || data.status === 'VERIFIED' || data.identityVerified)
       );
@@ -256,6 +283,10 @@ export default function WorkerAadhaarQrScanner({
       const masked = data.maskedAadhaar || 'XXXXXXXX8291';
       const name = data.nameOnAadhaar || workerFullName || 'Verified Worker';
 
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[AADHAAR_QR_CLIENT] Verification successful — updating state to VERIFIED');
+      }
+
       if (mountedRef.current) {
         setVerifiedDetails({
           maskedAadhaar: masked,
@@ -268,11 +299,20 @@ export default function WorkerAadhaarQrScanner({
         onVerifiedSuccess({ maskedAadhaar: masked, nameOnAadhaar: name });
       }
     } catch (err: any) {
-      if (mountedRef.current) {
-        setErrorMessage(err.message || 'An unexpected error occurred during QR verification.');
+      if (!mountedRef.current) return;
+
+      if (err.name === 'AbortError') {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[AADHAAR_QR_CLIENT] API request timed out after 15 seconds');
+        }
         setScannerState('ERROR');
+        setErrorMessage('Verification request timed out after 15 seconds. Please try again or use Aadhaar OTP.');
+      } else {
+        setScannerState('ERROR');
+        setErrorMessage(err.message || 'An unexpected error occurred during QR verification.');
       }
     } finally {
+      clearTimeout(timeoutId);
       if (mountedRef.current) {
         setIsSubmitting(false);
       }
@@ -835,6 +875,17 @@ export default function WorkerAadhaarQrScanner({
               >
                 Scan QR from Image
               </Button>
+
+              {onSwitchToOtp && (
+                <Button
+                  variant="outline"
+                  fullWidth
+                  onClick={onSwitchToOtp}
+                  icon={<ShieldCheck className="w-4 h-4 text-emerald-600" />}
+                >
+                  Use Aadhaar OTP
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -246,5 +246,31 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     );
   });
 
+  // Test 19: 15-Second Hard API Timeout Guard & AbortController
+  test('WorkerAadhaarQrScanner includes 15-second AbortController timeout guard for API request', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('new AbortController()'), 'Must instantiate AbortController');
+    assert(code.includes('15000'), 'Must enforce 15-second (15000ms) timeout limit');
+    assert(code.includes('timed out after 15 seconds'), 'Must include 15-second timeout error message');
+    assert(code.includes('Use Aadhaar OTP'), 'Must include Use Aadhaar OTP fallback option button');
+  });
+
+  // Test 20: Server-Side Timing Instrumentation
+  test('Aadhaar Secure QR API route includes server-side elapsed timing instrumentation', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'app', 'api', 'verifications', 'aadhaar', 'secure-qr', 'route.ts'),
+      'utf8'
+    );
+    assert(code.includes('[AADHAAR_QR] Request received'), 'Must log request received with timing');
+    assert(code.includes('[AADHAAR_QR] Database update complete'), 'Must log database update timing');
+  });
+
   return { passed, failed };
 }
