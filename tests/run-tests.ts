@@ -24,6 +24,8 @@ import { runAadhaarScannerUiTests } from './aadhaar-scanner-ui-tests';
 import { runAadhaarOnboardingIntegrationTests } from './aadhaar-onboarding-integration-tests';
 import { runAadhaarDiagnosticTests } from './aadhaar-diagnostic-runner-test';
 
+import { runFinalAcceptanceAuditTests } from './final-acceptance-audit-tests';
+
 async function runAllTests() {
   console.log('====================================================');
   console.log('RUNNING VERIFIED LABOUR FULL AUTOMATED TEST SUITE');
@@ -335,6 +337,10 @@ async function runAllTests() {
   const diagResults = await runAadhaarDiagnosticTests();
   passed += diagResults.passed;
   failed += diagResults.failed;
+
+  const finalAuditResults = await runFinalAcceptanceAuditTests();
+  passed += finalAuditResults.passed;
+  failed += finalAuditResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

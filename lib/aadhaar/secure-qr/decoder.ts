@@ -59,8 +59,9 @@ export interface AadhaarQrDecodeResult {
 
 /**
  * Converts a base-10 numeric string (BigInt representation of QR bytes) into a Node.js Buffer.
+ * If expectedByteLength is provided, pads hex with leading zeros to match expected byte length.
  */
-export function base10ToBuffer(numericStr: string): Buffer {
+export function base10ToBuffer(numericStr: string, expectedByteLength?: number): Buffer {
   const cleanStr = numericStr.replace(/\s+/g, '').trim();
   if (!/^\d+$/.test(cleanStr)) {
     throw new Error('Input is not a valid base-10 numeric string.');
@@ -71,12 +72,12 @@ export function base10ToBuffer(numericStr: string): Buffer {
   if (hex.length % 2 !== 0) {
     hex = '0' + hex;
   }
+  if (expectedByteLength && hex.length < expectedByteLength * 2) {
+    hex = hex.padStart(expectedByteLength * 2, '0');
+  }
   return Buffer.from(hex, 'hex');
 }
 
-/**
- * Safely parses input payload (Base10 string, Base64 string, or raw Buffer) into a byte Buffer.
- */
 /**
  * Safely parses input payload (Base10 string, Base64 string, or raw Buffer) into a byte Buffer.
  */
@@ -170,77 +171,141 @@ export function splitBufferByDelimiter(buffer: Buffer, delimiter: number = 255):
   return parts;
 }
 
+export interface UidaiSignatureVerificationResult {
+  valid: boolean;
+  procedure?: string;
+  digestAlgorithm?: string;
+  padding?: string;
+  signatureLength?: number;
+  signedBytesLength?: number;
+}
+
 /**
- * Validates RSA Digital Signature using multi-strategy verification across UIDAI V1/V2/V3 specifications.
+ * Validates RSA Digital Signature according to official UIDAI Secure QR Specification.
+ * 
+ * Procedure Standard:
+ * - Specification: UIDAI Secure QR Code Spec V2/V3 (RSA-2048 SHA-256 with PKCS#1 v1.5 padding)
+ * - Signature Location: Final 256 bytes of payload buffer
+ * - Signed Data: Compressed byte stream preceding signature (or decompressed byte stream fallback)
  */
+export function verifyUidaiSignatureWithMeta(
+  signedDataBytes: Buffer,
+  signatureBytes: Buffer,
+  publicKeyPemOrObj?: string | crypto.KeyObject,
+  decompressedBytes?: Buffer
+): UidaiSignatureVerificationResult {
+  if (!signatureBytes || signatureBytes.length !== 256) {
+    return { valid: false };
+  }
+
+  const key = publicKeyPemOrObj || getUidaiPublicKeyPem();
+
+  // Explicit UIDAI Specification Verification Procedures (in order of UIDAI standards):
+  // Procedure 1: UIDAI Standard V2/V3 - SHA256 + PKCS#1 v1.5 over Compressed Payload Bytes
+  try {
+    const isValid = crypto.verify(
+      'SHA256',
+      signedDataBytes,
+      {
+        key: key as any,
+        padding: crypto.constants.RSA_PKCS1_PADDING,
+      },
+      signatureBytes
+    );
+    if (isValid) {
+      return {
+        valid: true,
+        procedure: 'UIDAI_V2_V3_SHA256_PKCS1v15_COMPRESSED',
+        digestAlgorithm: 'SHA-256',
+        padding: 'RSA_PKCS1_PADDING',
+        signatureLength: 256,
+        signedBytesLength: signedDataBytes.length,
+      };
+    }
+  } catch {}
+
+  // Procedure 2: UIDAI Standard V2/V3 - SHA256 + PKCS#1 v1.5 over Decompressed Payload Bytes
+  if (decompressedBytes && decompressedBytes.length > 0) {
+    try {
+      const isValid = crypto.verify(
+        'SHA256',
+        decompressedBytes,
+        {
+          key: key as any,
+          padding: crypto.constants.RSA_PKCS1_PADDING,
+        },
+        signatureBytes
+      );
+      if (isValid) {
+        return {
+          valid: true,
+          procedure: 'UIDAI_V2_V3_SHA256_PKCS1v15_DECOMPRESSED',
+          digestAlgorithm: 'SHA-256',
+          padding: 'RSA_PKCS1_PADDING',
+          signatureLength: 256,
+          signedBytesLength: decompressedBytes.length,
+        };
+      }
+    } catch {}
+  }
+
+  // Procedure 3: UIDAI PSS Padding Standard - SHA256 + RSA-PSS over Compressed Payload Bytes
+  try {
+    const isValid = crypto.verify(
+      'SHA256',
+      signedDataBytes,
+      {
+        key: key as any,
+        padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+        saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
+      },
+      signatureBytes
+    );
+    if (isValid) {
+      return {
+        valid: true,
+        procedure: 'UIDAI_V2_V3_SHA256_RSAPSS_COMPRESSED',
+        digestAlgorithm: 'SHA-256',
+        padding: 'RSA_PKCS1_PSS_PADDING',
+        signatureLength: 256,
+        signedBytesLength: signedDataBytes.length,
+      };
+    }
+  } catch {}
+
+  // Procedure 4: UIDAI Legacy V1/V2 Standard - SHA1 + PKCS#1 v1.5 Fallback
+  try {
+    const isValid = crypto.verify(
+      'SHA1',
+      signedDataBytes,
+      {
+        key: key as any,
+        padding: crypto.constants.RSA_PKCS1_PADDING,
+      },
+      signatureBytes
+    );
+    if (isValid) {
+      return {
+        valid: true,
+        procedure: 'UIDAI_LEGACY_V1_SHA1_PKCS1v15',
+        digestAlgorithm: 'SHA-1',
+        padding: 'RSA_PKCS1_PADDING',
+        signatureLength: 256,
+        signedBytesLength: signedDataBytes.length,
+      };
+    }
+  } catch {}
+
+  return { valid: false };
+}
+
 export function verifyUidaiSignature(
   signedDataBytes: Buffer,
   signatureBytes: Buffer,
   publicKeyPemOrObj?: string | crypto.KeyObject,
   decompressedBytes?: Buffer
 ): boolean {
-  if (!signatureBytes || signatureBytes.length !== 256) {
-    return false;
-  }
-
-  const key = publicKeyPemOrObj || getUidaiPublicKeyPem();
-
-  const sigVariants = [
-    signatureBytes,
-    Buffer.from(signatureBytes).reverse(),
-  ];
-
-  const dataTargets: Buffer[] = [];
-  if (signedDataBytes && signedDataBytes.length > 0) {
-    dataTargets.push(signedDataBytes);
-    if (signedDataBytes.length > 1) {
-      dataTargets.push(signedDataBytes.subarray(1));
-    }
-  }
-  if (decompressedBytes && decompressedBytes.length > 0) {
-    dataTargets.push(decompressedBytes);
-    if (decompressedBytes.length > 1) {
-      dataTargets.push(decompressedBytes.subarray(1));
-    }
-  }
-
-  const algorithms = ['SHA256', 'SHA1', 'SHA512'];
-  const paddings = [
-    crypto.constants.RSA_PKCS1_PADDING,
-    crypto.constants.RSA_PKCS1_PSS_PADDING,
-  ];
-
-  for (const sig of sigVariants) {
-    for (const target of dataTargets) {
-      for (const algo of algorithms) {
-        for (const padding of paddings) {
-          try {
-            const isValid = crypto.verify(
-              algo,
-              target,
-              {
-                key: key as any,
-                padding,
-                saltLength: padding === crypto.constants.RSA_PKCS1_PSS_PADDING
-                  ? crypto.constants.RSA_PSS_SALTLEN_DIGEST
-                  : undefined,
-              },
-              sig
-            );
-            if (isValid) return true;
-          } catch {}
-
-          try {
-            const verify = crypto.createVerify(algo);
-            verify.update(target);
-            if (verify.verify(key, sig)) return true;
-          } catch {}
-        }
-      }
-    }
-  }
-
-  return false;
+  return verifyUidaiSignatureWithMeta(signedDataBytes, signatureBytes, publicKeyPemOrObj, decompressedBytes).valid;
 }
 
 /**
