@@ -93,5 +93,57 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(!scannerCode.includes('sessionStorage.setItem'), 'Must NOT save payload to sessionStorage');
   });
 
+  // Test 8: Worker Onboarding Scanner Component Export & Lifecycle Guard
+  test('WorkerAadhaarQrScanner component export exists and uses STARTING state before Html5Qrcode init', () => {
+    const component = require('../components/WorkerAadhaarQrScanner');
+    assert(component.default !== undefined, 'WorkerAadhaarQrScanner default export must exist');
+
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes("setScannerState('STARTING')"), 'Must use STARTING state to mount DOM container');
+    assert(code.includes("onboarding-aadhaar-qr-viewport"), 'Must reference DOM viewport container ID');
+  });
+
+  // Test 9: Camera Error Mapping & Fallbacks
+  test('WorkerAadhaarQrScanner includes camera error mapping and getCameras fallback', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('mapCameraError'), 'Must define mapCameraError helper');
+    assert(code.includes('Html5Qrcode.getCameras()'), 'Must include getCameras fallback');
+  });
+
+  // Test 10: QR Image File Upload Fallback
+  test('WorkerAadhaarQrScanner includes local client-side QR image file upload fallback', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('handleImageFileSelect'), 'Must define handleImageFileSelect');
+    assert(code.includes('scanFile'), 'Must call scanFile on local image file');
+    assert(code.includes('offscreen-file-qr-container'), 'Must use offscreen container for image scan');
+  });
+
+  // Test 11: Production Dev Mode Guard
+  test('WorkerAadhaarQrScanner hides manual paste UI in production environment', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes("process.env.NODE_ENV !== 'production'"), 'Manual paste UI must be wrapped in NODE_ENV check');
+  });
+
   return { passed, failed };
 }
+
