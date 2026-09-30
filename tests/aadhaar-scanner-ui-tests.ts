@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 export async function runAadhaarScannerUiTests(): Promise<{ passed: number; failed: number }> {
-  console.log('\n--- 12. Aadhaar Secure QR Test Scanner UI & Safety Tests ---');
+  console.log('\n--- 12. Aadhaar Secure QR Native Scanner UI & Safety Tests ---');
   let passed = 0;
   let failed = 0;
 
@@ -40,10 +40,10 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     const fs = require('fs');
     const path = require('path');
     const scannerCode = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'AadhaarQrTestScanner.tsx'),
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(scannerCode.includes('stopScanner'), 'Scanner must define stopScanner cleanup helper');
+    assert(scannerCode.includes('stopCamera'), 'Scanner must define stopCamera cleanup helper');
     assert(scannerCode.includes('return () =>'), 'Scanner useEffect must return unmount cleanup callback');
   });
 
@@ -52,10 +52,14 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     const fs = require('fs');
     const path = require('path');
     const scannerCode = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'AadhaarQrTestScanner.tsx'),
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(scannerCode.includes('facingMode: \'environment\'') || scannerCode.includes('facingMode: "environment"'), 'Scanner must prefer rear camera');
+    assert(
+      scannerCode.includes("facingMode: { ideal: 'environment' }") ||
+        scannerCode.includes('facingMode: { ideal: "environment" }'),
+      'Scanner must prefer rear camera via ideal environment'
+    );
   });
 
   // Test 5: Single API Dispatch & Duplicate Scan Guard
@@ -63,7 +67,7 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     const fs = require('fs');
     const path = require('path');
     const scannerCode = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'AadhaarQrTestScanner.tsx'),
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
     assert(scannerCode.includes('isProcessingScanRef'), 'Scanner must use duplicate scan ref guard');
@@ -74,7 +78,7 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     const fs = require('fs');
     const path = require('path');
     const scannerCode = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'AadhaarQrTestScanner.tsx'),
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
     assert(scannerCode.includes('maskedAadhaar'), 'Scanner UI must render maskedAadhaar');
@@ -86,15 +90,15 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     const fs = require('fs');
     const path = require('path');
     const scannerCode = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'AadhaarQrTestScanner.tsx'),
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
     assert(!scannerCode.includes('localStorage.setItem'), 'Must NOT save payload to localStorage');
     assert(!scannerCode.includes('sessionStorage.setItem'), 'Must NOT save payload to sessionStorage');
   });
 
-  // Test 8: Worker Onboarding Scanner Component Export & Lifecycle Guard
-  test('WorkerAadhaarQrScanner component export exists and uses STARTING state before Html5Qrcode init', () => {
+  // Test 8: Native getUserMedia & Video Ref Integration
+  test('WorkerAadhaarQrScanner uses native getUserMedia and videoRef element', () => {
     const component = require('../components/WorkerAadhaarQrScanner');
     assert(component.default !== undefined, 'WorkerAadhaarQrScanner default export must exist');
 
@@ -104,24 +108,39 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(code.includes("setScannerState('STARTING')"), 'Must use STARTING state to mount DOM container');
-    assert(code.includes("onboarding-aadhaar-qr-viewport"), 'Must reference DOM viewport container ID');
+    assert(code.includes('navigator.mediaDevices.getUserMedia'), 'Must use native getUserMedia');
+    assert(code.includes('videoRef'), 'Must use videoRef for native HTMLVideoElement');
+    assert(code.includes('playsInline') || code.includes('playsinline'), 'Must enforce playsInline attribute');
   });
 
-  // Test 9: Camera Error Mapping & Fallbacks
-  test('WorkerAadhaarQrScanner includes camera error mapping and getCameras fallback', () => {
+  // Test 9: Native jsQR Frame Decoding & Throttled Loop
+  test('WorkerAadhaarQrScanner uses jsQR frame decoding loop', () => {
     const fs = require('fs');
     const path = require('path');
     const code = fs.readFileSync(
       path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
       'utf8'
     );
-    assert(code.includes('mapCameraError'), 'Must define mapCameraError helper');
-    assert(code.includes('Html5Qrcode.getCameras()'), 'Must include getCameras fallback');
+    assert(code.includes("import jsQR from 'jsqr'"), 'Must import jsQR');
+    assert(code.includes('startFrameScanningLoop'), 'Must define startFrameScanningLoop');
+    assert(code.includes('jsQR(imageData.data'), 'Must execute jsQR frame decoding');
   });
 
-  // Test 10: QR Image File Upload Fallback
-  test('WorkerAadhaarQrScanner includes local client-side QR image file upload fallback', () => {
+  // Test 10: 5-Second Startup Timeout Guard
+  test('WorkerAadhaarQrScanner includes 5-second hard startup timeout guard', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('startupTimeoutRef'), 'Must define startupTimeoutRef');
+    assert(code.includes('5000'), 'Must set 5-second timeout (5000ms)');
+    assert(code.includes('timed out after 5 seconds'), 'Must include 5-second timeout error message');
+  });
+
+  // Test 11: Local Image QR Upload Fallback via jsQR
+  test('WorkerAadhaarQrScanner includes client-side local image QR file upload fallback', () => {
     const fs = require('fs');
     const path = require('path');
     const code = fs.readFileSync(
@@ -129,11 +148,11 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       'utf8'
     );
     assert(code.includes('handleImageFileSelect'), 'Must define handleImageFileSelect');
-    assert(code.includes('scanFile'), 'Must call scanFile on local image file');
-    assert(code.includes('offscreen-file-qr-container'), 'Must use offscreen container for image scan');
+    assert(code.includes('FileReader'), 'Must read file with FileReader');
+    assert(code.includes('Scan QR from Image'), 'Must provide Scan QR from Image button text');
   });
 
-  // Test 11: Production Dev Mode Guard
+  // Test 12: Production Dev Mode Guard
   test('WorkerAadhaarQrScanner hides manual paste UI in production environment', () => {
     const fs = require('fs');
     const path = require('path');
@@ -144,22 +163,8 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(code.includes("process.env.NODE_ENV !== 'production'"), 'Manual paste UI must be wrapped in NODE_ENV check');
   });
 
-  // Test 12: Stream Verification Guard (videoWidth & videoHeight > 0 check)
-  test('WorkerAadhaarQrScanner verifies video rendering & readyState before setting SCANNING state', () => {
-    const fs = require('fs');
-    const path = require('path');
-    const code = fs.readFileSync(
-      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
-      'utf8'
-    );
-    assert(code.includes('verifyVideoRendering'), 'Must define verifyVideoRendering stream check');
-    assert(code.includes('videoEl.videoWidth > 0'), 'Must check videoWidth > 0');
-    assert(code.includes('videoEl.videoHeight > 0'), 'Must check videoHeight > 0');
-    assert(code.includes('videoEl.readyState >= 2'), 'Must check video readyState >= 2');
-  });
-
-  // Test 13: HTTPS / Secure Context Check
-  test('WorkerAadhaarQrScanner performs HTTPS secure context check', () => {
+  // Test 13: HTTPS / Secure Context Pre-flight Check
+  test('WorkerAadhaarQrScanner performs HTTPS secure context pre-flight check', () => {
     const fs = require('fs');
     const path = require('path');
     const code = fs.readFileSync(

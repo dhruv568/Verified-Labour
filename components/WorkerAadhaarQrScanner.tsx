@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import jsQR from 'jsqr';
 import {
   Camera,
   StopCircle,
@@ -34,12 +35,11 @@ export type ScannerLifecycleState =
 interface CameraDiagnosticInfo {
   isSecureContext: boolean;
   hasMediaDevices: boolean;
-  camerasCount: number;
-  selectedCameraLabel: string;
   videoReadyState: number;
   videoWidth: number;
   videoHeight: number;
   streamActive: boolean;
+  activeTrackLabel: string;
 }
 
 export default function WorkerAadhaarQrScanner({
@@ -59,20 +59,19 @@ export default function WorkerAadhaarQrScanner({
 
   const [manualPayload, setManualPayload] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
-
-  // Development Diagnostics State
   const [diagnostics, setDiagnostics] = useState<CameraDiagnosticInfo | null>(null);
 
-  // Instance and lifecycle refs
-  const html5QrcodeRef = useRef<any>(null);
+  // Native DOM & Stream Refs
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<any>(null);
+  const startupTimeoutRef = useRef<any>(null);
   const isInitializingRef = useRef<boolean>(false);
   const isProcessingScanRef = useRef<boolean>(false);
   const mountedRef = useRef<boolean>(true);
-  const initAttemptsRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Update mounted ref on lifecycle
+  // Lifecycle mount check
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -80,25 +79,23 @@ export default function WorkerAadhaarQrScanner({
     };
   }, []);
 
-  // Safely stop scanner instance and release hardware video stream tracks completely
-  const stopScanner = useCallback(async () => {
+  // Complete cleanup of camera stream, timers, and video srcObject
+  const stopCamera = useCallback(() => {
     isInitializingRef.current = false;
 
-    // 1. Stop html5-qrcode scanner instance
-    if (html5QrcodeRef.current) {
-      try {
-        if (html5QrcodeRef.current.isScanning) {
-          await html5QrcodeRef.current.stop();
-        }
-        await html5QrcodeRef.current.clear();
-      } catch {
-        // Ignore cleanup errors
-      } finally {
-        html5QrcodeRef.current = null;
-      }
+    // 1. Clear scanning loop interval
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
 
-    // 2. Stop active stream tracks directly if stored
+    // 2. Clear 5-second hard startup timeout
+    if (startupTimeoutRef.current) {
+      clearTimeout(startupTimeoutRef.current);
+      startupTimeoutRef.current = null;
+    }
+
+    // 3. Stop all MediaStreamTracks
     if (activeStreamRef.current) {
       try {
         activeStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -106,32 +103,26 @@ export default function WorkerAadhaarQrScanner({
       activeStreamRef.current = null;
     }
 
-    // 3. Inspect DOM container and clear video srcObject
-    if (typeof document !== 'undefined') {
-      const containerEl = document.getElementById('onboarding-aadhaar-qr-viewport');
-      if (containerEl) {
-        const videoEl = containerEl.querySelector('video') as HTMLVideoElement | null;
-        if (videoEl) {
-          try {
-            if (videoEl.srcObject) {
-              const stream = videoEl.srcObject as MediaStream;
-              stream.getTracks().forEach((t) => t.stop());
-              videoEl.srcObject = null;
-            }
-          } catch {}
+    // 4. Detach stream from HTMLVideoElement
+    if (videoRef.current) {
+      try {
+        if (videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((t) => t.stop());
+          videoRef.current.srcObject = null;
         }
-      }
+      } catch {}
     }
   }, []);
 
-  // Clean up scanner hardware on component unmount
+  // Auto-cleanup on unmount
   useEffect(() => {
     return () => {
-      stopScanner();
+      stopCamera();
     };
-  }, [stopScanner]);
+  }, [stopCamera]);
 
-  // Map browser camera errors safely to user-friendly diagnostic messages
+  // Map browser camera errors safely to clear, actionable messages
   const mapCameraError = (err: any): string => {
     const name = (err?.name || '').toLowerCase();
     const msg = (err?.message || err?.toString() || '').toLowerCase();
@@ -139,37 +130,32 @@ export default function WorkerAadhaarQrScanner({
     if (name.includes('notallowed') || msg.includes('permission') || msg.includes('denied')) {
       return 'Camera permission is blocked. Please allow camera access for Verified Labour in your browser settings and try again.';
     }
-
     if (name.includes('notfound') || msg.includes('no camera') || msg.includes('notfound')) {
       return 'No camera was found on this device.';
     }
-
     if (name.includes('notreadable') || msg.includes('in use') || msg.includes('trackstart')) {
-      return 'Camera is currently being used by another application. Close other camera apps and try again.';
+      return 'The camera is currently being used by another application. Close other camera apps and try again.';
     }
-
     if (name.includes('overconstrained')) {
       return 'Selected camera is unavailable. Please try uploading a QR photo below.';
     }
-
     if (name.includes('security') || msg.includes('secure')) {
       return 'Camera scanner requires a secure HTTPS connection.';
     }
-
     if (name.includes('abort')) {
       return 'Camera startup was interrupted. Please try again.';
     }
-
-    return 'Camera scanner could not start. Please try again or upload a photo of your QR code below.';
+    return 'Camera could not be started. Please try again or upload a photo of your QR code below.';
   };
 
-  // Send detected payload ONCE to server-side verification API
+  // Send detected QR payload ONCE to server-side verification API
   const sendPayloadToApi = async (scannedPayload: string) => {
     if (isProcessingScanRef.current) return;
     isProcessingScanRef.current = true;
 
-    // Immediately stop camera scan & update state to PROCESSING
-    await stopScanner();
+    // Stop live camera preview immediately upon QR detection
+    stopCamera();
+
     if (mountedRef.current) {
       setScannerState('PROCESSING');
       setIsSubmitting(true);
@@ -230,77 +216,40 @@ export default function WorkerAadhaarQrScanner({
     }
   };
 
-  // Poll and verify actual video element dimensions and readyState
-  const verifyVideoRendering = async (containerId: string, maxWaitMs = 3000): Promise<boolean> => {
-    const startTime = Date.now();
-    while (Date.now() - startTime < maxWaitMs) {
-      if (!mountedRef.current) return false;
-
-      const containerEl = document.getElementById(containerId);
-      if (containerEl) {
-        const videoEl = containerEl.querySelector('video') as HTMLVideoElement | null;
-        if (videoEl) {
-          // iOS Safari inline playback attributes enforcement
-          if (!videoEl.hasAttribute('playsinline')) {
-            videoEl.setAttribute('playsinline', 'true');
-            videoEl.setAttribute('webkit-playsinline', 'true');
-          }
-          if (!videoEl.hasAttribute('autoplay')) {
-            videoEl.setAttribute('autoplay', 'true');
-          }
-          if (!videoEl.muted) {
-            videoEl.muted = true;
-          }
-
-          // Enforce visible CSS styling
-          videoEl.style.width = '100%';
-          videoEl.style.height = '100%';
-          videoEl.style.objectFit = 'cover';
-          videoEl.style.display = 'block';
-          videoEl.style.background = '#000';
-
-          // Attempt explicit play call on iOS Safari if paused
-          if (videoEl.paused) {
-            try {
-              await videoEl.play();
-            } catch {}
-          }
-
-          // Track stream reference if available
-          if (videoEl.srcObject) {
-            activeStreamRef.current = videoEl.srcObject as MediaStream;
-          }
-
-          // Update dev diagnostics info
-          if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
-            setDiagnostics((prev) => ({
-              isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : false,
-              hasMediaDevices: typeof navigator !== 'undefined' && !!navigator?.mediaDevices,
-              camerasCount: prev?.camerasCount || 0,
-              selectedCameraLabel: prev?.selectedCameraLabel || 'Active Camera',
-              videoReadyState: videoEl.readyState,
-              videoWidth: videoEl.videoWidth,
-              videoHeight: videoEl.videoHeight,
-              streamActive: !!videoEl.srcObject,
-            }));
-          }
-
-          // Strict verification: stream must have readyState >= 2 and width/height > 0
-          if (
-            videoEl.readyState >= 2 &&
-            videoEl.videoWidth > 0 &&
-            videoEl.videoHeight > 0
-          ) {
-            return true;
-          }
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 150));
+  // Live Video Frame QR Scanner Loop using jsQR
+  const startFrameScanningLoop = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
     }
-    return false;
-  };
 
-  // Main camera scan startup workflow
+    const canvas = document.createElement('canvas');
+
+    scanIntervalRef.current = setInterval(() => {
+      if (!mountedRef.current || isProcessingScanRef.current || !videoRef.current) return;
+
+      const video = videoRef.current;
+      if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+
+      if (code && code.data && code.data.trim()) {
+        sendPayloadToApi(code.data.trim());
+      }
+    }, 180); // Scan frame every 180ms (~5.5 FPS for optimal performance and battery)
+  }, []);
+
+  // Main Native camera scan startup workflow
   const initiateCameraScan = async () => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
@@ -308,9 +257,8 @@ export default function WorkerAadhaarQrScanner({
     setErrorMessage(null);
     setVerifiedDetails(null);
     isProcessingScanRef.current = false;
-    initAttemptsRef.current = 0;
 
-    // Step 1: Pre-flight security & browser capability checks
+    // Step 1: Pre-flight security & browser checks
     if (typeof window === 'undefined') return;
 
     if (!window.isSecureContext) {
@@ -335,167 +283,120 @@ export default function WorkerAadhaarQrScanner({
     setScannerState('REQUESTING');
   };
 
-  // Camera start execution effect when state is REQUESTING or STARTING
+  // Camera start execution effect when state is REQUESTING
   useEffect(() => {
     if (scannerState !== 'REQUESTING') return;
 
     let isEffectActive = true;
 
-    const startSession = async () => {
+    const startNativeCameraSession = async () => {
       try {
-        await stopScanner();
+        stopCamera();
 
-        // 1. Explicitly request camera permission to populate device labels
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
-          });
-          // Release initial test stream immediately
-          stream.getTracks().forEach((track) => track.stop());
-        } catch (permErr: any) {
-          // If permission explicitly denied, throw immediately
-          if (
-            permErr?.name === 'NotAllowedError' ||
-            permErr?.toString().includes('Permission')
-          ) {
-            throw permErr;
-          }
-        }
-
-        if (!isEffectActive || !mountedRef.current) return;
-
-        // 2. Set state to STARTING to mount viewport container element in DOM
+        // 1. Set state to STARTING to mount <video ref={videoRef} /> in DOM
         setScannerState('STARTING');
-
-        // Allow DOM repaint for container element
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 80));
         if (!isEffectActive || !mountedRef.current) return;
 
-        const containerId = 'onboarding-aadhaar-qr-viewport';
-        const containerEl = document.getElementById(containerId);
-        if (!containerEl) {
-          throw new Error('Scanner container element initialization failed.');
+        // 2. Set 5-second hard startup timeout guard
+        startupTimeoutRef.current = setTimeout(() => {
+          if (isEffectActive && mountedRef.current) {
+            stopCamera();
+            setScannerState('ERROR');
+            setErrorMessage('Camera stream startup timed out after 5 seconds. Please try again or upload a photo of your QR code below.');
+          }
+        }, 5000);
+
+        // 3. Obtain native MediaStream via getUserMedia
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          });
+        } catch (facingErr) {
+          // Fallback to plain video constraints if environment facingMode fails
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
         }
 
-        const { Html5Qrcode } = await import('html5-qrcode');
-        if (!isEffectActive || !mountedRef.current) return;
+        if (!isEffectActive || !mountedRef.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
 
-        const scanner = new Html5Qrcode(containerId);
-        html5QrcodeRef.current = scanner;
+        activeStreamRef.current = stream;
 
-        const config = {
-          fps: 10,
-          qrbox: { width: 260, height: 260 },
-          aspectRatio: 1.0,
-        };
+        // 4. Attach stream directly to HTMLVideoElement
+        const video = videoRef.current;
+        if (!video) {
+          throw new Error('Video container element was not found in DOM.');
+        }
 
-        const onScanSuccess = async (decodedText: string) => {
-          if (!isProcessingScanRef.current && mountedRef.current) {
-            await sendPayloadToApi(decodedText);
-          }
-        };
+        video.srcObject = stream;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.setAttribute('autoplay', 'true');
+        video.muted = true;
 
-        // 3. Enumerate camera devices
-        let cameras: any[] = [];
         try {
-          cameras = await Html5Qrcode.getCameras();
+          await video.play();
         } catch {}
 
+        // 5. Poll video readiness up to 5 seconds
+        const startTime = Date.now();
+        let isVideoReady = false;
+
+        while (Date.now() - startTime < 4500) {
+          if (!isEffectActive || !mountedRef.current) return;
+
+          if (
+            video.readyState >= 2 &&
+            video.videoWidth > 0 &&
+            video.videoHeight > 0
+          ) {
+            isVideoReady = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 100));
+        }
+
+        if (!isVideoReady) {
+          throw new Error('Camera video stream could not be rendered.');
+        }
+
+        // Clear hard startup timeout guard since stream is verified live
+        if (startupTimeoutRef.current) {
+          clearTimeout(startupTimeoutRef.current);
+          startupTimeoutRef.current = null;
+        }
+
         if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
-          setDiagnostics((prev) => ({
+          const track = stream.getVideoTracks()[0];
+          setDiagnostics({
             isSecureContext: window.isSecureContext,
-            hasMediaDevices: !!navigator?.mediaDevices,
-            camerasCount: cameras.length,
-            selectedCameraLabel: 'Selecting...',
-            videoReadyState: 0,
-            videoWidth: 0,
-            videoHeight: 0,
-            streamActive: false,
-          }));
+            hasMediaDevices: true,
+            videoReadyState: video.readyState,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            streamActive: stream.active,
+            activeTrackLabel: track?.label || 'Live Camera',
+          });
         }
 
-        let startedSuccessfully = false;
-
-        // Attempt Strategy 1: Camera enumeration selecting rear camera ID
-        if (cameras && cameras.length > 0) {
-          const rearCamera =
-            cameras.find(
-              (c) =>
-                c.label.toLowerCase().includes('back') ||
-                c.label.toLowerCase().includes('rear') ||
-                c.label.toLowerCase().includes('environment') ||
-                c.label.toLowerCase().includes('wide') ||
-                c.label.toLowerCase().includes('0')
-            ) || cameras[cameras.length - 1];
-
-          if (process.env.NODE_ENV !== 'production' && mountedRef.current) {
-            setDiagnostics((prev: any) => ({
-              ...prev,
-              selectedCameraLabel: rearCamera.label || rearCamera.id,
-            }));
-          }
-
-          try {
-            await scanner.start(
-              rearCamera.id,
-              config,
-              onScanSuccess,
-              () => {}
-            );
-            startedSuccessfully = true;
-          } catch (camIdErr) {
-            // Strategy 1 failed, proceed to Strategy 2
-          }
-        }
-
-        // Attempt Strategy 2: facingMode "environment"
-        if (!startedSuccessfully) {
-          try {
-            await scanner.start(
-              { facingMode: 'environment' },
-              config,
-              onScanSuccess,
-              () => {}
-            );
-            startedSuccessfully = true;
-          } catch (facingErr) {
-            // Strategy 2 failed, proceed to Strategy 3
-          }
-        }
-
-        // Attempt Strategy 3: Plain fallback config for strict iOS WebKit
-        if (!startedSuccessfully) {
-          await scanner.start(
-            { facingMode: 'user' },
-            config,
-            onScanSuccess,
-            () => {}
-          );
-        }
-
-        if (!isEffectActive || !mountedRef.current) return;
-
-        // 4. CRITICAL: Verify actual video stream dimensions & rendering
-        const isVideoActive = await verifyVideoRendering(containerId, 3000);
-
-        if (isVideoActive && isEffectActive && mountedRef.current) {
+        if (isEffectActive && mountedRef.current) {
           setScannerState('SCANNING');
-        } else {
-          // If video dimensions are zero, retry initialization up to 3 bounded retries
-          if (initAttemptsRef.current < 2) {
-            initAttemptsRef.current += 1;
-            await stopScanner();
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            if (isEffectActive && mountedRef.current) {
-              setScannerState('REQUESTING');
-            }
-          } else {
-            throw new Error('Camera video stream could not be rendered. Please try uploading a QR photo.');
-          }
+          startFrameScanningLoop();
         }
       } catch (err: any) {
         if (!isEffectActive || !mountedRef.current) return;
-        await stopScanner();
+        stopCamera();
         setScannerState('ERROR');
         setErrorMessage(mapCameraError(err));
       } finally {
@@ -503,14 +404,14 @@ export default function WorkerAadhaarQrScanner({
       }
     };
 
-    startSession();
+    startNativeCameraSession();
 
     return () => {
       isEffectActive = false;
     };
-  }, [scannerState, stopScanner]);
+  }, [scannerState, stopCamera, startFrameScanningLoop]);
 
-  // Image Upload Fallback Handler (Client-Side Local QR Scan)
+  // Image Upload Fallback Handler (Client-Side Local QR Scan via jsQR)
   const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -526,26 +427,49 @@ export default function WorkerAadhaarQrScanner({
     setIsSubmitting(true);
 
     try {
-      await stopScanner();
+      stopCamera();
 
-      const { Html5Qrcode } = await import('html5-qrcode');
-      // Create temporary offscreen scanner instance for local file scan
-      const tempScanner = new Html5Qrcode('offscreen-file-qr-container');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setScannerState('ERROR');
+            setErrorMessage('Could not process image file.');
+            setIsSubmitting(false);
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+          });
 
-      // Scan file locally in browser (no server upload)
-      const decodedText = await tempScanner.scanFile(file, true);
-      await tempScanner.clear();
-
-      if (decodedText) {
-        await sendPayloadToApi(decodedText);
-      } else {
-        throw new Error('No QR code could be detected in the uploaded image.');
-      }
+          if (code && code.data && code.data.trim()) {
+            sendPayloadToApi(code.data.trim());
+          } else {
+            setScannerState('ERROR');
+            setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear and well-lit.');
+            setIsSubmitting(false);
+          }
+        };
+        img.onerror = () => {
+          setScannerState('ERROR');
+          setErrorMessage('Failed to load the selected image file.');
+          setIsSubmitting(false);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
       if (mountedRef.current) {
         setScannerState('ERROR');
         setErrorMessage(
-          err.message || 'Unable to detect a valid Aadhaar QR code in the selected image. Please ensure the QR photo is clear and well-lit.'
+          err.message || 'Unable to detect a valid Aadhaar QR code in the selected image.'
         );
         setIsSubmitting(false);
       }
@@ -553,7 +477,7 @@ export default function WorkerAadhaarQrScanner({
   };
 
   const handleReset = async () => {
-    await stopScanner();
+    stopCamera();
     if (mountedRef.current) {
       setVerifiedDetails(null);
       setErrorMessage(null);
@@ -570,9 +494,6 @@ export default function WorkerAadhaarQrScanner({
 
   return (
     <div className="w-full space-y-4">
-      {/* Hidden container for client-side file QR scanning */}
-      <div id="offscreen-file-qr-container" className="hidden" />
-
       {/* Header Banner */}
       <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 text-xs text-slate-800 flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
@@ -638,26 +559,44 @@ export default function WorkerAadhaarQrScanner({
         {/* State 2 & 3: REQUESTING / STARTING */}
         {(scannerState === 'REQUESTING' || scannerState === 'STARTING') && (
           <div className="space-y-3 animate-in fade-in">
-            <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 min-h-[280px] sm:min-h-[320px] flex items-center justify-center p-6 text-center">
-              <div id="onboarding-aadhaar-qr-viewport" className="w-full h-full text-white" />
+            <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] max-w-md mx-auto flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover block bg-black"
+              />
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm space-y-3 text-white z-10">
                 <Loader2 className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
-                <p className="text-xs font-bold">
-                  {scannerState === 'REQUESTING'
-                    ? 'Requesting Camera Permission...'
-                    : 'Camera starting...'}
-                </p>
-                <p className="text-[11px] text-slate-400">Verifying live video stream playback</p>
+                <p className="text-xs font-bold">Starting Camera...</p>
+                <p className="text-[11px] text-slate-400">Requesting native hardware video stream</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* State 4: SCANNING (Verified Live Stream) */}
+        {/* State 4: SCANNING (Verified Native Live Stream) */}
         {scannerState === 'SCANNING' && (
           <div className="space-y-3 animate-in fade-in">
-            <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 min-h-[280px] sm:min-h-[320px] flex items-center justify-center">
-              <div id="onboarding-aadhaar-qr-viewport" className="w-full h-full text-white" />
+            <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-[4/3] max-w-md mx-auto flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover block bg-black"
+              />
+
+              {/* Viewfinder Target Frame Overlay */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-56 h-56 border-2 border-emerald-400/90 rounded-2xl shadow-2xl relative">
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 -mt-1 -ml-1 rounded-tl-sm" />
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 -mt-1 -mr-1 rounded-tr-sm" />
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400 -mb-1 -ml-1 rounded-bl-sm" />
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400 -mb-1 -mr-1 rounded-br-sm" />
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-between gap-3 pt-1">
@@ -742,10 +681,10 @@ export default function WorkerAadhaarQrScanner({
               <Button
                 variant="brand"
                 fullWidth
-                onClick={handleReset}
+                onClick={initiateCameraScan}
                 icon={<RefreshCw className="w-4 h-4" />}
               >
-                Try Scanning Again
+                Try Camera Again
               </Button>
 
               <Button
@@ -754,7 +693,7 @@ export default function WorkerAadhaarQrScanner({
                 onClick={() => fileInputRef.current?.click()}
                 icon={<Upload className="w-4 h-4 text-blue-600" />}
               >
-                Upload QR Photo
+                Scan QR from Image
               </Button>
             </div>
           </div>
@@ -782,11 +721,10 @@ export default function WorkerAadhaarQrScanner({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono bg-white p-2.5 rounded-xl border border-slate-200 text-slate-700">
               <div>HTTPS Context: <strong>{diagnostics.isSecureContext ? 'Yes' : 'No'}</strong></div>
               <div>Media API: <strong>{diagnostics.hasMediaDevices ? 'Yes' : 'No'}</strong></div>
-              <div>Cameras Found: <strong>{diagnostics.camerasCount}</strong></div>
               <div>Ready State: <strong>{diagnostics.videoReadyState}</strong></div>
               <div>Dimensions: <strong>{diagnostics.videoWidth}x{diagnostics.videoHeight}</strong></div>
               <div>Stream Active: <strong>{diagnostics.streamActive ? 'True' : 'False'}</strong></div>
-              <div className="col-span-2 truncate">Label: <strong>{diagnostics.selectedCameraLabel}</strong></div>
+              <div className="col-span-3 truncate">Track: <strong>{diagnostics.activeTrackLabel}</strong></div>
             </div>
           )}
 
