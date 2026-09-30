@@ -249,7 +249,7 @@ export default function WorkerAadhaarQrScanner({
       if (data.signatureValid === false) {
         if (mountedRef.current) {
           setScannerState('SIGNATURE_INVALID');
-          setErrorMessage('UIDAI digital signature verification failed. Please scan an authentic Aadhaar Secure QR.');
+          setErrorMessage('Secure QR verification could not be completed. Please try again or use Aadhaar OTP.');
         }
         return;
       }
