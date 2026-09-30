@@ -125,7 +125,8 @@ export async function POST(req: NextRequest) {
         verified: false,
         signatureValid: false,
         identityMatch: false,
-        error: 'UIDAI digital signature verification failed or unsupported QR code.',
+        errorCode: 'SIGNATURE_INVALID',
+        error: 'Unable to verify this Aadhaar QR. Please scan the QR again or use Aadhaar OTP.',
       });
     }
 
@@ -164,7 +165,8 @@ export async function POST(req: NextRequest) {
         verified: false,
         signatureValid: true,
         identityMatch: false,
-        error: matchResult.reason || 'The details on the Aadhaar QR do not match your registered information.',
+        errorCode: 'IDENTITY_MISMATCH',
+        error: matchResult.reason || 'The Aadhaar details do not match this worker account.',
       });
     }
 
