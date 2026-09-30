@@ -469,7 +469,7 @@ export default function WorkerAadhaarQrScanner({
     startFrameScanningLoop();
   }, [scannerState, startFrameScanningLoop]);
 
-  // Image Upload Fallback Handler (Client-Side Local QR Scan via dynamic jsQR)
+  // Image Upload Fallback Handler (Client-Side Local Multi-Variant QR Scan via ZXing + jsQR)
   const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -491,51 +491,23 @@ export default function WorkerAadhaarQrScanner({
       reader.onload = (event) => {
         const img = new Image();
         img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          if (!ctx) {
-            setScannerState('ERROR');
-            setErrorMessage('Could not process image file.');
-            setIsSubmitting(false);
-            return;
-          }
-          ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, img.width, img.height);
-
           try {
-            const jsQR = (await import('jsqr')).default;
-            const code = jsQR(imageData.data, imageData.width, imageData.height, {
-              inversionAttempts: 'attemptBoth',
-            });
+            const { decodeAadhaarQrFromImageElement } = await import('@/lib/aadhaar/secure-qr/client-decoder');
+            const payloadString = await decodeAadhaarQrFromImageElement(img);
 
-            if (code && (code.binaryData?.length > 0 || code.data?.trim())) {
-              let payloadString = '';
-              if (code.binaryData && code.binaryData.length > 0) {
-                const bytes = new Uint8Array(code.binaryData);
-                let binary = '';
-                const len = bytes.byteLength;
-                for (let i = 0; i < len; i++) {
-                  binary += String.fromCharCode(bytes[i]);
-                }
-                payloadString = btoa(binary);
-              } else if (code.data) {
-                payloadString = code.data.trim();
-              }
-
-              if (payloadString) {
-                sendPayloadToApi(payloadString);
-                return;
-              }
+            if (payloadString) {
+              sendPayloadToApi(payloadString);
+              return;
             }
 
             setScannerState('ERROR');
-            setErrorMessage('No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear, well-lit, and unblurred.');
+            setErrorMessage(
+              'No valid Aadhaar QR code could be detected in the selected image. Please ensure the QR photo is clear, well-lit, and unblurred.'
+            );
             setIsSubmitting(false);
-          } catch {
+          } catch (err: any) {
             setScannerState('ERROR');
-            setErrorMessage('QR decoder library loading failed. Please ensure npm dependencies are installed.');
+            setErrorMessage('QR decoder library loading failed. Please try uploading another photo.');
             setIsSubmitting(false);
           }
         };
