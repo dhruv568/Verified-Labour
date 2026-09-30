@@ -40,6 +40,7 @@ import { INDIAN_STATES_AND_CITIES } from '@/lib/indian-locations';
 import { LOCAL_COORDINATE_MAP, calculateHaversineDistanceKm } from '@/lib/location';
 import { COMMON_TRADES } from '@/lib/common-trades';
 import WorkerLivePhotoCapture from './WorkerLivePhotoCapture';
+import WorkerAadhaarQrScanner from './WorkerAadhaarQrScanner';
 
 interface WorkerOnboardingWizardProps {
   categories: any[];
@@ -100,8 +101,8 @@ export default function WorkerOnboardingWizard({
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [maskedAadhaar, setMaskedAadhaar] = useState('');
 
-  // DigiLocker KYC state
-  const [verificationMode, setVerificationMode] = useState<'OTP' | 'DIGILOCKER'>('OTP');
+  // DigiLocker KYC & QR state
+  const [verificationMode, setVerificationMode] = useState<'QR' | 'OTP' | 'DIGILOCKER'>('QR');
   const [digiLockerStatus, setDigiLockerStatus] = useState<'IDLE' | 'PENDING' | 'AUTHENTICATED' | 'EXPIRED' | 'CONSENT_DENIED' | 'FAILED' | 'MANUAL_REVIEW'>('IDLE');
   const [digiLockerUrl, setDigiLockerUrl] = useState<string | null>(null);
   const [digiLockerMessage, setDigiLockerMessage] = useState<string | null>(null);
@@ -1466,28 +1467,39 @@ export default function WorkerOnboardingWizard({
             </div>
 
             {!aadhaarVerified && (
-              <div className="flex border-b border-slate-200 mb-2">
+              <div className="flex border-b border-slate-200 mb-2 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setVerificationMode('QR')}
+                  className={`py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
+                    verificationMode === 'QR'
+                      ? 'border-emerald-600 text-emerald-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Aadhaar Secure QR • आधार Secure QR
+                </button>
                 <button
                   type="button"
                   onClick={() => setVerificationMode('OTP')}
-                  className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  className={`py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
                     verificationMode === 'OTP'
                       ? 'border-[#079447] text-[#079447]'
                       : 'border-transparent text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  Aadhaar OTP Verification
+                  Aadhaar OTP
                 </button>
                 <button
                   type="button"
                   onClick={() => setVerificationMode('DIGILOCKER')}
-                  className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  className={`py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
                     verificationMode === 'DIGILOCKER'
                       ? 'border-[#1264D6] text-[#1264D6]'
                       : 'border-transparent text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  DigiLocker KYC (Cashfree)
+                  DigiLocker KYC
                 </button>
               </div>
             )}
@@ -1505,6 +1517,19 @@ export default function WorkerOnboardingWizard({
                   </p>
                 </div>
               </div>
+            ) : verificationMode === 'QR' ? (
+              <WorkerAadhaarQrScanner
+                workerId={sessionUser?.workerProfile?.id || ''}
+                workerFullName={fullName}
+                onVerifiedSuccess={(data) => {
+                  setAadhaarVerified(true);
+                  setMaskedAadhaar(data.maskedAadhaar);
+                  setSuccessMsg('✓ Aadhaar identity verified successfully via UIDAI Secure QR!');
+                  setTimeout(() => {
+                    setCurrentStep(7);
+                  }, 500);
+                }}
+              />
             ) : verificationMode === 'DIGILOCKER' ? (
               <div className="space-y-3.5 bg-blue-50/50 p-4 border border-blue-200/80 rounded-2xl">
                 {digiLockerStatus === 'IDLE' && (

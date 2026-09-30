@@ -21,6 +21,7 @@ import { runWorkerBookingFlowTests } from './worker-booking-flow-tests';
 import { runAadhaarCertTests } from './aadhaar-cert-tests';
 import { runAadhaarDecoderTests } from './aadhaar-decoder-tests';
 import { runAadhaarScannerUiTests } from './aadhaar-scanner-ui-tests';
+import { runAadhaarOnboardingIntegrationTests } from './aadhaar-onboarding-integration-tests';
 
 async function runAllTests() {
   console.log('====================================================');
@@ -325,6 +326,10 @@ async function runAllTests() {
   const uiResults = await runAadhaarScannerUiTests();
   passed += uiResults.passed;
   failed += uiResults.failed;
+
+  const integrationResults = await runAadhaarOnboardingIntegrationTests();
+  passed += integrationResults.passed;
+  failed += integrationResults.failed;
 
   console.log('\n====================================================');
   console.log(`ALL TESTS COMPLETED: ${passed} PASSED, ${failed} FAILED`);

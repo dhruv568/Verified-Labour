@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { decodeAndVerifyAadhaarQr } from '@/lib/aadhaar/secure-qr/decoder';
+import { validateIdentityMatch, syncWorkerVerificationStatus } from '@/lib/worker-verification';
 import { checkRateLimit } from '@/lib/rate-limiter';
 
 const qrPayloadSchema = z.object({
   payload: z.string().min(1, 'QR payload string is required'),
+  workerId: z.string().optional(),
+  testOnly: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -30,7 +34,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { payload } = parsed.data;
+    const { payload, testOnly } = parsed.data;
+    const targetWorkerId = parsed.data.workerId || sessionUser.workerProfile?.id;
+
+    // Authorization check
+    if (sessionUser.role !== 'ADMIN' && sessionUser.workerProfile?.id !== targetWorkerId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: You cannot verify another worker\'s profile' },
+        { status: 403 }
+      );
+    }
 
     // 3. Rate Limiting (max 10 verification requests per 5 minutes per user)
     const userId = sessionUser.id;
@@ -45,7 +58,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Server-Side Cryptographic Signature Verification & Decoding
+    // 4. If target worker exists, check for existing verification (IDEMPOTENCY)
+    let worker: any = null;
+    if (targetWorkerId && !testOnly) {
+      worker = await prisma.workerProfile.findUnique({
+        where: { id: targetWorkerId },
+        include: { aadhaarVerif: true, bankVerif: true },
+      });
+
+      if (worker && (worker.identityVerified || worker.aadhaarVerif?.status === 'VERIFIED')) {
+        return NextResponse.json({
+          success: true,
+          alreadyVerified: true,
+          verified: true,
+          signatureValid: true,
+          identityMatch: true,
+          status: 'VERIFIED',
+          maskedAadhaar: worker.aadhaarVerif?.maskedAadhaar || 'XXXXXXXX8291',
+          nameOnAadhaar: worker.aadhaarVerif?.nameOnAadhaar || worker.fullName,
+          message: 'Aadhaar identity is already verified for this worker profile.',
+        });
+      }
+    }
+
+    // 5. Server-Side Cryptographic Signature Verification & Decoding
     const result = decodeAndVerifyAadhaarQr(payload);
 
     if (!result.signatureValid || !result.verified || !result.data) {
@@ -53,27 +89,106 @@ export async function POST(req: NextRequest) {
         success: true,
         verified: false,
         signatureValid: false,
+        identityMatch: false,
+        error: 'UIDAI digital signature verification failed or unsupported QR code.',
       });
     }
 
-    // 5. Sanitized Response (No sensitive internal cryptographic data or full Aadhaar numbers)
+    // If running in test mode or no worker profile context, return decode result without DB updates
+    if (testOnly || !worker) {
+      return NextResponse.json({
+        success: true,
+        verified: true,
+        signatureValid: true,
+        identityMatch: true,
+        data: {
+          name: result.data.name,
+          dob: result.data.dob,
+          gender: result.data.gender,
+          maskedAadhaar: result.data.maskedAadhaar,
+        },
+      });
+    }
+
+    // 6. Identity Matching: Compare extracted QR details vs registered worker profile
+    const matchResult = validateIdentityMatch(worker.fullName, worker.dateOfBirth, {
+      name: result.data.name,
+      dob: result.data.dob,
+      gender: result.data.gender,
+    });
+
+    if (matchResult.outcome !== 'VERIFIED') {
+      return NextResponse.json({
+        success: true,
+        verified: false,
+        signatureValid: true,
+        identityMatch: false,
+        error: matchResult.reason || 'The details on the Aadhaar QR do not match your registered information.',
+      });
+    }
+
+    // 7. Database Updates: Record verification results in AadhaarVerification & Verification
+    const finalWorkerId: string = targetWorkerId!;
+    const refId = result.data.referenceId || `QR_${Date.now()}`;
+    const verifiedName = result.data.name || worker.fullName;
+    const verifiedDob = result.data.dob || undefined;
+    const verifiedGender = result.data.gender || undefined;
+    const maskedAadhaar = result.data.maskedAadhaar;
+
+    await prisma.aadhaarVerification.upsert({
+      where: { workerId: finalWorkerId },
+      update: {
+        refId,
+        maskedAadhaar,
+        nameOnAadhaar: verifiedName,
+        dob: verifiedDob,
+        gender: verifiedGender,
+        status: 'VERIFIED',
+        verifiedAt: new Date(),
+        failureReason: null,
+      },
+      create: {
+        workerId: finalWorkerId,
+        refId,
+        maskedAadhaar,
+        nameOnAadhaar: verifiedName,
+        dob: verifiedDob,
+        gender: verifiedGender,
+        status: 'VERIFIED',
+        verifiedAt: new Date(),
+        failureReason: null,
+      },
+    });
+
+    await prisma.verification.create({
+      data: {
+        workerId: finalWorkerId,
+        type: 'AADHAAR_SECURE_QR',
+        provider: 'UIDAI_OFFLINE',
+        providerReference: refId,
+        status: 'VERIFIED',
+        verifiedAt: new Date(),
+      },
+    });
+
+    // 8. Synchronize overall worker eligibility (Bank + Identity + Profile completeness)
+    await syncWorkerVerificationStatus(finalWorkerId);
+
     return NextResponse.json({
       success: true,
       verified: true,
       signatureValid: true,
-      data: {
-        name: result.data.name,
-        dob: result.data.dob,
-        gender: result.data.gender,
-        maskedAadhaar: result.data.maskedAadhaar,
-      },
+      identityMatch: true,
+      status: 'VERIFIED',
+      maskedAadhaar,
+      nameOnAadhaar: verifiedName,
+      message: '✓ Aadhaar identity verified successfully via UIDAI Secure QR!',
     });
-  } catch {
-    // Return sanitized response on any internal exception
-    return NextResponse.json({
-      success: true,
-      verified: false,
-      signatureValid: false,
-    });
+  } catch (err: any) {
+    console.error('Error verifying Secure QR:', err);
+    return NextResponse.json(
+      { success: false, error: 'Failed to verify Secure QR: ' + err.message },
+      { status: 500 }
+    );
   }
 }
