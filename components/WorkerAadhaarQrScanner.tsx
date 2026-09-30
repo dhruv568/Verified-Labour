@@ -26,10 +26,19 @@ interface WorkerAadhaarQrScannerProps {
 export type ScannerLifecycleState =
   | 'IDLE'
   | 'STARTING'
+  | 'CAMERA_ACTIVE'
   | 'SCANNING'
+  | 'QR_DETECTED'
+  | 'VERIFYING'
   | 'PROCESSING'
   | 'SUCCESS'
+  | 'VERIFIED'
   | 'FAILED'
+  | 'QR_NOT_FOUND'
+  | 'INVALID_SECURE_QR'
+  | 'SIGNATURE_INVALID'
+  | 'IDENTITY_MISMATCH'
+  | 'SERVER_ERROR'
   | 'ERROR';
 
 interface CameraDiagnosticInfo {
@@ -174,16 +183,23 @@ export default function WorkerAadhaarQrScanner({
     stopCamera();
 
     if (mountedRef.current) {
-      setScannerState('PROCESSING');
+      setScannerState('QR_DETECTED');
       setIsSubmitting(true);
       setErrorMessage(null);
     }
+
+    // Brief transition to VERIFYING state for clean user feedback
+    setTimeout(() => {
+      if (mountedRef.current) {
+        setScannerState('VERIFYING');
+      }
+    }, 300);
 
     try {
       const res = await fetch('/api/verifications/aadhaar/secure-qr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payload: scannedPayload, workerId }),
+        body: JSON.stringify({ payloadBase64: scannedPayload, workerId }),
       });
 
       const data = await res.json();
@@ -196,11 +212,37 @@ export default function WorkerAadhaarQrScanner({
         throw new Error(data.error || 'Too many attempts. Please wait a moment before retrying.');
       }
 
-      if (!data.success || !data.verified) {
+      if (res.status >= 500) {
         if (mountedRef.current) {
-          setScannerState('FAILED');
+          setScannerState('SERVER_ERROR');
+          setErrorMessage(data.error || 'Server error occurred during verification. Please try again.');
+        }
+        return;
+      }
+
+      if (data.signatureValid === false) {
+        if (mountedRef.current) {
+          setScannerState('SIGNATURE_INVALID');
+          setErrorMessage('UIDAI digital signature verification failed. Please scan an authentic Aadhaar Secure QR.');
+        }
+        return;
+      }
+
+      if (data.identityMatch === false) {
+        if (mountedRef.current) {
+          setScannerState('IDENTITY_MISMATCH');
           setErrorMessage(
             data.error || 'Identity details on the Aadhaar QR do not match your registered information.'
+          );
+        }
+        return;
+      }
+
+      if (!data.success || !data.verified) {
+        if (mountedRef.current) {
+          setScannerState('INVALID_SECURE_QR');
+          setErrorMessage(
+            data.error || 'Invalid or unparseable Aadhaar Secure QR payload structure.'
           );
         }
         return;
