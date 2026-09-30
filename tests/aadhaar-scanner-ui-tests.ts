@@ -144,6 +144,30 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(code.includes("process.env.NODE_ENV !== 'production'"), 'Manual paste UI must be wrapped in NODE_ENV check');
   });
 
+  // Test 12: Stream Verification Guard (videoWidth & videoHeight > 0 check)
+  test('WorkerAadhaarQrScanner verifies video rendering & readyState before setting SCANNING state', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('verifyVideoRendering'), 'Must define verifyVideoRendering stream check');
+    assert(code.includes('videoEl.videoWidth > 0'), 'Must check videoWidth > 0');
+    assert(code.includes('videoEl.videoHeight > 0'), 'Must check videoHeight > 0');
+    assert(code.includes('videoEl.readyState >= 2'), 'Must check video readyState >= 2');
+  });
+
+  // Test 13: HTTPS / Secure Context Check
+  test('WorkerAadhaarQrScanner performs HTTPS secure context check', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'WorkerAadhaarQrScanner.tsx'),
+      'utf8'
+    );
+    assert(code.includes('window.isSecureContext'), 'Must check window.isSecureContext');
+  });
+
   return { passed, failed };
 }
-
