@@ -611,7 +611,9 @@ export class CashfreeVerificationService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const response = await fetch(`${this.baseUrl}/digilocker?${queryParams.toString()}`, {
+      const endpointPath = '/digilocker';
+
+      const response = await fetch(`${this.baseUrl}${endpointPath}?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'x-client-id': this.clientId,
@@ -622,7 +624,24 @@ export class CashfreeVerificationService {
       });
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        data = {};
+      }
+
+      console.error('[Cashfree DigiLocker Status]', {
+        endpointPath,
+        httpStatus: response.status,
+        ok: response.ok,
+        verificationIdProvided: Boolean(verificationId),
+        referenceIdProvided: Boolean(referenceId),
+        code: data?.code,
+        message: data?.message,
+        status: data?.status,
+        keys: data && typeof data === 'object' && data !== null ? Object.keys(data) : [],
+      });
 
       if (response.ok && data.status) {
         const rawStatus = (data.status || '').toUpperCase();
@@ -632,6 +651,12 @@ export class CashfreeVerificationService {
         else if (rawStatus === 'CONSENT_DENIED') validStatus = 'CONSENT_DENIED';
         else if (rawStatus === 'PENDING') validStatus = 'PENDING';
         else validStatus = 'FAILED';
+
+        console.log('[Cashfree DigiLocker Status Result]', {
+          httpStatus: response.status,
+          rawStatus: data?.status,
+          normalizedStatus: validStatus,
+        });
 
         return {
           success: true,
@@ -652,10 +677,24 @@ export class CashfreeVerificationService {
         message: data.message || 'Failed to retrieve DigiLocker verification status.',
       };
     } catch (err: any) {
+      const isTimeout =
+        err?.name === 'AbortError' ||
+        err?.code === '20' ||
+        (typeof err?.message === 'string' && err.message.toLowerCase().includes('aborted'));
+
+      console.error('[Cashfree DigiLocker Status Error]', {
+        endpointPath: '/digilocker',
+        verificationIdProvided: Boolean(verificationId),
+        referenceIdProvided: Boolean(referenceId),
+        errorType: isTimeout ? 'TIMEOUT' : 'NETWORK_ERROR',
+        errorName: err?.name || 'Error',
+        errorMessage: err?.message || 'Unknown network error',
+      });
+
       return {
         success: false,
         status: 'FAILED',
-        error: 'NETWORK_TIMEOUT',
+        error: isTimeout ? 'NETWORK_TIMEOUT' : 'FETCH_ERROR',
         message: 'DigiLocker verification service is momentarily unreachable. Please try again.',
       };
     }
