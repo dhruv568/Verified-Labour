@@ -138,7 +138,7 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
     assert(code.includes('timed out after 5 seconds'), 'Must include 5-second timeout error message');
   });
 
-  // Test 11: Local Image QR Upload Fallback via jsQR
+  // Test 11: Local Image QR Upload Fallback via ZXing + jsQR
   test('WorkerAadhaarQrScanner includes client-side local image QR file upload fallback', () => {
     const fs = require('fs');
     const path = require('path');
@@ -147,7 +147,10 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       'utf8'
     );
     assert(code.includes('handleImageFileSelect'), 'Must define handleImageFileSelect');
-    assert(code.includes('FileReader'), 'Must read file with FileReader');
+    assert(
+      code.includes('createObjectURL') || code.includes('FileReader'),
+      'Must load image file via URL.createObjectURL or FileReader'
+    );
     assert(code.includes('Scan QR from Image'), 'Must provide Scan QR from Image button text');
   });
 
@@ -171,6 +174,22 @@ export async function runAadhaarScannerUiTests(): Promise<{ passed: number; fail
       'utf8'
     );
     assert(code.includes('window.isSecureContext'), 'Must check window.isSecureContext');
+  });
+
+  // Test 14: 10-Second Hard Image Decoding Timeout Guard
+  test('Client decoder includes 10-second hard image decoding timeout guard', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(
+      path.join(process.cwd(), 'lib', 'aadhaar', 'secure-qr', 'client-decoder.ts'),
+      'utf8'
+    );
+    assert(
+      code.includes('decodeAadhaarQrFromImageElementWithTimeout'),
+      'Must define decodeAadhaarQrFromImageElementWithTimeout'
+    );
+    assert(code.includes('10000'), 'Must enforce 10-second (10000ms) timeout limit');
+    assert(code.includes('MAX_DIM = 1800'), 'Must clamp maximum image dimensions to 1800px');
   });
 
   return { passed, failed };

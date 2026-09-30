@@ -94,7 +94,7 @@ export function parseRawPayloadToBuffer(rawPayload: string | Buffer): Buffer {
     throw new Error('Payload is empty.');
   }
 
-  if (trimmed.length > MAX_QR_PAYLOAD_BYTES * 2) {
+  if (trimmed.length > MAX_QR_PAYLOAD_BYTES * 4) {
     throw new Error(`Payload size exceeds maximum allowed limit of ${MAX_QR_PAYLOAD_BYTES} bytes.`);
   }
 
@@ -103,13 +103,15 @@ export function parseRawPayloadToBuffer(rawPayload: string | Buffer): Buffer {
     return base10ToBuffer(trimmed);
   }
 
-  // 2. Check if Base64 string
-  try {
-    const b64Buf = Buffer.from(trimmed, 'base64');
-    if (b64Buf.length > 0 && (b64Buf.toString('base64') === trimmed || trimmed.endsWith('='))) {
-      return b64Buf;
-    }
-  } catch {}
+  // 2. Check if Base64 string (RFC 4648 Base64 character set)
+  if (/^[A-Za-z0-9+/]+={0,2}$/.test(trimmed) && trimmed.length % 4 === 0) {
+    try {
+      const b64Buf = Buffer.from(trimmed, 'base64');
+      if (b64Buf.length > 0) {
+        return b64Buf;
+      }
+    } catch {}
+  }
 
   // 3. Fallback: treat as raw binary string Buffer
   return Buffer.from(trimmed, 'binary');

@@ -6,11 +6,16 @@ import { decodeAndVerifyAadhaarQr } from '@/lib/aadhaar/secure-qr/decoder';
 import { validateIdentityMatch, syncWorkerVerificationStatus } from '@/lib/worker-verification';
 import { checkRateLimit } from '@/lib/rate-limiter';
 
-const qrPayloadSchema = z.object({
-  payload: z.string().min(1, 'QR payload string is required'),
-  workerId: z.string().optional(),
-  testOnly: z.boolean().optional(),
-});
+const qrPayloadSchema = z
+  .object({
+    payload: z.string().optional(),
+    payloadBase64: z.string().optional(),
+    workerId: z.string().optional(),
+    testOnly: z.boolean().optional(),
+  })
+  .refine((data) => Boolean(data.payload || data.payloadBase64), {
+    message: 'QR payload string or payloadBase64 is required',
+  });
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +39,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { payload, testOnly } = parsed.data;
+    const rawInput = (parsed.data.payloadBase64 || parsed.data.payload || '').trim();
+    const testOnly = parsed.data.testOnly;
     const targetWorkerId = parsed.data.workerId || sessionUser.workerProfile?.id;
 
     // Authorization check
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Server-Side Cryptographic Signature Verification & Decoding
-    const result = decodeAndVerifyAadhaarQr(payload);
+    const result = decodeAndVerifyAadhaarQr(rawInput);
 
     if (!result.signatureValid || !result.verified || !result.data) {
       return NextResponse.json({

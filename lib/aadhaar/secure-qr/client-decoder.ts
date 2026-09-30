@@ -5,8 +5,9 @@ import jsQR from 'jsqr';
  * Client-Side Multi-Engine Aadhaar Secure QR Decoder Helper
  * 
  * Combines ZXing BrowserQRCodeReader + jsQR + Multi-Variant Canvas Preprocessing
- * (Rotation 90/180/270°, Contrast Binarization, 2x Upscaling, Center Cropping)
- * to detect dense Aadhaar Secure QRs from camera frames and uploaded photos.
+ * (Dimension Clamping, Rotations 90/180/270°, Contrast Binarization, Upscaling)
+ * to reliably detect dense Aadhaar Secure QRs from camera frames and uploaded photos
+ * without freezing the browser thread.
  */
 
 // Singleton instance of ZXing reader
@@ -84,7 +85,7 @@ export async function decodeCanvasWithEngines(
 
 /**
  * Multi-Variant Image QR Decoder: Preprocesses uploaded photo across 7 image transformations
- * (Original, 90°, 180°, 270°, Binarized High-Contrast, 2x Upscale, Center Crop)
+ * (Dimension Clamping, Original, 90°, 180°, 270°, Binarized High-Contrast, Upscale)
  * to locate dense/rotated Aadhaar QRs.
  */
 export async function decodeAadhaarQrFromImageElement(
@@ -96,6 +97,21 @@ export async function decodeAadhaarQrFromImageElement(
 
   if (origWidth === 0 || origHeight === 0) {
     return null;
+  }
+
+  // Clamp max dimensions to 1800px to prevent main thread freezing on 12MP+ photos
+  const MAX_DIM = 1800;
+  let targetWidth = origWidth;
+  let targetHeight = origHeight;
+
+  if (targetWidth > MAX_DIM || targetHeight > MAX_DIM) {
+    if (targetWidth > targetHeight) {
+      targetHeight = Math.round((targetHeight * MAX_DIM) / targetWidth);
+      targetWidth = MAX_DIM;
+    } else {
+      targetWidth = Math.round((targetWidth * MAX_DIM) / targetHeight);
+      targetHeight = MAX_DIM;
+    }
   }
 
   const reader = getZxingReader();
@@ -119,45 +135,45 @@ export async function decodeAadhaarQrFromImageElement(
     return { canvas, ctx };
   };
 
-  // Variant 1: Original Canvas
-  if (onAttemptProgress) onAttemptProgress({ attempt: 2, total: 8, strategy: 'Full Resolution Original' });
-  const { canvas: origCanvas, ctx: origCtx } = createCanvas(origWidth, origHeight);
-  origCtx.drawImage(img, 0, 0);
+  // Variant 1: Clamped Original Canvas
+  if (onAttemptProgress) onAttemptProgress({ attempt: 2, total: 8, strategy: 'Normalized Image Canvas' });
+  const { canvas: origCanvas, ctx: origCtx } = createCanvas(targetWidth, targetHeight);
+  origCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
   let res = await decodeCanvasWithEngines(origCanvas);
   if (res) return res;
 
   // Variant 2: Rotated 90° Clockwise
   if (onAttemptProgress) onAttemptProgress({ attempt: 3, total: 8, strategy: 'Rotated 90° Right' });
-  const { canvas: rot90, ctx: ctx90 } = createCanvas(origHeight, origWidth);
-  ctx90.translate(origHeight / 2, origWidth / 2);
+  const { canvas: rot90, ctx: ctx90 } = createCanvas(targetHeight, targetWidth);
+  ctx90.translate(targetHeight / 2, targetWidth / 2);
   ctx90.rotate((90 * Math.PI) / 180);
-  ctx90.drawImage(img, -origWidth / 2, -origHeight / 2);
+  ctx90.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
   res = await decodeCanvasWithEngines(rot90);
   if (res) return res;
 
   // Variant 3: Rotated 180°
   if (onAttemptProgress) onAttemptProgress({ attempt: 4, total: 8, strategy: 'Rotated 180° Upside Down' });
-  const { canvas: rot180, ctx: ctx180 } = createCanvas(origWidth, origHeight);
-  ctx180.translate(origWidth / 2, origHeight / 2);
+  const { canvas: rot180, ctx: ctx180 } = createCanvas(targetWidth, targetHeight);
+  ctx180.translate(targetWidth / 2, targetHeight / 2);
   ctx180.rotate((180 * Math.PI) / 180);
-  ctx180.drawImage(img, -origWidth / 2, -origHeight / 2);
+  ctx180.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
   res = await decodeCanvasWithEngines(rot180);
   if (res) return res;
 
   // Variant 4: Rotated 270° Counter-Clockwise
   if (onAttemptProgress) onAttemptProgress({ attempt: 5, total: 8, strategy: 'Rotated 270° Left' });
-  const { canvas: rot270, ctx: ctx270 } = createCanvas(origHeight, origWidth);
-  ctx270.translate(origHeight / 2, origWidth / 2);
+  const { canvas: rot270, ctx: ctx270 } = createCanvas(targetHeight, targetWidth);
+  ctx270.translate(targetHeight / 2, targetWidth / 2);
   ctx270.rotate((270 * Math.PI) / 180);
-  ctx270.drawImage(img, -origWidth / 2, -origHeight / 2);
+  ctx270.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
   res = await decodeCanvasWithEngines(rot270);
   if (res) return res;
 
   // Variant 5: Binarized High-Contrast Grayscale
   if (onAttemptProgress) onAttemptProgress({ attempt: 6, total: 8, strategy: 'High Contrast Grayscale' });
-  const { canvas: contrastCanvas, ctx: contrastCtx } = createCanvas(origWidth, origHeight);
-  contrastCtx.drawImage(img, 0, 0);
-  const imgData = contrastCtx.getImageData(0, 0, origWidth, origHeight);
+  const { canvas: contrastCanvas, ctx: contrastCtx } = createCanvas(targetWidth, targetHeight);
+  contrastCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+  const imgData = contrastCtx.getImageData(0, 0, targetWidth, targetHeight);
   const d = imgData.data;
   for (let i = 0; i < d.length; i += 4) {
     const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
@@ -170,23 +186,42 @@ export async function decodeAadhaarQrFromImageElement(
   res = await decodeCanvasWithEngines(contrastCanvas);
   if (res) return res;
 
-  // Variant 6: 2x Upscaled Canvas
-  if (onAttemptProgress) onAttemptProgress({ attempt: 7, total: 8, strategy: '2x High Resolution Upscale' });
-  const { canvas: upCanvas, ctx: upCtx } = createCanvas(origWidth * 2, origHeight * 2);
-  upCtx.imageSmoothingEnabled = false;
-  upCtx.drawImage(img, 0, 0, origWidth * 2, origHeight * 2);
-  res = await decodeCanvasWithEngines(upCanvas);
-  if (res) return res;
+  // Variant 6: Upscaled Canvas (if original image was small)
+  if (targetWidth < 1200) {
+    if (onAttemptProgress) onAttemptProgress({ attempt: 7, total: 8, strategy: 'High Resolution Upscale' });
+    const scale = 1.5;
+    const { canvas: upCanvas, ctx: upCtx } = createCanvas(Math.round(targetWidth * scale), Math.round(targetHeight * scale));
+    upCtx.imageSmoothingEnabled = false;
+    upCtx.drawImage(img, 0, 0, Math.round(targetWidth * scale), Math.round(targetHeight * scale));
+    res = await decodeCanvasWithEngines(upCanvas);
+    if (res) return res;
+  }
 
-  // Variant 7: Center Crop
-  if (onAttemptProgress) onAttemptProgress({ attempt: 8, total: 8, strategy: 'Center Region Isolation' });
-  const cropSize = Math.floor(Math.min(origWidth, origHeight) * 0.7);
-  const cropX = Math.floor((origWidth - cropSize) / 2);
-  const cropY = Math.floor((origHeight - cropSize) / 2);
-  const { canvas: cropCanvas, ctx: cropCtx } = createCanvas(cropSize, cropSize);
-  cropCtx.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-  res = await decodeCanvasWithEngines(cropCanvas);
+  // Variant 7: Full resolution unscaled image scan
+  if (onAttemptProgress) onAttemptProgress({ attempt: 8, total: 8, strategy: 'Full Resolution Original' });
+  const { canvas: fullCanvas, ctx: fullCtx } = createCanvas(origWidth, origHeight);
+  fullCtx.drawImage(img, 0, 0, origWidth, origHeight);
+  res = await decodeCanvasWithEngines(fullCanvas);
   if (res) return res;
 
   return null;
+}
+
+/**
+ * Hard 10-second Promise.race timeout wrapper around decodeAadhaarQrFromImageElement.
+ * Guarantees that image scanning NEVER hangs or spins infinitely.
+ */
+export async function decodeAadhaarQrFromImageElementWithTimeout(
+  img: HTMLImageElement,
+  timeoutMs: number = 10000,
+  onAttemptProgress?: (info: { attempt: number; total: number; strategy: string }) => void
+): Promise<string | null> {
+  const decodePromise = decodeAadhaarQrFromImageElement(img, onAttemptProgress);
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => {
+      resolve(null);
+    }, timeoutMs);
+  });
+
+  return Promise.race([decodePromise, timeoutPromise]);
 }
