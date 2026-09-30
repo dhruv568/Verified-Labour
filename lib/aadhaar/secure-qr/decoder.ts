@@ -5,17 +5,17 @@ import { getUidaiPublicKeyPem, getUidaiPublicKeyObject } from './certificate';
 /**
  * UIDAI Secure QR Code Decoder & Cryptographic Verifier (Server-Side Only)
  * 
- * Implements UIDAI Secure QR Code specification (V2/V3):
+ * Supports UIDAI Secure QR Code specifications (V1 XML, V2, V3 e-Aadhaar/PVC):
  * 1. Payload validation (size & formatting bounds)
  * 2. BigInteger / Base-10 / Base64 / Binary byte conversion
- * 3. Raw Deflate / GZIP decompression
- * 4. Delimiter-separated binary field parsing (Byte 255 / 0xFF)
- * 5. RSA-2048 SHA-256 digital signature validation using UIDAI Public Certificate
+ * 3. ZLIB Inflate / InflateRaw / GZIP decompression
+ * 4. Multi-Strategy RSA-2048 Digital Signature Validation using UIDAI Public Certificate
+ * 5. Delimiter-separated binary field parsing (Byte 255 / 0xFF) and XML fallback
  * 6. Sanitized data extraction (Name, DOB, Gender, Address, Masked Aadhaar)
  * 
  * Security Guardrails:
  * - Server-side execution only.
- * - Maximum payload size limit (15 KB) to prevent DoS/decompression bomb attacks.
+ * - Maximum payload size limit (15 KB) to prevent DoS attacks.
  * - Zero raw QR payload logging.
  * - Zero 12-digit Aadhaar number logging or storage.
  */
@@ -61,7 +61,7 @@ export interface AadhaarQrDecodeResult {
  * Converts a base-10 numeric string (BigInt representation of QR bytes) into a Node.js Buffer.
  */
 export function base10ToBuffer(numericStr: string): Buffer {
-  const cleanStr = numericStr.trim();
+  const cleanStr = numericStr.replace(/\s+/g, '').trim();
   if (!/^\d+$/.test(cleanStr)) {
     throw new Error('Input is not a valid base-10 numeric string.');
   }
@@ -99,8 +99,9 @@ export function parseRawPayloadToBuffer(rawPayload: string | Buffer): Buffer {
   }
 
   // 1. Check if base-10 integer string
-  if (/^\d+$/.test(trimmed)) {
-    return base10ToBuffer(trimmed);
+  const cleanNumeric = trimmed.replace(/\s+/g, '');
+  if (/^\d+$/.test(cleanNumeric)) {
+    return base10ToBuffer(cleanNumeric);
   }
 
   // 2. Check if Base64 string (RFC 4648 Base64 character set)
@@ -118,7 +119,7 @@ export function parseRawPayloadToBuffer(rawPayload: string | Buffer): Buffer {
 }
 
 /**
- * Decompresses raw QR binary byte payload using ZLIB Inflate or GZIP.
+ * Decompresses raw QR binary byte payload using ZLIB Inflate, InflateRaw, or GZIP.
  */
 export function decompressQrBytes(compressedBytes: Buffer): Buffer {
   try {
@@ -162,25 +163,53 @@ export function splitBufferByDelimiter(buffer: Buffer, delimiter: number = 255):
 }
 
 /**
- * Validates RSA-2048 SHA-256 digital signature against signed data bytes using UIDAI Public Key.
+ * Validates RSA Digital Signature using multi-strategy verification across UIDAI V1/V2/V3 standards.
  */
 export function verifyUidaiSignature(
   signedDataBytes: Buffer,
   signatureBytes: Buffer,
-  publicKeyPemOrObj?: string | crypto.KeyObject
+  publicKeyPemOrObj?: string | crypto.KeyObject,
+  decompressedBytes?: Buffer
 ): boolean {
-  try {
-    if (!signatureBytes || signatureBytes.length !== 256) {
-      return false;
-    }
-
-    const key = publicKeyPemOrObj || getUidaiPublicKeyPem();
-    const verifier = crypto.createVerify('SHA256');
-    verifier.update(signedDataBytes);
-    return verifier.verify(key, signatureBytes);
-  } catch {
+  if (!signatureBytes || signatureBytes.length !== 256) {
     return false;
   }
+
+  const key = publicKeyPemOrObj || getUidaiPublicKeyPem();
+
+  // Strategy 1: SHA256 over raw signedDataBytes (UIDAI Standard V2/V3 compressed stream)
+  try {
+    const v1 = crypto.createVerify('SHA256');
+    v1.update(signedDataBytes);
+    if (v1.verify(key, signatureBytes)) return true;
+  } catch {}
+
+  // Strategy 2: SHA256 over decompressedBytes (UIDAI V3 uncompressed data payload)
+  if (decompressedBytes && decompressedBytes.length > 0) {
+    try {
+      const v2 = crypto.createVerify('SHA256');
+      v2.update(decompressedBytes);
+      if (v2.verify(key, signatureBytes)) return true;
+    } catch {}
+  }
+
+  // Strategy 3: SHA256 over signedDataBytes.subarray(1) (Stripping 1-byte V3 version prefix)
+  if (signedDataBytes.length > 1) {
+    try {
+      const v3 = crypto.createVerify('SHA256');
+      v3.update(signedDataBytes.subarray(1));
+      if (v3.verify(key, signatureBytes)) return true;
+    } catch {}
+  }
+
+  // Strategy 4: SHA1 over signedDataBytes (Legacy V1 SHA1 RSA signature)
+  try {
+    const v4 = crypto.createVerify('SHA1');
+    v4.update(signedDataBytes);
+    if (v4.verify(key, signatureBytes)) return true;
+  } catch {}
+
+  return false;
 }
 
 /**
@@ -219,9 +248,17 @@ export function decodeAndVerifyAadhaarQr(
     const signatureBytes = rawBuffer.subarray(rawBuffer.length - 256);
     const signedDataBytes = rawBuffer.subarray(0, rawBuffer.length - 256);
 
-    // 3. Cryptographic RSA-2048 SHA-256 signature verification
+    // Decompress signed data payload
+    const decompressed = decompressQrBytes(signedDataBytes);
+
+    // 3. Cryptographic RSA digital signature verification
     const publicKey = overridePublicKeyPem || getUidaiPublicKeyPem();
-    const isSignatureValid = verifyUidaiSignature(signedDataBytes, signatureBytes, publicKey);
+    const isSignatureValid = verifyUidaiSignature(
+      signedDataBytes,
+      signatureBytes,
+      publicKey,
+      decompressed
+    );
 
     if (!isSignatureValid) {
       return {
@@ -232,11 +269,9 @@ export function decodeAndVerifyAadhaarQr(
       };
     }
 
-    // 4. Decompress signed data payload
-    const decompressed = decompressQrBytes(signedDataBytes);
+    // 4. Extract fields based on UIDAI V2/V3 spec
     const parts = splitBufferByDelimiter(decompressed, 255);
 
-    // 5. Extract fields based on UIDAI V2/V3 spec
     // Format: Version, Email/Mobile Present, RefId, Name, DOB, Gender, House, Street, Landmark, Locality, VTC, District, State, PostOffice, Pincode, MobileHash, ImageBytes
     const version = parts[0]?.toString('utf8').trim() || 'V2';
     const refId = parts[2]?.toString('utf8').trim() || parts[0]?.toString('utf8').trim() || '';
