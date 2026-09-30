@@ -1521,10 +1521,21 @@ export default function WorkerOnboardingWizard({
               <WorkerAadhaarQrScanner
                 workerId={sessionUser?.workerProfile?.id || ''}
                 workerFullName={fullName}
-                onVerifiedSuccess={(data) => {
+                onVerifiedSuccess={async (data) => {
                   setAadhaarVerified(true);
                   setMaskedAadhaar(data.maskedAadhaar);
                   setSuccessMsg('✓ Aadhaar identity verified successfully via UIDAI Secure QR!');
+
+                  // Re-fetch session to synchronize server-side verified status
+                  try {
+                    const meRes = await fetch('/api/auth/me');
+                    const meData = await meRes.json();
+                    if (meData.authenticated && meData.user) {
+                      setSessionUser(meData.user);
+                    }
+                  } catch {}
+
+                  // Immediately unlock Step 6 and advance to Step 7
                   setTimeout(() => {
                     setCurrentStep(7);
                   }, 500);

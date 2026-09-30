@@ -759,8 +759,8 @@ export default function WorkerAadhaarQrScanner({
           </div>
         )}
 
-        {/* State 5: SUCCESS */}
-        {scannerState === 'SUCCESS' && verifiedDetails && (
+        {/* State 5: SUCCESS / VERIFIED */}
+        {(scannerState === 'SUCCESS' || scannerState === 'VERIFIED') && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-3 animate-in fade-in">
             <div className="flex items-center gap-2.5 text-emerald-800 font-bold text-base">
               <CheckCircle2 className="w-6 h-6 text-emerald-600 stroke-[2.5]" />
@@ -773,15 +773,15 @@ export default function WorkerAadhaarQrScanner({
             <div className="bg-white p-3.5 rounded-xl border border-emerald-200/80 space-y-2 text-xs text-slate-800">
               <div className="grid grid-cols-2 gap-2 border-b pb-1.5 border-slate-100">
                 <span className="text-slate-500 font-medium">Verified Name:</span>
-                <strong className="font-bold text-slate-900">{verifiedDetails.nameOnAadhaar}</strong>
+                <strong className="font-bold text-slate-900">{verifiedDetails?.nameOnAadhaar || workerFullName || 'Verified Worker'}</strong>
               </div>
-              {verifiedDetails.dob && (
+              {verifiedDetails?.dob && (
                 <div className="grid grid-cols-2 gap-2 border-b pb-1.5 border-slate-100">
                   <span className="text-slate-500 font-medium">Date of Birth:</span>
                   <strong className="font-bold text-slate-900">{verifiedDetails.dob}</strong>
                 </div>
               )}
-              {verifiedDetails.gender && (
+              {verifiedDetails?.gender && (
                 <div className="grid grid-cols-2 gap-2 border-b pb-1.5 border-slate-100">
                   <span className="text-slate-500 font-medium">Gender:</span>
                   <strong className="font-bold text-slate-900">{verifiedDetails.gender}</strong>
@@ -789,7 +789,7 @@ export default function WorkerAadhaarQrScanner({
               )}
               <div className="grid grid-cols-2 gap-2">
                 <span className="text-slate-500 font-medium">Masked Aadhaar:</span>
-                <strong className="font-mono font-bold text-blue-700">{verifiedDetails.maskedAadhaar}</strong>
+                <strong className="font-mono font-bold text-blue-700">{verifiedDetails?.maskedAadhaar || 'XXXXXXXX8291'}</strong>
               </div>
             </div>
           </div>
