@@ -661,13 +661,10 @@ export default function AuthModal({
           {tab === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {/* Account Creation Heading */}
-              <div className="space-y-0.5 pb-0.5">
+              <div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 font-devanagari leading-snug">
                   खाता बनाएं / Create Account
                 </h3>
-                <p className="text-xs text-slate-500 font-devanagari leading-relaxed">
-                  कुछ ही सेकंड में अपना खाता बनाएं / Create your account in a few seconds
-                </p>
               </div>
 
               {/* Account Type Selection */}
