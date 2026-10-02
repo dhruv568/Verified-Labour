@@ -8,9 +8,8 @@ import { NotificationService } from '@/services/notification';
 const createJobSchema = z
   .object({
     workerId: z.string().min(1, 'Worker ID is required'),
-    serviceId: z.string().optional().nullable(),
+    serviceId: z.string().min(1, 'Service ID is required'),
     categoryId: z.string().optional().nullable(),
-    customService: z.string().optional().nullable(),
     description: z.string().optional().default(''),
     voiceNoteUrl: z.string().optional().nullable(),
     voiceNoteDuration: z.number().optional().nullable(),
@@ -25,17 +24,9 @@ const createJobSchema = z
     budget: z.number().optional(),
   })
   .refine(
-    (data) => (data.serviceId === 'OTHER' ? !!data.customService && data.customService.trim().length >= 1 : true),
-    {
-      message: 'Please describe your work',
-      path: ['customService'],
-    }
-  )
-  .refine(
     (data) =>
       (data.description && data.description.trim().length >= 3) ||
-      !!data.voiceNoteUrl ||
-      (!!data.customService && data.customService.trim().length >= 1),
+      !!data.voiceNoteUrl,
     {
       message: 'Please describe your requirement in text or attach a voice note',
       path: ['description'],
@@ -85,29 +76,53 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    // Validate missing serviceId & missing customService (Requirement #13.C)
+    // Validate rawServiceId
     const rawServiceId = (data.serviceId || '').trim();
-    const hasCustomWork = !!(data.customService && data.customService.trim().length >= 1);
 
-    if (!rawServiceId && !hasCustomWork) {
+    if (!rawServiceId || rawServiceId.toUpperCase() === 'OTHER') {
       return NextResponse.json(
         {
           success: false,
-          error: 'Selected service is unavailable. Please select another service.',
+          error: 'Please select a valid service provided by this worker.',
         },
         { status: 400 }
       );
     }
 
-    // SECTION 65: Re-check worker state at booking time
+    // Step 1: Validate that the service exists in the production database
+    const selectedServiceObj = await prisma.service.findFirst({
+      where: {
+        OR: [
+          { id: rawServiceId },
+          { slug: rawServiceId },
+        ],
+        isActive: true,
+      },
+      include: { category: true },
+    });
+
+    if (!selectedServiceObj) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected service does not exist or is inactive.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Step 2: Re-check worker state & skills at booking time
     const worker = await prisma.workerProfile.findUnique({
       where: { id: data.workerId },
       include: {
         user: true,
-        primaryCategory: true,
+        primaryCategory: {
+          include: { services: true },
+        },
         skills: {
           include: {
-            category: true,
+            category: { include: { services: true } },
+            service: true,
           },
         },
       },
@@ -134,6 +149,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate that the worker actually provides the requested service
+    const workerCategoryIds = new Set<string>();
+    const workerServiceIds = new Set<string>();
+
+    if (worker.primaryCategoryId) workerCategoryIds.add(worker.primaryCategoryId);
+    if (worker.primaryCategory?.id) workerCategoryIds.add(worker.primaryCategory.id);
+
+    if (worker.skills && Array.isArray(worker.skills)) {
+      for (const skill of worker.skills) {
+        if (skill.categoryId) workerCategoryIds.add(skill.categoryId);
+        if (skill.category?.id) workerCategoryIds.add(skill.category.id);
+        if (skill.serviceId) workerServiceIds.add(skill.serviceId);
+        if (skill.service?.id) workerServiceIds.add(skill.service.id);
+      }
+    }
+
+    const isServiceProvidedByWorker =
+      workerCategoryIds.has(selectedServiceObj.categoryId) ||
+      workerServiceIds.has(selectedServiceObj.id) ||
+      (workerCategoryIds.size === 0 && (
+        worker.primaryCategory?.slug === selectedServiceObj.category?.slug ||
+        worker.primaryCategory?.name === selectedServiceObj.category?.name
+      ));
+
+    if (!isServiceProvidedByWorker) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This worker does not provide the requested service.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Distance check: verify job coordinates are within worker's service radius
     if (worker.latitude !== null && worker.longitude !== null) {
       const distance = calculateHaversineDistanceKm(
@@ -153,7 +202,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // SECTION 64: Booking conflicts & Double Booking Prevention
+    // Booking conflicts & Double Booking Prevention
     const existingConflict = await prisma.job.findFirst({
       where: {
         workerId: data.workerId,
@@ -186,202 +235,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 1: Validate / resolve the submitted service ID
-    let selectedServiceObj = null;
-
-    if (rawServiceId && rawServiceId.toUpperCase() !== 'OTHER') {
-      // 1A. Try direct ID lookup
-      selectedServiceObj = await prisma.service.findUnique({
-        where: { id: rawServiceId },
-      });
-
-      // 1B. Try slug or name match if rawServiceId is slug/name
-      if (!selectedServiceObj) {
-        selectedServiceObj = await prisma.service.findFirst({
-          where: {
-            OR: [
-              { slug: rawServiceId },
-              { name: rawServiceId },
-            ],
-            isActive: true,
-          },
-        });
-      }
-
-      // If an explicit non-'OTHER' serviceId was supplied but does not exist in the database:
-      // Return a clean 400 response (Requirements #7, #10, #13.B)
-      if (!selectedServiceObj && !hasCustomWork) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Selected service is unavailable. Please select another service.',
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Step 2: Resolve & Validate Category ID for JobRequest strictly from selected worker / service / DB
-    let resolvedCategoryId: string | null = null;
-
-    // 1. Worker's primary category ID or relation
-    if (worker.primaryCategoryId) {
-      resolvedCategoryId = worker.primaryCategoryId;
-    } else if (worker.primaryCategory?.id) {
-      resolvedCategoryId = worker.primaryCategory.id;
-    }
-
-    // 2. Check worker's skills
-    if (!resolvedCategoryId && worker.skills && worker.skills.length > 0) {
-      for (const skill of worker.skills) {
-        const skillCatId = skill.categoryId || skill.category?.id;
-        if (skillCatId) {
-          resolvedCategoryId = skillCatId;
-          break;
-        }
-      }
-    }
-
-    // 3. Check selected service's category ID if worker has no primary category/skills
-    if (!resolvedCategoryId && selectedServiceObj?.categoryId) {
-      resolvedCategoryId = selectedServiceObj.categoryId;
-    }
-
-    // 4. Try matching worker's primary category slug / name with Category table
-    if (!resolvedCategoryId && worker.primaryCategory) {
-      const targetSlug = typeof worker.primaryCategory === 'object' ? worker.primaryCategory.slug : null;
-      const targetName = typeof worker.primaryCategory === 'object' ? worker.primaryCategory.name : String(worker.primaryCategory);
-      if (targetSlug || targetName) {
-        const catMatch = await prisma.category.findFirst({
-          where: {
-            OR: [
-              { slug: targetSlug || '' },
-              { name: targetName || '' },
-            ],
-          },
-          select: { id: true },
-        });
-        if (catMatch) {
-          resolvedCategoryId = catMatch.id;
-        }
-      }
-    }
-
-    // 5. Fallback if frontend passed a valid category ID
-    if (!resolvedCategoryId && data.categoryId && data.categoryId !== 'ALL' && data.categoryId !== 'OTHER') {
-      const catCheck = await prisma.category.findUnique({
-        where: { id: data.categoryId },
-        select: { id: true },
-      });
-      if (catCheck) {
-        resolvedCategoryId = catCheck.id;
-      }
-    }
-
-    // 6. Final fallback: pick any active Category from DB
-    if (!resolvedCategoryId) {
-      const defaultCat = await prisma.category.findFirst({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } });
-      if (defaultCat) {
-        resolvedCategoryId = defaultCat.id;
-      }
-    }
-
-    // Server-Side Verification: Ensure resolvedCategoryId exists in Category table
-    const categoryExists = await prisma.category.findUnique({
-      where: { id: resolvedCategoryId! },
-      select: { id: true },
-    });
-
-    if (!categoryExists) {
-      const fallbackCat = await prisma.category.findFirst({ where: { isActive: true } });
-      if (!fallbackCat) {
-        return NextResponse.json(
-          { success: false, error: 'System contains no active service categories.' },
-          { status: 500 }
-        );
-      }
-      resolvedCategoryId = fallbackCat.id;
-    }
-
-    // Step 3: Resolve backing database Service record for Job model relation
-    let serviceIdToUse: string | null = null;
-    let serviceNameForNotification = 'Home Service';
-    let basePrice = worker.hourlyRate || 350.0;
-
-    if (selectedServiceObj) {
-      serviceIdToUse = selectedServiceObj.id;
-      basePrice = selectedServiceObj.basePrice || basePrice;
-      serviceNameForNotification = selectedServiceObj.name;
-    } else {
-      // Custom Service or 'OTHER' selection:
-      // Find official 'other-work-service', or valid active Service from resolved category, or fallback to any active Service in DB
-      let backingService = await prisma.service.findFirst({
-        where: { slug: 'other-work-service', isActive: true },
-      });
-      if (!backingService && resolvedCategoryId) {
-        backingService = await prisma.service.findFirst({
-          where: { categoryId: resolvedCategoryId, isActive: true },
-        });
-      }
-      if (!backingService) {
-        backingService = await prisma.service.findFirst({ where: { isActive: true } });
-      }
-
-      if (backingService) {
-        serviceIdToUse = backingService.id;
-        basePrice = backingService.basePrice || basePrice;
-        serviceNameForNotification = backingService.name;
-      }
-
-      if (data.customService?.trim()) {
-        serviceNameForNotification = `Custom Work: ${data.customService.trim()}`;
-      }
-    }
-
-    // Step 4: DEFENSIVE FOREIGN KEY VALIDATION (Requirements #7, #10)
-    if (!serviceIdToUse) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Selected service is unavailable. Please select another service.',
-        },
-        { status: 400 }
-      );
-    }
-
-    const finalServiceCheck = await prisma.service.findUnique({
-      where: { id: serviceIdToUse },
-    });
-
-    if (!finalServiceCheck) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Selected service is unavailable. Please select another service.',
-        },
-        { status: 400 }
-      );
-    }
-
+    const resolvedCategoryId = selectedServiceObj.categoryId;
+    const basePrice = selectedServiceObj.basePrice || worker.hourlyRate || 350.0;
     const finalAmount = data.budget || basePrice;
+    const serviceNameForNotification = selectedServiceObj.name;
+    const fullDescription = data.description?.trim() || 'Voice note requirement attached';
 
-    // Build job request description incorporating custom service if specified
-    let fullDescription = data.description?.trim() || '';
-    if (data.customService?.trim()) {
-      const customPrefix = `[विशिष्ट काम / Custom Work: ${data.customService.trim()}]`;
-      fullDescription = fullDescription ? `${customPrefix} ${fullDescription}` : customPrefix;
-    }
-    if (!fullDescription) {
-      fullDescription = 'Voice note requirement attached';
-    }
-
-    // Step 5: Create JobRequest and Job in database transaction
+    // Create JobRequest and Job in database transaction
     const result = await prisma.$transaction(async (tx) => {
       const jobRequest = await tx.jobRequest.create({
         data: {
           customerId: customerProfileId,
-          categoryId: resolvedCategoryId!,
-          serviceId: finalServiceCheck.id,
+          categoryId: resolvedCategoryId,
+          serviceId: selectedServiceObj.id,
           description: fullDescription,
           voiceNoteUrl: data.voiceNoteUrl || null,
           voiceNoteDuration: data.voiceNoteDuration || null,
@@ -403,7 +269,7 @@ export async function POST(req: NextRequest) {
           jobRequestId: jobRequest.id,
           customerId: customerProfileId,
           workerId: data.workerId,
-          serviceId: finalServiceCheck.id,
+          serviceId: selectedServiceObj.id,
           status: 'REQUESTED',
           baseAmount: basePrice,
           finalAmount: finalAmount,
