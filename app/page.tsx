@@ -246,7 +246,7 @@ export default function HomePage() {
       <TestimonialsSection />
 
       {/* FOOTER */}
-      <Footer />
+      <Footer variant="full" />
 
       {/* ================= MODALS & ACTIVE FUNCTIONALITY ================= */}
 

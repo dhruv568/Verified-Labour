@@ -269,7 +269,7 @@ function LogoutContent() {
       />
 
       {/* Standard Verified Labour Footer */}
-      <Footer />
+      <Footer variant="full" />
     </div>
   );
 }

@@ -332,7 +332,7 @@ export default function WhoIsNotVerifiedPage() {
       </main>
 
       {/* FOOTER */}
-      <Footer />
+      <Footer variant="full" />
 
       {/* Reused Authentication Modal for Worker Registration */}
       <AuthModal

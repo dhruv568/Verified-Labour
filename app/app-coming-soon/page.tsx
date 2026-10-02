@@ -355,7 +355,7 @@ export default function AppComingSoonPage() {
       <Suspense fallback={<div className="flex-1 py-20 text-center text-slate-500">Loading...</div>}>
         <ComingSoonContent />
       </Suspense>
-      <Footer />
+      <Footer variant="full" />
     </div>
   );
 }

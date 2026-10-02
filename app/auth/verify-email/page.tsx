@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Mail, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -303,12 +304,7 @@ function VerifyEmailContent() {
       </main>
 
       {/* FOOTER */}
-      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
-        <p>© 2026 Verified Labour. All rights reserved.</p>
-        <p className="text-[11px] text-slate-400 mt-1">
-          Support: <a href="mailto:help@verifiedlabour.com" className="text-[#08783b] underline">help@verifiedlabour.com</a> | Helpline: +91 9109019090
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

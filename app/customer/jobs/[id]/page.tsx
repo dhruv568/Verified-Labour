@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import {
   CheckCircle2,
   Clock,
@@ -614,6 +615,7 @@ export default function CustomerJobTrackerPage({
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

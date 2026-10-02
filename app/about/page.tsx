@@ -237,7 +237,7 @@ export default function AboutPage() {
         </div>
       </main>
 
-      <Footer />
+      <Footer variant="full" />
     </div>
   );
 }

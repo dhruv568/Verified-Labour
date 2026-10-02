@@ -266,7 +266,7 @@ export default function ContactPage() {
         </div>
       </main>
 
-      <Footer />
+      <Footer variant="full" />
     </div>
   );
 }

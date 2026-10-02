@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';
 import WorkerProfileModal from '@/components/WorkerProfileModal';
@@ -880,13 +881,7 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* Copyright Footer */}
-      <footer className="w-full border-t border-slate-200/80 bg-white py-4 sm:py-5 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-xs font-semibold text-slate-500 font-sans tracking-wide">
-            © 2026 Verified Labour. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Booking Modal */}
       <JobRequestModal

@@ -1,5 +1,6 @@
 import React from 'react';
 import AadhaarQrTestScanner from '@/components/AadhaarQrTestScanner';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Aadhaar Secure QR Verification Test | Verified Labour',
@@ -8,10 +9,13 @@ export const metadata = {
 
 export default function AadhaarQrTestPage() {
   return (
-    <main className="min-h-screen bg-slate-100 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <AadhaarQrTestScanner />
-      </div>
-    </main>
+    <div className="min-h-screen flex flex-col bg-slate-100">
+      <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <AadhaarQrTestScanner />
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 }
