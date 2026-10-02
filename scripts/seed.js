@@ -26,7 +26,7 @@ async function main() {
   }
   console.log('✔ Platform configs seeded.');
 
-  // 2. Blueprint 18 Categories and their services
+  // 2. Blueprint 16 Categories and their services
   const categoryDefs = [
     {
       name: 'Construction',
@@ -171,17 +171,6 @@ async function main() {
       ],
     },
     {
-      name: 'Confectioner',
-      slug: 'confectioner',
-      nameHi: 'हलवाई (मिठाई/कैटरिंग)',
-      iconUrl: 'Cookie',
-      description: 'Sweets preparation, festival specials, wedding snacks, and catering chiefs.',
-      services: [
-        { name: 'Festival Sweets / Farsan Chef', slug: 'sweets-farsan-chef', basePrice: 1500, priceUnit: 'per day' },
-        { name: 'Wedding Halwai Team Booking', slug: 'wedding-halwai', basePrice: 5000, priceUnit: 'per event' },
-      ],
-    },
-    {
       name: 'Car / 2 Wheeler Mechanic',
       slug: 'mechanic',
       nameHi: 'गाड़ी मैकेनिक (कार/बाइक)',
@@ -215,17 +204,6 @@ async function main() {
       ],
     },
     {
-      name: 'House Care Taker',
-      slug: 'house-care-taker',
-      nameHi: 'हाउस केयरटेकर / घरेलू सहायक',
-      iconUrl: 'Home',
-      description: 'Property maintenance, elder assistance, villa maintenance, and pet care.',
-      services: [
-        { name: 'Elderly Assistance / Daily Help', slug: 'elder-care-assistant', basePrice: 700, priceUnit: 'per day' },
-        { name: 'Vacant Property Caretaking', slug: 'vacant-property-care', basePrice: 2500, priceUnit: 'per month' },
-      ],
-    },
-    {
       name: 'Office Boy',
       slug: 'office-boy',
       nameHi: 'ऑफिस बॉय / चपरासी',
@@ -234,6 +212,16 @@ async function main() {
       services: [
         { name: 'Daily Office Attendant (Day Shift)', slug: 'daily-office-attendant', basePrice: 500, priceUnit: 'per day' },
         { name: 'Monthly Office Assistant', slug: 'monthly-office-assistant', basePrice: 12000, priceUnit: 'per month' },
+      ],
+    },
+    {
+      name: 'Other Work / Other Service',
+      slug: 'other-service',
+      nameHi: 'अन्य कार्य / अन्य सेवा',
+      iconUrl: 'HelpCircle',
+      description: 'Custom or unlisted services and general work.',
+      services: [
+        { name: 'Other Work / Other Service', slug: 'other-work-service', basePrice: 350, priceUnit: 'per job' },
       ],
     },
   ];

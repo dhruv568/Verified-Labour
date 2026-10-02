@@ -314,10 +314,15 @@ export async function POST(req: NextRequest) {
       serviceNameForNotification = selectedServiceObj.name;
     } else {
       // Custom Service or 'OTHER' selection:
-      // Find a valid active Service from resolved category, or fallback to any active Service in DB
+      // Find official 'other-work-service', or valid active Service from resolved category, or fallback to any active Service in DB
       let backingService = await prisma.service.findFirst({
-        where: { categoryId: resolvedCategoryId!, isActive: true },
+        where: { slug: 'other-work-service', isActive: true },
       });
+      if (!backingService && resolvedCategoryId) {
+        backingService = await prisma.service.findFirst({
+          where: { categoryId: resolvedCategoryId, isActive: true },
+        });
+      }
       if (!backingService) {
         backingService = await prisma.service.findFirst({ where: { isActive: true } });
       }

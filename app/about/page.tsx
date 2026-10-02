@@ -34,8 +34,8 @@ export default function AboutPage() {
     : 'Verified Labour connects households and businesses with Aadhaar KYC verified and bank validated local skilled professionals.');
 
   const purposeText = content.about_purpose || (isHindi
-    ? 'हमारा उद्देश्य इलेक्ट्रीशियन, प्लंबर, कारपेंटर, कुक, सफाईकर्मी, मैकेनिक और केयरटेकर जैसे हुनरमंद कामगारों को सीधे ग्राहकों से जोड़ना और पारदर्शिता प्रदान करना है।'
-    : 'Our purpose is to connect customers directly with skilled professionals—electricians, plumbers, carpenters, cooks, cleaners, mechanics, and caretakers.');
+    ? 'हमारा उद्देश्य इलेक्ट्रीशियन, प्लंबर, कारपेंटर, कुक, सफाईकर्मी और मैकेनिक जैसे हुनरमंद कामगारों को सीधे ग्राहकों से जोड़ना और पारदर्शिता प्रदान करना है।'
+    : 'Our purpose is to connect customers directly with skilled professionals—electricians, plumbers, carpenters, cooks, cleaners, and mechanics.');
 
   const visionText = content.about_vision || (isHindi
     ? 'पूरे भारत के हर शहर और कस्बे में विश्वसनीय सेवाएं पहुँचाना, जहाँ कामगारों को सही सम्मान और ग्राहकों को 100% सुरक्षा मिले।'
@@ -85,7 +85,7 @@ export default function AboutPage() {
               { label: 'रसोइया / Cook' },
               { label: 'सफाईकर्मी / Cleaner' },
               { label: 'मैकेनिक / Mechanic' },
-              { label: 'केयरटेकर / Caretaker' },
+              { label: 'ड्राइवर / Driver' },
               { label: 'अन्य सेवाएं / Other Services' },
             ].map((item, idx) => (
               <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 text-center font-bold text-xs text-[#082B66] font-devanagari">

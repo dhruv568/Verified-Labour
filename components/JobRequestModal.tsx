@@ -39,7 +39,6 @@ const TRADE_TO_CATEGORY_SLUG: Record<string, string> = {
   ac: 'electrical',
   watchman: 'watchman',
   'security guard': 'watchman',
-  caretaker: 'house-care-taker',
   'office boy': 'office-boy',
   washerman: 'washerman',
 };

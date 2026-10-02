@@ -77,7 +77,7 @@ export const translations = {
     heroTitle: 'Skilled People When You Need Them',
     heroSubtitle: 'Verified. Nearby. Reliable.',
     heroDescription:
-      'From electricians to cooks, from house caretakers to office boys — find verified workers near you instantly.',
+      'From electricians to cooks, from house cleaners to office boys — find verified workers near you instantly.',
     home: 'Home',
     findWorker: 'Find Worker',
     becomeWorker: 'Become a Worker',

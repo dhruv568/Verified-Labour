@@ -64,7 +64,6 @@ export const SKILL_OPTIONS: SkillOption[] = [
   { id: 'beautician', name: 'Beautician', nameHi: 'ब्यूटीशियन', categorySlug: 'beautician' },
   { id: 'delivery-worker', name: 'Delivery Worker', nameHi: 'डिलीवरी कर्मचारी', categorySlug: 'loading-moving' },
   { id: 'office-helper', name: 'Office Helper', nameHi: 'ऑफिस हेल्पर', categorySlug: 'office-boy' },
-  { id: 'caretaker', name: 'Caretaker', nameHi: 'देखभाल करने वाला', categorySlug: 'house-care-taker' },
   { id: 'other', name: 'Other / Custom', nameHi: 'अन्य / कस्टम', categorySlug: 'other' },
 ];
 

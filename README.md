@@ -14,8 +14,8 @@ Production-ready, full-stack on-demand labour marketplace platform built for Ind
 ### Core Marketplace Flow
 - **Automatic Geolocation**: Browser Geolocation API + reverse geocoding with graceful fallbacks (manual locality search, PIN code, saved addresses).
 - **Worker Discovery & Privacy Protection**: Distance matching via server-side Haversine formula within worker's defined service radius. **Worker exact GPS coordinates are never publicly exposed**; only approximate distance (e.g. "2.4 km away") and locality are shown.
-- **18 Seeded Blueprint Categories**:
-  Construction, Plumbing, Electrical, Painting, Loading & Moving, Cleaning, Cook, Carpenter, Driver, Washerman, Computer Hardware, Computer Software, Confectioner, Car/2 Wheeler Mechanic, Gas Cylinder Delivery, Watchman, House Care Taker, Office Boy.
+- **16 Seeded Blueprint Categories**:
+  Construction, Plumbing, Electrical, Painting, Loading & Moving, Cleaning, Cook, Carpenter, Driver, Washerman, Computer Hardware, Computer Software, Car/2 Wheeler Mechanic, Gas Cylinder Delivery, Watchman, Office Boy.
 - **Strict Linear State Machine**:
   `REQUESTED` ➔ `ACCEPTED` ➔ `SCHEDULED` ➔ `WORKER_ON_THE_WAY` ➔ `ARRIVED` ➔ `WORK_STARTED` ➔ `WORK_COMPLETED` ➔ `PAYMENT_PENDING` ➔ `PAID` ➔ `REVIEWED` ➔ `COMPLETED`
   Illegal transitions (e.g. `REQUESTED` directly to `PAID`) are blocked server-side.

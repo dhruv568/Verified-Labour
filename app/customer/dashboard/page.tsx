@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import ServiceFilterBar from '@/components/ui/ServiceFilterBar';
 import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
 import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
@@ -398,36 +399,10 @@ export default function CustomerDashboardPage() {
                 </div>
 
                 {/* Popular Services Quick Pills */}
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 font-devanagari">
-                    लोकप्रिय सेवाएं / Popular Services
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setSelectedCategory('')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border font-devanagari ${
-                        !selectedCategory
-                          ? 'bg-brand-700 text-white border-brand-700 shadow-xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      सभी सेवाएं / All Services
-                    </button>
-                    {categories.slice(0, 7).map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setSelectedCategory(selectedCategory === c.slug ? '' : c.slug)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                          selectedCategory === c.slug
-                            ? 'bg-brand-700 text-white border-brand-700 shadow-xs'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <ServiceFilterBar
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={(slug) => setSelectedCategory(slug)}
+                />
               </Card>
 
               {/* Active Bookings Banner if any exist */}

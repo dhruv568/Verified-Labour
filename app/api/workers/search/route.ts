@@ -43,10 +43,26 @@ export async function GET(req: NextRequest) {
     }
 
     if (categorySlug) {
-      whereClause.OR = [
-        { primaryCategory: { slug: categorySlug } },
-        { skills: { some: { category: { slug: categorySlug } } } },
-      ];
+      const catLower = categorySlug.toLowerCase();
+      if (catLower === 'other' || catLower === 'other-service' || categorySlug === 'OTHER') {
+        whereClause.OR = [
+          { primaryCategory: { slug: 'other-service' } },
+          { skills: { some: { category: { slug: 'other-service' } } } },
+          { status: 'VERIFIED' },
+        ];
+      } else if (catLower === 'ac-technician') {
+        whereClause.OR = [
+          { primaryCategory: { slug: 'ac-technician' } },
+          { primaryCategory: { slug: 'electrical' } },
+          { skills: { some: { category: { slug: 'electrical' } } } },
+          { skills: { some: { service: { slug: 'ac-servicing-repair' } } } },
+        ];
+      } else {
+        whereClause.OR = [
+          { primaryCategory: { slug: categorySlug } },
+          { skills: { some: { category: { slug: categorySlug } } } },
+        ];
+      }
     }
 
     // Only restrict DB query by location string if coordinates are NOT available.

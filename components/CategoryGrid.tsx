@@ -46,11 +46,9 @@ const CATEGORY_IMAGE_MAP: Record<string, string> = {
   electrical: '/images/services/electrician.jpg',
   'computer-hardware': '/images/services/computer-hardware.jpg',
   'computer-software': '/images/services/computer-software.jpg',
-  confectioner: '/images/services/confectioner.jpg',
   mechanic: '/images/services/mechanic.jpg',
   'gas-cylinder': '/images/services/gas-cylinder.jpg',
   watchman: '/images/services/watchman.jpg',
-  'house-care-taker': '/images/services/house-care-taker.jpg',
   'office-boy': '/images/services/office-boy.jpg',
   cook: '/images/services/cook.jpg',
   plumbing: '/images/services/plumber.jpg',
@@ -67,11 +65,9 @@ const CATEGORY_POSITION_MAP: Record<string, string> = {
   electrical: 'center 2%',
   'computer-hardware': 'center 4%',
   'computer-software': 'center 4%',
-  confectioner: 'center 4%',
   mechanic: 'center 5%',
   'gas-cylinder': 'center 4%',
   watchman: 'center 2%',
-  'house-care-taker': 'center 5%',
   'office-boy': 'center 5%',
   cook: 'center 0%',
   plumbing: 'center 4%',
@@ -119,14 +115,6 @@ const CATEGORY_STYLE_MAP: Record<string, CategoryVisual> = {
     label: 'Computer Software',
     IconComponent: Monitor,
   },
-  confectioner: {
-    pillColor: 'bg-[#C026D3]', // Magenta / Halwai
-    bgColor: 'bg-fuchsia-50/70',
-    iconColor: 'text-[#C026D3]',
-    accentBadge: 'bg-fuchsia-100 text-fuchsia-800',
-    label: 'Confectioner',
-    IconComponent: Cookie,
-  },
   mechanic: {
     pillColor: 'bg-[#4338CA]', // Indigo Mechanic
     bgColor: 'bg-indigo-50/70',
@@ -150,14 +138,6 @@ const CATEGORY_STYLE_MAP: Record<string, CategoryVisual> = {
     accentBadge: 'bg-sky-100 text-sky-800',
     label: 'Watchman',
     IconComponent: Shield,
-  },
-  'house-care-taker': {
-    pillColor: 'bg-[#0D9488]', // Teal Caretaker
-    bgColor: 'bg-teal-50/70',
-    iconColor: 'text-[#0D9488]',
-    accentBadge: 'bg-teal-100 text-teal-800',
-    label: 'House Care Taker',
-    IconComponent: Home,
   },
   'office-boy': {
     pillColor: 'bg-[#A16207]', // Mustard Office Boy

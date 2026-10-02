@@ -11,10 +11,7 @@ interface ServiceCategoriesProps {
   onViewAll?: () => void;
 }
 
-// Excluded from homepage display only (remains fully functional in DB, Admin, Booking & Worker profiles)
-const EXCLUDED_HOMEPAGE_SLUGS = ['confectioner', 'house-care-taker'];
-
-// Exactly 16 categories for homepage grid (2 rows of 8 cards on desktop)
+// Dynamic homepage categories list (16 active categories in 2 rows of 8 on desktop)
 const CATEGORY_ITEMS = [
   // --- ROW 1 (8 items) ---
   {
@@ -176,12 +173,12 @@ export default function ServiceCategories({
         // Map database categories by slug for fast lookup
         const dbCatMap = new Map<string, any>();
         data.categories.forEach((cat: any) => {
-          if (cat.slug && !EXCLUDED_HOMEPAGE_SLUGS.includes(cat.slug)) {
+          if (cat.slug) {
             dbCatMap.set(cat.slug, cat);
           }
         });
 
-        // Merge DB dynamic metadata into full CATEGORY_ITEMS array (preserving 16 homepage categories)
+        // Merge DB dynamic metadata into full CATEGORY_ITEMS array
         const merged = CATEGORY_ITEMS.map((item) => {
           const dbCat = dbCatMap.get(item.slug);
           return {
@@ -192,11 +189,10 @@ export default function ServiceCategories({
           };
         });
 
-        // Append any extra DB categories not already in CATEGORY_ITEMS (skipping excluded)
+        // Append any extra DB categories not already in CATEGORY_ITEMS
         data.categories.forEach((cat: any) => {
           if (
             cat.slug &&
-            !EXCLUDED_HOMEPAGE_SLUGS.includes(cat.slug) &&
             !merged.some((item) => item.slug === cat.slug)
           ) {
             merged.push({

@@ -14,7 +14,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
   hero_title: "Skilled People When You Need Them",
   hero_subtitle: 'Verified. Nearby. Reliable.',
   hero_description:
-    'From electricians to cooks, from house caretakers to office boys — find verified workers near you, just like Ola or Uber.',
+    'From electricians to cooks, from house cleaners to office boys — find verified workers near you, just like Ola or Uber.',
   hero_button_primary: 'Find a Worker',
   hero_button_secondary: 'Become a Worker',
   hero_promotional_tag: 'Different Jobs | Same Opportunities | A Stronger India',

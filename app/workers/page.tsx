@@ -22,6 +22,7 @@ import {
   Users,
   CheckCircle2,
 } from 'lucide-react';
+import ServiceFilterBar from '@/components/ui/ServiceFilterBar';
 
 function FindWorkerContent() {
   const router = useRouter();
@@ -187,50 +188,10 @@ function FindWorkerContent() {
           </div>
 
           {/* Category Quick Selector Pills */}
-          <div>
-            <div className="flex items-center justify-between mb-2 font-devanagari">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {isHindi ? 'श्रेणी अनुसार खोजें / Categories' : 'Filter by Trade Category'}
-              </span>
-              {selectedCategory && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategory('')}
-                  className="text-xs font-bold text-red-600 hover:underline"
-                >
-                  {isHindi ? 'फ़िल्टर हटाएं / Clear' : 'Clear Filter'}
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border font-devanagari ${
-                  !selectedCategory
-                    ? 'bg-[#082B66] text-white border-[#082B66] shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {isHindi ? 'सभी सेवाएं / All' : 'All Categories'}
-              </button>
-              {categories.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(selectedCategory === c.slug ? '' : c.slug)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    selectedCategory === c.slug
-                      ? 'bg-[#1264D6] text-white border-[#1264D6] shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  {isHindi && c.nameHi ? c.nameHi : c.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ServiceFilterBar
+            selectedCategory={selectedCategory}
+            onSelectCategory={(slug) => setSelectedCategory(slug)}
+          />
         </div>
 
         {/* Results Header */}
