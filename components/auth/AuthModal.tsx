@@ -662,7 +662,7 @@ export default function AuthModal({
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {/* Account Creation Heading */}
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 font-devanagari leading-snug">
+                <h3 className="text-center text-base sm:text-lg font-bold text-slate-900 font-devanagari leading-snug">
                   खाता बनाएं / Create Account
                 </h3>
               </div>
