@@ -36,7 +36,7 @@ export async function evaluateWorkerVerification(
   }
 
   const isAadhaarVerified = worker.aadhaarVerif?.status === 'VERIFIED' || worker.identityVerified;
-  const isBankVerified = worker.bankVerif?.status === 'VERIFIED';
+  const isBankVerified = worker.bankVerif?.status === 'VERIFIED' || worker.bankVerified;
   const isProfileComplete = Boolean(
     worker.fullName?.trim() &&
     worker.primaryCategoryId &&

@@ -261,8 +261,8 @@ export default function WorkerDashboardPage() {
   const profile = session?.workerProfile;
   const workerName = profile?.fullName || 'Worker Partner';
 
-  const aadhaarDone = profile?.aadhaarVerif?.status === 'VERIFIED';
-  const bankDone = profile?.bankVerif?.status === 'VERIFIED';
+  const aadhaarDone = profile?.aadhaarVerif?.status === 'VERIFIED' || profile?.identityVerified;
+  const bankDone = profile?.bankVerif?.status === 'VERIFIED' || profile?.bankVerified;
   const documentsDone = (profile?.documents?.length || 0) > 0;
   const profileComplete = Boolean(profile?.fullName && profile?.primaryCategory && profile?.city);
 
