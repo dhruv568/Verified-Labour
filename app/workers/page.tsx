@@ -214,6 +214,7 @@ function FindWorkerContent() {
           <ServiceFilterBar
             selectedCategory={selectedCategory}
             onSelectCategory={handleSelectCategory}
+            categories={categories}
           />
         </div>
 
