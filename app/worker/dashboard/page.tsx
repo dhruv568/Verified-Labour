@@ -32,6 +32,7 @@ import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
 import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
 import EmptyState from '@/components/ui/EmptyState';
+import WorkerBookingAlertModal from '@/components/WorkerBookingAlertModal';
 
 type WorkerNavTab =
   | 'dashboard'
@@ -191,6 +192,8 @@ export default function WorkerDashboardPage() {
   useEffect(() => {
     if (session) {
       fetchWorkerJobs();
+      const interval = setInterval(fetchWorkerJobs, 4000);
+      return () => clearInterval(interval);
     }
   }, [session]);
 
@@ -221,7 +224,14 @@ export default function WorkerDashboardPage() {
   const handleJobTransition = async (jobId: string, toStatus: string) => {
     setActionLoading(jobId);
     try {
-      const res = await fetch(`/api/jobs/${jobId}/transition`, {
+      const endpoint =
+        toStatus === 'ACCEPTED'
+          ? `/api/jobs/${jobId}/accept`
+          : toStatus === 'REJECTED'
+          ? `/api/jobs/${jobId}/reject`
+          : `/api/jobs/${jobId}/transition`;
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toStatus }),
@@ -278,6 +288,9 @@ export default function WorkerDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
+
+      {/* Global Real-Time Worker Incoming Booking Alert Modal */}
+      <WorkerBookingAlertModal onJobResolved={fetchWorkerJobs} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6">
         {/* Mobile Navigation Toggle & Quick Horizontal Tab Bar */}

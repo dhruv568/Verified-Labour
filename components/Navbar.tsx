@@ -15,6 +15,7 @@ import LanguageSelector from './LanguageSelector';
 import Logo from '@/components/Logo';
 import { useLanguage } from '@/context/LanguageContext';
 import { fetchWithTimeout } from '@/lib/fetch-utils';
+import WorkerBookingAlertModal from '@/components/WorkerBookingAlertModal';
 
 interface NavbarProps {
   onOpenAuth?: (
@@ -372,6 +373,8 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
           </div>
         )}
       </div>
+
+      {sessionUser?.role === 'WORKER' && <WorkerBookingAlertModal />}
     </header>
   );
 }

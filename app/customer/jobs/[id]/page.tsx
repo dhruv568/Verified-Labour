@@ -301,6 +301,73 @@ export default function CustomerJobTrackerPage({
           </span>
         </div>
 
+        {/* Live Booking Status Banner for Customer */}
+        {job.status === 'REQUESTED' && (
+          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-amber-600 animate-spin" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm font-devanagari">
+                  वर्कर आपके अनुरोध की समीक्षा कर रहा है... / Worker is reviewing your booking request
+                </h3>
+                <p className="text-xs text-slate-600 font-devanagari mt-0.5">
+                  जैसे ही {job.worker.fullName} स्वीकार करेंगे, आपको तुरंत सूचना मिलेगी। / You will be notified as soon as worker accepts.
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 bg-amber-200 text-amber-900 font-extrabold text-xs rounded-lg font-devanagari shrink-0 hidden sm:inline-block">
+              प्रतीक्षा में / Pending Review
+            </span>
+          </div>
+        )}
+
+        {job.status === 'ACCEPTED' && (
+          <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-emerald-950 text-sm font-devanagari">
+                  ✓ {job.worker.fullName} ने आपका अनुरोध स्वीकार कर लिया! / Worker Accepted Your Request!
+                </h3>
+                <p className="text-xs text-emerald-800 font-devanagari mt-0.5">
+                  वर्कर जल्द ही आपके स्थान के लिए रवाना होंगे। / Worker will arrive as scheduled.
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-emerald-600 text-white font-black text-xs rounded-lg font-devanagari shrink-0">
+              स्वीकृत / ACCEPTED
+            </span>
+          </div>
+        )}
+
+        {job.status === 'REJECTED' && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-800 flex items-center justify-center shrink-0">
+                <X className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-red-950 text-sm font-devanagari">
+                  वर्कर ने यह अनुरोध अस्वीकार कर दिया / Worker declined this booking request
+                </h3>
+                <p className="text-xs text-red-700 font-devanagari mt-0.5">
+                  {job.rejectionReason || 'Worker is currently unavailable for this slot.'} आप दूसरे सत्यापित वर्कर को बुक कर सकते हैं।
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/workers"
+              className="px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 font-devanagari"
+            >
+              दूसरा वर्कर खोजें / Select Another Worker
+            </Link>
+          </div>
+        )}
+
         {/* State Machine Progress Bar */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-xs mb-6 sm:mb-8 overflow-hidden">
           <div className="flex sm:grid sm:grid-cols-7 gap-3 sm:gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0">
