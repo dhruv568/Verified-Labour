@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Sparkles, Layers, ChevronUp } from 'lucide-react';
 import { fetchWithTimeout } from '@/lib/fetch-utils';
+import { isExcludedServiceOrCategory } from '@/lib/service-translations';
 
 export interface ServiceFilterOption {
   id: string;
@@ -23,7 +24,7 @@ export const INITIAL_POPULAR_SERVICES: ServiceFilterOption[] = [
   { id: 'cook', name: 'Cook', nameHi: 'रसोइया (कुक)', slug: 'cook' },
   { id: 'construction', name: 'Construction', nameHi: 'निर्माण एवं मजदूरी', slug: 'construction' },
   { id: 'driver', name: 'Driver', nameHi: 'चालक (ड्राइवर)', slug: 'driver' },
-];
+].filter((item) => !isExcludedServiceOrCategory(item));
 
 export interface ServiceFilterBarProps {
   selectedCategory: string; // slug
@@ -46,13 +47,13 @@ export default function ServiceFilterBar({
 
   useEffect(() => {
     if (initialCategories && initialCategories.length > 0) {
-      setAllCategories(initialCategories);
+      setAllCategories(initialCategories.filter((cat) => !isExcludedServiceOrCategory(cat)));
     } else {
       fetchWithTimeout('/api/categories', { timeoutMs: 4000 })
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.categories)) {
-            setAllCategories(data.categories);
+            setAllCategories(data.categories.filter((cat: any) => !isExcludedServiceOrCategory(cat)));
           }
         })
         .catch(console.error);
@@ -63,7 +64,7 @@ export default function ServiceFilterBar({
   const popularSlugs = new Set(INITIAL_POPULAR_SERVICES.map((s) => s.slug));
 
   const extraCategoriesFromDb: ServiceFilterOption[] = allCategories
-    .filter((cat) => cat.slug && !popularSlugs.has(cat.slug) && cat.slug !== 'ac-technician')
+    .filter((cat) => cat.slug && !popularSlugs.has(cat.slug) && cat.slug !== 'ac-technician' && !isExcludedServiceOrCategory(cat))
     .map((cat) => ({
       id: cat.id || cat.slug,
       name: cat.name || cat.slug,

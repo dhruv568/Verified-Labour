@@ -67,3 +67,23 @@ export function getServiceHindiName(service: { name: string; nameHi?: string | n
   }
   return service.name;
 }
+
+export function isExcludedServiceOrCategory(item?: {
+  name?: string | null;
+  slug?: string | null;
+  title?: string | null;
+  nameHi?: string | null;
+  hindiTitle?: string | null;
+}): boolean {
+  if (!item) return false;
+  const fields = [item.name, item.slug, item.title, item.nameHi, item.hindiTitle];
+  for (const f of fields) {
+    if (!f) continue;
+    const lower = String(f).toLowerCase().replace(/[\s\-_]/g, '');
+    if (lower.includes('pagadhi') || lower.includes('childcare')) {
+      return true;
+    }
+  }
+  return false;
+}
+

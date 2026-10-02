@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, X, Check, Tag } from 'lucide-react';
-import { getServiceHindiName } from '@/lib/service-translations';
+import { getServiceHindiName, isExcludedServiceOrCategory } from '@/lib/service-translations';
 
 export interface ServiceItem {
   id: string;
@@ -67,7 +67,7 @@ export default function ServiceSearchableSelect({
 
     let count = 0;
     for (const svc of services) {
-      if (!svc || !svc.id || seenIds.has(svc.id)) continue;
+      if (!svc || !svc.id || seenIds.has(svc.id) || isExcludedServiceOrCategory(svc) || isExcludedServiceOrCategory(svc.category)) continue;
       seenIds.add(svc.id);
       count++;
 

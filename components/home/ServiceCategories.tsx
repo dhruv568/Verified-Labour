@@ -4,6 +4,7 @@ import React from 'react';
 import ServiceCard from './ServiceCard';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { isExcludedServiceOrCategory } from '@/lib/service-translations';
 
 interface ServiceCategoriesProps {
   selectedCategorySlug?: string;
@@ -152,7 +153,7 @@ const CATEGORY_ITEMS = [
     pillColor: 'bg-[#059669]',
     objectPosition: 'center 5%',
   },
-];
+].filter((item) => !isExcludedServiceOrCategory(item));
 
 export default function ServiceCategories({
   selectedCategorySlug,
@@ -170,9 +171,11 @@ export default function ServiceCategories({
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
+        const validCategories = data.categories.filter((cat: any) => !isExcludedServiceOrCategory(cat));
+
         // Map database categories by slug for fast lookup
         const dbCatMap = new Map<string, any>();
-        data.categories.forEach((cat: any) => {
+        validCategories.forEach((cat: any) => {
           if (cat.slug) {
             dbCatMap.set(cat.slug, cat);
           }
@@ -187,13 +190,14 @@ export default function ServiceCategories({
             hindiTitle: dbCat?.nameHi || item.hindiTitle,
             image: dbCat?.iconUrl || item.image,
           };
-        });
+        }).filter((item) => !isExcludedServiceOrCategory(item));
 
         // Append any extra DB categories not already in CATEGORY_ITEMS
-        data.categories.forEach((cat: any) => {
+        validCategories.forEach((cat: any) => {
           if (
             cat.slug &&
-            !merged.some((item) => item.slug === cat.slug)
+            !merged.some((item) => item.slug === cat.slug) &&
+            !isExcludedServiceOrCategory(cat)
           ) {
             merged.push({
               title: cat.name,
@@ -207,7 +211,7 @@ export default function ServiceCategories({
           }
         });
 
-        setCategoriesList(merged);
+        setCategoriesList(merged.filter((item) => !isExcludedServiceOrCategory(item)));
       }
     } catch (err) {
       // Keep static default CATEGORY_ITEMS on error

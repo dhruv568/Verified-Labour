@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { getServiceHindiName } from '@/lib/service-translations';
+import { getServiceHindiName, isExcludedServiceOrCategory } from '@/lib/service-translations';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,11 +23,14 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Remove duplicates based on ID
+    // Remove duplicates based on ID & exclude Pagadhi / Child Care
     const seenIds = new Set<string>();
     const services = [];
 
     for (const svc of rawServices) {
+      if (isExcludedServiceOrCategory(svc) || isExcludedServiceOrCategory(svc.category)) {
+        continue;
+      }
       if (!seenIds.has(svc.id)) {
         seenIds.add(svc.id);
         services.push({

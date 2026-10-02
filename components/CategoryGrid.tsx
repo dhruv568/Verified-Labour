@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { isExcludedServiceOrCategory } from '@/lib/service-translations';
 import {
   Zap,
   Wrench,
@@ -236,9 +237,11 @@ export default function CategoryGrid({
   onSelectCategory,
   onRequestWorker,
 }: CategoryGridProps) {
+  const visibleCategories = (categories || []).filter((cat) => !isExcludedServiceOrCategory(cat));
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-      {categories.map((cat) => {
+      {visibleCategories.map((cat) => {
         const visual = CATEGORY_STYLE_MAP[cat.slug] || DEFAULT_STYLE;
         const Icon = visual.IconComponent;
         const isSelected = selectedCategorySlug === cat.slug;

@@ -117,8 +117,10 @@ export async function POST(req: NextRequest) {
 
     // Resolve & validate real database Service object for Job creation
     const rawServiceId = (data.serviceId || '').trim();
+    const rawCategoryId = (data.categoryId || '').trim();
     let selectedServiceObj = null;
 
+    // 1. Direct active service match by ID or slug
     if (rawServiceId && rawServiceId.toUpperCase() !== 'OTHER') {
       selectedServiceObj = await prisma.service.findFirst({
         where: {
@@ -132,7 +134,118 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Automatic fallback resolution based on worker's primary category or skills
+    // 2. Reject explicitly inactive services if serviceId was directly specified and found inactive
+    if (!selectedServiceObj && rawServiceId && rawServiceId.toUpperCase() !== 'OTHER') {
+      const inactiveService = await prisma.service.findFirst({
+        where: {
+          OR: [
+            { id: rawServiceId },
+            { slug: rawServiceId },
+          ],
+          isActive: false,
+        },
+      });
+      if (inactiveService) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Selected service is unavailable. Please select another worker.',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 3. Category / Trade match: if serviceId or categoryId passed is a Category ID, Category slug, or trade term
+    const TRADE_SLUG_MAP: Record<string, string> = {
+      electrician: 'electrical',
+      electrical: 'electrical',
+      plumber: 'plumbing',
+      plumbing: 'plumbing',
+      carpenter: 'carpenter',
+      painter: 'painting',
+      painting: 'painting',
+      cook: 'cook',
+      cleaner: 'cleaning',
+      cleaning: 'cleaning',
+      driver: 'driver',
+      mason: 'construction',
+      construction: 'construction',
+      mechanic: 'mechanic',
+      'ac-technician': 'electrical',
+      'ac technician': 'electrical',
+      watchman: 'watchman',
+      'office-boy': 'office-boy',
+      washerman: 'washerman',
+    };
+
+    if (!selectedServiceObj) {
+      const categoryTerm = rawServiceId || rawCategoryId;
+      if (categoryTerm && categoryTerm.toUpperCase() !== 'OTHER') {
+        let mappedSlug = TRADE_SLUG_MAP[categoryTerm.toLowerCase()];
+        if (!mappedSlug) {
+          const lower = categoryTerm.toLowerCase();
+          for (const [trade, catSlug] of Object.entries(TRADE_SLUG_MAP)) {
+            if (lower.includes(trade)) {
+              mappedSlug = catSlug;
+              break;
+            }
+          }
+        }
+
+        let matchedCategory = await prisma.category.findFirst({
+          where: {
+            OR: [
+              { id: categoryTerm },
+              { slug: categoryTerm.toLowerCase() },
+              ...(mappedSlug ? [{ slug: mappedSlug }] : []),
+              { name: { equals: categoryTerm } },
+            ],
+            isActive: true,
+          },
+        });
+
+        if (!matchedCategory && worker) {
+          const workerCatId = worker.primaryCategoryId || worker.primaryCategory?.id;
+          const workerCatSlug = worker.primaryCategory?.slug?.toLowerCase();
+          const categoryTermLower = categoryTerm.toLowerCase();
+
+          if (
+            (workerCatId && categoryTerm === workerCatId) ||
+            (workerCatSlug && categoryTermLower === workerCatSlug) ||
+            (mappedSlug && workerCatSlug === mappedSlug) ||
+            (rawServiceId && rawCategoryId && rawServiceId === rawCategoryId)
+          ) {
+            if (workerCatId) {
+              matchedCategory = await prisma.category.findFirst({
+                where: { id: workerCatId, isActive: true },
+              });
+            }
+          }
+        }
+
+        if (matchedCategory) {
+          selectedServiceObj = await prisma.service.findFirst({
+            where: { categoryId: matchedCategory.id, isActive: true },
+            include: { category: true },
+          });
+        }
+      }
+    }
+
+    // If a non-empty, non-OTHER serviceId was explicitly provided, but failed both Service and Category matching, reject it as invalid.
+    const isCategoryUsage = rawServiceId && ((rawCategoryId && rawServiceId === rawCategoryId) || rawServiceId === worker.primaryCategoryId);
+    if (!selectedServiceObj && rawServiceId && rawServiceId.toUpperCase() !== 'OTHER' && !isCategoryUsage) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected service is unavailable. Please select another worker.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 4. Automatic Fallback for empty/OTHER serviceId: use worker's primary category or trade
     if (!selectedServiceObj) {
       const workerCatId = worker.primaryCategoryId || worker.primaryCategory?.id;
       if (workerCatId) {
@@ -141,62 +254,40 @@ export async function POST(req: NextRequest) {
           include: { category: true },
         });
       }
-    }
 
-    if (!selectedServiceObj) {
-      const rawCatTerm = (worker.primaryCategory?.slug || worker.primaryCategory?.name || worker.bio || '').toLowerCase();
-      
-      const TRADE_SLUG_MAP: Record<string, string> = {
-        electrician: 'electrical',
-        electrical: 'electrical',
-        plumber: 'plumbing',
-        plumbing: 'plumbing',
-        carpenter: 'carpenter',
-        painter: 'painting',
-        painting: 'painting',
-        cook: 'cook',
-        cleaner: 'cleaning',
-        cleaning: 'cleaning',
-        driver: 'driver',
-        mason: 'construction',
-        construction: 'construction',
-        mechanic: 'mechanic',
-        'ac-technician': 'electrical',
-        'ac technician': 'electrical',
-        watchman: 'watchman',
-        'office-boy': 'office-boy',
-        washerman: 'washerman',
-      };
+      if (!selectedServiceObj) {
+        const rawCatTerm = (worker.primaryCategory?.slug || worker.primaryCategory?.name || worker.bio || '').toLowerCase();
 
-      let mappedCatSlug = '';
-      for (const [trade, catSlug] of Object.entries(TRADE_SLUG_MAP)) {
-        if (rawCatTerm.includes(trade)) {
-          mappedCatSlug = catSlug;
-          break;
+        let mappedCatSlug = '';
+        for (const [trade, catSlug] of Object.entries(TRADE_SLUG_MAP)) {
+          if (rawCatTerm.includes(trade)) {
+            mappedCatSlug = catSlug;
+            break;
+          }
+        }
+
+        if (mappedCatSlug) {
+          selectedServiceObj = await prisma.service.findFirst({
+            where: { category: { slug: mappedCatSlug }, isActive: true },
+            include: { category: true },
+          });
+        } else if (worker.primaryCategory?.slug) {
+          selectedServiceObj = await prisma.service.findFirst({
+            where: { category: { slug: worker.primaryCategory.slug.toLowerCase() }, isActive: true },
+            include: { category: true },
+          });
         }
       }
 
-      if (mappedCatSlug) {
+      if (!selectedServiceObj) {
         selectedServiceObj = await prisma.service.findFirst({
-          where: { category: { slug: mappedCatSlug }, isActive: true },
+          where: { slug: 'other-work-service', isActive: true },
           include: { category: true },
-        });
-      } else if (worker.primaryCategory?.slug) {
-        selectedServiceObj = await prisma.service.findFirst({
-          where: { category: { slug: worker.primaryCategory.slug.toLowerCase() }, isActive: true },
+        }) || await prisma.service.findFirst({
+          where: { isActive: true },
           include: { category: true },
         });
       }
-    }
-
-    if (!selectedServiceObj) {
-      selectedServiceObj = await prisma.service.findFirst({
-        where: { slug: 'other-work-service', isActive: true },
-        include: { category: true },
-      }) || await prisma.service.findFirst({
-        where: { isActive: true },
-        include: { category: true },
-      });
     }
 
     console.log('[DEBUG_BOOKING]', {

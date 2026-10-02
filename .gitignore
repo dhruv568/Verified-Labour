@@ -47,6 +47,8 @@ public/uploads/*
 /storage
 /tmp
 /temp
+/scratch
+scratch/
 
 # Certificates and keys
 *.pem

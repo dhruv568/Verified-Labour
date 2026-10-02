@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { getServiceHindiName } from '@/lib/service-translations';
+import { getServiceHindiName, isExcludedServiceOrCategory } from '@/lib/service-translations';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,13 +18,17 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const categories = rawCategories.map((cat) => ({
-      ...cat,
-      services: cat.services.map((svc) => ({
-        ...svc,
-        nameHi: svc.nameHi || getServiceHindiName(svc),
-      })),
-    }));
+    const categories = rawCategories
+      .filter((cat) => !isExcludedServiceOrCategory(cat))
+      .map((cat) => ({
+        ...cat,
+        services: cat.services
+          .filter((svc) => !isExcludedServiceOrCategory(svc))
+          .map((svc) => ({
+            ...svc,
+            nameHi: svc.nameHi || getServiceHindiName(svc),
+          })),
+      }));
 
     return NextResponse.json(
       {

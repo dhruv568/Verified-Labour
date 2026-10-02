@@ -1,3 +1,5 @@
+import { isExcludedServiceOrCategory } from './service-translations';
+
 export interface TradeOption {
   id: string;
   name: string;
@@ -26,4 +28,4 @@ export const COMMON_TRADES: TradeOption[] = [
   { id: 'beautician', name: 'Beautician', nameHi: 'ब्यूटीशियन', slug: 'beautician' },
   { id: 'delivery-worker', name: 'Delivery Worker', nameHi: 'डिलीवरी बॉय / वर्कर', slug: 'delivery-worker' },
   { id: 'office-helper', name: 'Office Helper', nameHi: 'ऑफिस हेल्पर / प्यून', slug: 'office-helper' },
-];
+].filter((item) => !isExcludedServiceOrCategory(item));

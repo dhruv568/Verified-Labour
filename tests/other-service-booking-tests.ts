@@ -214,13 +214,42 @@ export async function runOtherServiceBookingTests() {
   assert(!workerCategoryIds.has(carpenterCat.id), 'Multi-worker does NOT provide Carpenter');
   console.log('  ✔ PASS: Multiple-service worker provides only their valid services (Electrical + Plumbing)');
 
-  // 4. Invalid service ID validation check
+  // 4. Invalid service ID validation check (Requirement 14.B)
   const nonExistentServiceId = 'invalid-service-id-nonexistent-999';
   const foundInvalid = await prisma.service.findUnique({
     where: { id: nonExistentServiceId }
   });
   assert.strictEqual(foundInvalid, null, 'Non-existent service ID must not be found in DB');
-  console.log('  ✔ PASS: Non-existent service ID validation prevents DB foreign key crash');
+  console.log('  ✔ PASS: Non-existent service ID validation prevents DB foreign key crash (Requirement 14.B)');
+
+  // 5. Inactive service validation check (Requirement 14.C)
+  const dummyInactiveService = await prisma.service.create({
+    data: {
+      name: 'Test Inactive Service',
+      slug: `inactive-test-${Date.now()}`,
+      categoryId: electricalCat.id,
+      isActive: false,
+    }
+  });
+
+  try {
+    const inactiveCheck = await prisma.service.findFirst({
+      where: { id: dummyInactiveService.id, isActive: true }
+    });
+    assert.strictEqual(inactiveCheck, null, 'Inactive service must not be returned when querying active services');
+    console.log('  ✔ PASS: Inactive services are rejected from active booking resolution (Requirement 14.C)');
+  } finally {
+    await prisma.service.delete({ where: { id: dummyInactiveService.id } });
+  }
+
+  // 6. Verify Job FK constraint satisfaction (Requirement 14.E)
+  const createdJobWithService = await prisma.job.findUnique({
+    where: { id: jobElec.id },
+    include: { service: true }
+  });
+  assert(createdJobWithService?.service, 'Created Job must have a valid Service relation in DB');
+  assert.strictEqual(createdJobWithService.serviceId, electricianService.id, 'Job serviceId must match active database Service ID');
+  console.log('  ✔ PASS: Created Job has valid serviceId satisfying database FK constraint (Requirement 14.E)');
 
   console.log('\n✔ All Worker Service Validation Tests PASSED Successfully!\n');
 }

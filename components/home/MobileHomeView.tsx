@@ -8,6 +8,7 @@ import TrustIndicators from './TrustIndicators';
 import PopularSearches from './PopularSearches';
 import MobileHero from './MobileHero';
 import { useLanguage } from '@/context/LanguageContext';
+import { isExcludedServiceOrCategory } from '@/lib/service-translations';
 import {
   Zap,
   Wrench,
@@ -123,7 +124,7 @@ const FEATURED_CATEGORIES = [
     iconBg: 'bg-[#16A34A]',
     objectPosition: 'center 5%',
   },
-];
+].filter((item) => !isExcludedServiceOrCategory(item));
 
 // Additional 8 categories for "View All" expander on mobile homepage
 const MORE_CATEGORIES = [
@@ -135,7 +136,7 @@ const MORE_CATEGORIES = [
   { title: 'Office Boy', hindiTitle: 'ऑफिस बॉय', slug: 'office-boy', image: '/images/services/office-boy.jpg', objectPosition: 'center 5%' },
   { title: 'Delivery Helper', hindiTitle: 'डिलीवरी सहायक', slug: 'loading-moving', image: '/images/services/delivery.jpg', objectPosition: 'center 5%' },
   { title: 'Other Services', hindiTitle: 'अन्य सेवाएं', slug: 'construction', image: '/images/services/others.jpg', objectPosition: 'center 4%' },
-];
+].filter((item) => !isExcludedServiceOrCategory(item));
 
 export default function MobileHomeView({
   selectedCategory,
