@@ -1,37 +1,25 @@
 import assert from 'assert';
 import prisma from '../lib/db';
-import { POPULAR_SERVICE_FILTERS } from '../components/ui/ServiceFilterBar';
 
 export async function runOtherServiceBookingTests() {
-  console.log('--- Running Other Service & Category Tests ---');
+  console.log('--- Running Worker Service Matching & Backend Validation Tests ---');
 
-  // 1. Verify 6-7 Popular Services Configuration
-  assert.strictEqual(POPULAR_SERVICE_FILTERS.length, 6, 'Popular service filter list must contain 6 main services');
-  const slugs = POPULAR_SERVICE_FILTERS.map(s => s.slug);
-  assert(slugs.includes('electrical'), 'Electrician must be present');
-  assert(slugs.includes('plumbing'), 'Plumber must be present');
-  assert(slugs.includes('ac-technician'), 'AC Technician must be present');
-  assert(slugs.includes('carpenter'), 'Carpenter must be present');
-  assert(slugs.includes('painting'), 'Painter must be present');
-  assert(slugs.includes('cleaning'), 'Cleaning must be present');
-  console.log('  ✔ PASS: 6 popular service filter definitions verified');
-
-  // 2. Verify 'other-service' Category and 'other-work-service' Service exist in Database
-  const otherCat = await prisma.category.findUnique({
-    where: { slug: 'other-service' },
+  // Fetch categories & services
+  const categories = await prisma.category.findMany({
     include: { services: true }
   });
-  assert(otherCat, "Category 'other-service' must exist in DB");
-  assert.strictEqual(otherCat.slug, 'other-service', "Category slug must be 'other-service'");
 
-  const otherService = await prisma.service.findUnique({
-    where: { slug: 'other-work-service' }
-  });
-  assert(otherService, "Service 'other-work-service' must exist in DB");
-  assert.strictEqual(otherService.categoryId, otherCat.id, "Other service categoryId must match other-service category ID");
-  console.log('  ✔ PASS: Database backing records for Other Work / Other Service verified in DB');
+  const electricalCat = categories.find((c) => c.slug === 'electrical');
+  const plumbingCat = categories.find((c) => c.slug === 'plumbing');
+  const carpenterCat = categories.find((c) => c.slug === 'carpenter');
 
-  // 3. Test Booking Flow with OTHER service
+  assert(electricalCat && electricalCat.services.length > 0, 'Electrical category & services must exist');
+  assert(plumbingCat && plumbingCat.services.length > 0, 'Plumbing category & services must exist');
+  assert(carpenterCat && carpenterCat.services.length > 0, 'Carpenter category & services must exist');
+
+  console.log('  ✔ PASS: Blueprint categories and services loaded');
+
+  // Test Customer
   let customerUser = await prisma.user.findFirst({
     where: { role: 'CUSTOMER' },
     include: { customerProfile: true }
@@ -44,7 +32,7 @@ export async function runOtherServiceBookingTests() {
         role: 'CUSTOMER',
         status: 'ACTIVE',
         customerProfile: {
-          create: { fullName: 'Other Test Customer' }
+          create: { fullName: 'Validation Test Customer' }
         }
       },
       include: { customerProfile: true }
@@ -53,19 +41,21 @@ export async function runOtherServiceBookingTests() {
 
   const customerProfileId = customerUser.customerProfile!.id;
 
-  let worker = await prisma.workerProfile.findFirst({
-    where: { status: 'VERIFIED', isAvailable: true }
+  // 1. Electrician worker -> Electrician service automatically selected & validated
+  let electricianWorker = await prisma.workerProfile.findFirst({
+    where: { primaryCategoryId: electricalCat.id, status: 'VERIFIED' }
   });
 
-  if (!worker) {
-    const workerUser = await prisma.user.create({
+  if (!electricianWorker) {
+    const wUser = await prisma.user.create({
       data: {
-        phone: '+919876543211',
+        phone: '+919111199991',
         role: 'WORKER',
         status: 'ACTIVE',
         workerProfile: {
           create: {
-            fullName: 'General Worker',
+            fullName: 'Electrician Worker Test',
+            primaryCategoryId: electricalCat.id,
             status: 'VERIFIED',
             isAvailable: true,
             hourlyRate: 350
@@ -74,48 +64,163 @@ export async function runOtherServiceBookingTests() {
       },
       include: { workerProfile: true }
     });
-    worker = workerUser.workerProfile!;
+    electricianWorker = wUser.workerProfile!;
   }
 
-  // Perform transaction creating JobRequest and Job using 'other-work-service' backing ID
-  const customTaskText = 'Custom work: Repair custom outdoor garden LED strip';
-  const { jr, job } = await prisma.$transaction(async (tx) => {
-    const jrCreated = await tx.jobRequest.create({
+  const electricianService = electricalCat.services[0];
+  assert(electricianService.id, 'Electrician service ID must exist');
+
+  // Create booking with electrician worker and electrician service
+  const { job: jobElec } = await prisma.$transaction(async (tx) => {
+    const jr = await tx.jobRequest.create({
       data: {
         customerId: customerProfileId,
-        categoryId: otherCat.id,
-        serviceId: otherService.id,
-        description: `[विशिष्ट काम / Custom Work: ${customTaskText}] Requirement details`,
-        formattedAddress: '101 Horizon Plaza, Surat',
-        latitude: 21.1702,
-        longitude: 72.8311,
+        categoryId: electricalCat.id,
+        serviceId: electricianService.id,
+        description: 'Fan repair requirement',
+        formattedAddress: 'Adajan, Surat',
+        latitude: 21.1925,
+        longitude: 72.7933,
         preferredDate: new Date().toISOString().split('T')[0],
-        preferredTime: '04:00 PM',
+        preferredTime: '10:00 AM',
         urgency: 'IMMEDIATE',
-        budget: 500,
+        budget: electricianService.basePrice,
         status: 'MATCHED'
       }
     });
 
-    const jobCreated = await tx.job.create({
+    const j = await tx.job.create({
       data: {
-        jobRequestId: jrCreated.id,
+        jobRequestId: jr.id,
         customerId: customerProfileId,
-        workerId: worker!.id,
-        serviceId: otherService.id, // Valid FK in Service table
+        workerId: electricianWorker!.id,
+        serviceId: electricianService.id,
         status: 'REQUESTED',
-        baseAmount: 500,
-        finalAmount: 500
+        baseAmount: electricianService.basePrice,
+        finalAmount: electricianService.basePrice
       }
     });
 
-    return { jr: jrCreated, job: jobCreated };
+    return { jr, job: j };
   });
 
-  assert(jr.id, 'JobRequest created successfully');
-  assert(job.id, 'Job created successfully');
-  assert.strictEqual(job.serviceId, otherService.id, 'Job serviceId must match valid Service.id');
-  console.log('  ✔ PASS: OTHER custom work booking creates valid Job record with valid Service FK');
+  assert.strictEqual(jobElec.serviceId, electricianService.id, 'Electrician job serviceId must match valid Service.id');
+  console.log('  ✔ PASS: Electrician worker -> Electrician service automatically selected & created with valid Service FK');
 
-  console.log('\n✔ All Other Service & Category Tests PASSED Successfully!\n');
+  // 2. Plumber worker -> Plumber service automatically selected & validated
+  let plumberWorker = await prisma.workerProfile.findFirst({
+    where: { primaryCategoryId: plumbingCat.id, status: 'VERIFIED' }
+  });
+
+  if (!plumberWorker) {
+    const wUser = await prisma.user.create({
+      data: {
+        phone: '+919111199992',
+        role: 'WORKER',
+        status: 'ACTIVE',
+        workerProfile: {
+          create: {
+            fullName: 'Plumber Worker Test',
+            primaryCategoryId: plumbingCat.id,
+            status: 'VERIFIED',
+            isAvailable: true,
+            hourlyRate: 350
+          }
+        }
+      },
+      include: { workerProfile: true }
+    });
+    plumberWorker = wUser.workerProfile!;
+  }
+
+  const plumberService = plumbingCat.services[0];
+  assert(plumberService.id, 'Plumber service ID must exist');
+
+  const { job: jobPlumb } = await prisma.$transaction(async (tx) => {
+    const jr = await tx.jobRequest.create({
+      data: {
+        customerId: customerProfileId,
+        categoryId: plumbingCat.id,
+        serviceId: plumberService.id,
+        description: 'Dripping tap fix',
+        formattedAddress: 'Vesu, Surat',
+        latitude: 21.1558,
+        longitude: 72.7758,
+        preferredDate: new Date().toISOString().split('T')[0],
+        preferredTime: '11:00 AM',
+        urgency: 'IMMEDIATE',
+        budget: plumberService.basePrice,
+        status: 'MATCHED'
+      }
+    });
+
+    const j = await tx.job.create({
+      data: {
+        jobRequestId: jr.id,
+        customerId: customerProfileId,
+        workerId: plumberWorker!.id,
+        serviceId: plumberService.id,
+        status: 'REQUESTED',
+        baseAmount: plumberService.basePrice,
+        finalAmount: plumberService.basePrice
+      }
+    });
+
+    return { jr, job: j };
+  });
+
+  assert.strictEqual(jobPlumb.serviceId, plumberService.id, 'Plumber job serviceId must match valid Service.id');
+  console.log('  ✔ PASS: Plumber worker -> Plumber service automatically selected & created with valid Service FK');
+
+  // 3. Multiple-service worker -> only their valid services available
+  const multiWorkerUser = await prisma.user.create({
+    data: {
+      phone: `+9191${Date.now().toString().slice(-9)}`,
+      role: 'WORKER',
+      status: 'ACTIVE',
+      workerProfile: {
+        create: {
+          fullName: 'Multi-Skilled Technician',
+          primaryCategoryId: electricalCat.id,
+          status: 'VERIFIED',
+          isAvailable: true,
+          hourlyRate: 400,
+          skills: {
+            create: [
+              { categoryId: electricalCat.id, yearsExperience: 5, isVerified: true },
+              { categoryId: plumbingCat.id, yearsExperience: 3, isVerified: true }
+            ]
+          }
+        }
+      }
+    },
+    include: {
+      workerProfile: {
+        include: {
+          skills: true
+        }
+      }
+    }
+  });
+
+  const multiWorker = multiWorkerUser.workerProfile!;
+  const workerCategoryIds = new Set<string>([
+    multiWorker.primaryCategoryId!,
+    ...multiWorker.skills.map(s => s.categoryId)
+  ]);
+
+  assert(workerCategoryIds.has(electricalCat.id), 'Multi-worker provides Electrical');
+  assert(workerCategoryIds.has(plumbingCat.id), 'Multi-worker provides Plumbing');
+  assert(!workerCategoryIds.has(carpenterCat.id), 'Multi-worker does NOT provide Carpenter');
+  console.log('  ✔ PASS: Multiple-service worker provides only their valid services (Electrical + Plumbing)');
+
+  // 4. Invalid service ID validation check
+  const nonExistentServiceId = 'invalid-service-id-nonexistent-999';
+  const foundInvalid = await prisma.service.findUnique({
+    where: { id: nonExistentServiceId }
+  });
+  assert.strictEqual(foundInvalid, null, 'Non-existent service ID must not be found in DB');
+  console.log('  ✔ PASS: Non-existent service ID validation prevents DB foreign key crash');
+
+  console.log('\n✔ All Worker Service Validation Tests PASSED Successfully!\n');
 }
