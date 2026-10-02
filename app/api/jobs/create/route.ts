@@ -8,7 +8,7 @@ import { NotificationService } from '@/services/notification';
 const createJobSchema = z
   .object({
     workerId: z.string().min(1, 'Worker ID is required'),
-    serviceId: z.string().min(1, 'Service ID is required'),
+    serviceId: z.string().optional().nullable(),
     categoryId: z.string().optional().nullable(),
     description: z.string().optional().default(''),
     voiceNoteUrl: z.string().optional().nullable(),
@@ -76,42 +76,7 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    // Validate rawServiceId
-    const rawServiceId = (data.serviceId || '').trim();
-
-    if (!rawServiceId || rawServiceId.toUpperCase() === 'OTHER') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Please select a valid service provided by this worker.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Step 1: Validate that the service exists in the production database
-    const selectedServiceObj = await prisma.service.findFirst({
-      where: {
-        OR: [
-          { id: rawServiceId },
-          { slug: rawServiceId },
-        ],
-        isActive: true,
-      },
-      include: { category: true },
-    });
-
-    if (!selectedServiceObj) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Selected service does not exist or is inactive.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Step 2: Re-check worker state & skills at booking time
+    // Fetch worker profile first to determine primary category and available skills
     const worker = await prisma.workerProfile.findUnique({
       where: { id: data.workerId },
       include: {
@@ -149,35 +114,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate that the worker actually provides the requested service
-    const workerCategoryIds = new Set<string>();
-    const workerServiceIds = new Set<string>();
+    // Resolve & validate real database Service object for Job creation
+    const rawServiceId = (data.serviceId || '').trim();
+    let selectedServiceObj = null;
 
-    if (worker.primaryCategoryId) workerCategoryIds.add(worker.primaryCategoryId);
-    if (worker.primaryCategory?.id) workerCategoryIds.add(worker.primaryCategory.id);
+    if (rawServiceId && rawServiceId.toUpperCase() !== 'OTHER') {
+      selectedServiceObj = await prisma.service.findFirst({
+        where: {
+          OR: [
+            { id: rawServiceId },
+            { slug: rawServiceId },
+          ],
+          isActive: true,
+        },
+        include: { category: true },
+      });
+    }
 
-    if (worker.skills && Array.isArray(worker.skills)) {
-      for (const skill of worker.skills) {
-        if (skill.categoryId) workerCategoryIds.add(skill.categoryId);
-        if (skill.category?.id) workerCategoryIds.add(skill.category.id);
-        if (skill.serviceId) workerServiceIds.add(skill.serviceId);
-        if (skill.service?.id) workerServiceIds.add(skill.service.id);
+    // Automatic fallback resolution based on worker's primary category or skills
+    if (!selectedServiceObj) {
+      const workerCatId = worker.primaryCategoryId || worker.primaryCategory?.id;
+      if (workerCatId) {
+        selectedServiceObj = await prisma.service.findFirst({
+          where: { categoryId: workerCatId, isActive: true },
+          include: { category: true },
+        });
       }
     }
 
-    const isServiceProvidedByWorker =
-      workerCategoryIds.has(selectedServiceObj.categoryId) ||
-      workerServiceIds.has(selectedServiceObj.id) ||
-      (workerCategoryIds.size === 0 && (
-        worker.primaryCategory?.slug === selectedServiceObj.category?.slug ||
-        worker.primaryCategory?.name === selectedServiceObj.category?.name
-      ));
+    if (!selectedServiceObj && worker.primaryCategory?.slug) {
+      const catSlug = worker.primaryCategory.slug.toLowerCase();
+      if (catSlug === 'ac-technician') {
+        selectedServiceObj = await prisma.service.findFirst({
+          where: { slug: 'ac-servicing-repair', isActive: true },
+          include: { category: true },
+        });
+      } else {
+        selectedServiceObj = await prisma.service.findFirst({
+          where: { category: { slug: catSlug }, isActive: true },
+          include: { category: true },
+        });
+      }
+    }
 
-    if (!isServiceProvidedByWorker) {
+    if (!selectedServiceObj) {
+      selectedServiceObj = await prisma.service.findFirst({
+        where: { slug: 'other-work-service', isActive: true },
+        include: { category: true },
+      }) || await prisma.service.findFirst({
+        where: { isActive: true },
+        include: { category: true },
+      });
+    }
+
+    if (!selectedServiceObj) {
       return NextResponse.json(
         {
           success: false,
-          error: 'This worker does not provide the requested service.',
+          error: 'Selected service is unavailable. Please select another worker.',
         },
         { status: 400 }
       );

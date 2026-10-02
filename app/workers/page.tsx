@@ -96,6 +96,29 @@ function FindWorkerContent() {
     }
   };
 
+  // Sync state with URL searchParams if browser back/forward navigation occurs
+  useEffect(() => {
+    const cat = searchParams ? searchParams.get('category') || '' : '';
+    if (cat !== selectedCategory) {
+      setSelectedCategory(cat);
+    }
+  }, [searchParams]);
+
+  const handleSelectCategory = (slug: string) => {
+    setSelectedCategory(slug);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (slug) {
+        params.set('category', slug);
+      } else {
+        params.delete('category');
+      }
+      const queryString = params.toString();
+      const newUrl = queryString ? `/workers?${queryString}` : '/workers';
+      router.replace(newUrl, { scroll: false });
+    }
+  };
+
   useEffect(() => {
     fetchWorkers();
   }, [selectedCategory, searchRadius, location.latitude, location.longitude, location.city]);
@@ -190,7 +213,7 @@ function FindWorkerContent() {
           {/* Category Quick Selector Pills */}
           <ServiceFilterBar
             selectedCategory={selectedCategory}
-            onSelectCategory={(slug) => setSelectedCategory(slug)}
+            onSelectCategory={handleSelectCategory}
           />
         </div>
 
@@ -230,29 +253,53 @@ function FindWorkerContent() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200 shadow-2xs space-y-3 max-w-lg mx-auto">
+          <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200 shadow-2xs space-y-3 max-w-lg mx-auto font-devanagari">
             <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
-              <AlertCircle className="w-6 h-6" />
+              <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>
             <h3 className="text-base font-bold text-slate-900">
-              {isHindi ? 'इस श्रेणी/स्थान में कोई कामगार उपलब्ध नहीं है' : 'No verified workers found in this immediate radius'}
+              {selectedCategory
+                ? isHindi
+                  ? selectedCategory === 'OTHER' || selectedCategory === 'other' || selectedCategory === 'other-service'
+                    ? 'अन्य सेवा (OTHER) श्रेणी में आपके क्षेत्र में कोई कामगार उपलब्ध नहीं है'
+                    : 'इस चुनी गई श्रेणी में आपके क्षेत्र में कोई सत्यापित कामगार उपलब्ध नहीं है'
+                  : selectedCategory === 'OTHER' || selectedCategory === 'other' || selectedCategory === 'other-service'
+                  ? 'No verified workers found for Other Services in your area'
+                  : 'No verified workers found in this category in your area'
+                : isHindi
+                ? 'इस दायरा में कोई सत्यापित कामगार उपलब्ध नहीं है'
+                : 'No verified workers found in this immediate radius'}
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {isHindi
+              {selectedCategory
+                ? isHindi
+                  ? 'कृपया सभी सेवाएं देखने के लिए फ़िल्टर हटाएं या सर्च का दायरा (Radius) बढ़ाएं।'
+                  : 'Try clearing the category filter or expanding your search radius.'
+                : isHindi
                 ? 'कृपया सर्च का दायरा (Radius) बढ़ाकर 30 km करें या अन्य श्रेणी चुनें।'
                 : 'Try expanding your search radius to 30 km or selecting a different category.'}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchRadius(30);
-                setSelectedCategory('');
-                fetchWorkers();
-              }}
-              className="mt-2 px-6 py-2.5 bg-[#1264D6] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
-            >
-              {isHindi ? 'दायरा बढ़ाकर 30 km करें' : 'Expand Radius to 30 km'}
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectCategory('')}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  {isHindi ? 'सभी सेवाएं देखें (Clear Filter)' : 'Clear Filter / View All'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchRadius(30);
+                  fetchWorkers();
+                }}
+                className="px-4 py-2 bg-[#1264D6] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                {isHindi ? 'दायरा बढ़ाकर 30 km करें' : 'Expand Radius to 30 km'}
+              </button>
+            </div>
           </div>
         )}
       </main>

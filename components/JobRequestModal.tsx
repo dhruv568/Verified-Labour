@@ -253,11 +253,31 @@ export default function JobRequestModal({
       }
     }
 
-    const filtered = allServices.filter(
+    let filtered = allServices.filter(
       (s) =>
         (s.categoryId && workerCategoryIds.has(s.categoryId)) ||
         workerServiceIds.has(s.id)
     );
+
+    // Fallback 1: Match by category slug or name (e.g. electrician -> electrical, plumber -> plumbing)
+    if (filtered.length === 0 && worker) {
+      const catSlug = (worker.primaryCategory?.slug || workerCategory?.slug || '').toLowerCase();
+      const catName = (worker.primaryCategory?.name || workerCategory?.name || '').toLowerCase();
+
+      filtered = allServices.filter((s) => {
+        const sCatSlug = (s.category?.slug || '').toLowerCase();
+        const sCatName = (s.category?.name || '').toLowerCase();
+        return (
+          (catSlug && (sCatSlug.includes(catSlug) || catSlug.includes(sCatSlug))) ||
+          (catName && (sCatName.includes(catName) || catName.includes(sCatName)))
+        );
+      });
+    }
+
+    // Fallback 2: Guaranteed fallback to allServices if no specific category match found
+    if (filtered.length === 0) {
+      filtered = allServices;
+    }
 
     return filtered;
   }, [allServices, categories, workerCategory, worker]);
@@ -269,10 +289,10 @@ export default function JobRequestModal({
       if (!isValid) {
         setSelectedServiceId(availableServices[0].id);
       }
-    } else {
-      setSelectedServiceId('');
+    } else if (allServices.length > 0) {
+      setSelectedServiceId(allServices[0].id);
     }
-  }, [availableServices, selectedServiceId]);
+  }, [availableServices, allServices, selectedServiceId]);
 
   // Handle service selection by user from SearchableSelect
   const handleServiceSelect = (serviceId: string) => {
@@ -281,19 +301,26 @@ export default function JobRequestModal({
 
   if (!isOpen || !worker) return null;
 
-  const selectedService = availableServices.find((s) => s.id === selectedServiceId);
-  const estimatedAmount = selectedService?.basePrice || worker.hourlyRate || 350;
+  const selectedService = availableServices.find((s) => s.id === selectedServiceId) || allServices.find((s) => s.id === selectedServiceId);
+  const estimatedAmount = selectedService?.basePrice || worker.hourlyRate || 250;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    let effectiveServiceId = selectedServiceId;
+    if (!effectiveServiceId && availableServices.length > 0) {
+      effectiveServiceId = availableServices[0].id;
+    } else if (!effectiveServiceId && allServices.length > 0) {
+      effectiveServiceId = allServices[0].id;
+    }
 
     const workerCatId =
       typeof worker.primaryCategory === 'object'
         ? (worker.primaryCategory as any)?.id
         : worker.primaryCategoryId || null;
 
-    const selectedServiceObj = availableServices.find((s) => s.id === selectedServiceId);
+    const selectedServiceObj = allServices.find((s) => s.id === effectiveServiceId);
 
     let finalCategoryId = '';
     if (selectedServiceObj && selectedServiceObj.categoryId && selectedServiceObj.categoryId !== 'ALL') {
@@ -302,11 +329,6 @@ export default function JobRequestModal({
       finalCategoryId = workerCategory.id;
     } else if (workerCatId && workerCatId !== 'ALL') {
       finalCategoryId = workerCatId;
-    }
-
-    if (!selectedServiceId) {
-      setError('कृपया एक विशिष्ट कार्य/सेवा चुनें / Please select a service provided by this worker');
-      return;
     }
 
     setLoading(true);
@@ -341,7 +363,7 @@ export default function JobRequestModal({
         body: JSON.stringify({
           workerId: worker.id,
           categoryId: finalCategoryId,
-          serviceId: selectedServiceId,
+          serviceId: effectiveServiceId,
           description,
           voiceNoteUrl: uploadedVoiceUrl,
           voiceNoteDuration: voiceNoteDuration || 0,
@@ -450,7 +472,7 @@ export default function JobRequestModal({
             </div>
           )}
 
-          {/* Service Selection (Searchable Dropdown with Dynamic 1..N Indexing) */}
+          {/* Booking Service Display */}
           <div className="space-y-3">
             {categoriesError ? (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-2">
@@ -464,20 +486,27 @@ export default function JobRequestModal({
                   <span>पुनः प्रयास करें / Retry</span>
                 </button>
               </div>
-            ) : availableServices.length === 0 && !loadingServices ? (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium font-devanagari">
-                इस वर्कर के पास कोई सक्रिय सेवा उपलब्ध नहीं है / No active services available for this worker
-              </div>
             ) : (
+              <div className="bg-brand-50/70 p-3.5 rounded-xl border border-brand-200/90 flex items-center justify-between shadow-2xs">
+                <div>
+                  <span className="text-[11px] font-extrabold text-brand-800 uppercase tracking-wider block font-devanagari">
+                    बुक की जा रही सेवा / Booking Service
+                  </span>
+                  <div className="text-sm font-black text-navy-900 font-devanagari mt-0.5 flex items-center gap-1.5">
+                    <span>{worker.primaryCategory?.name || selectedService?.name || 'Skilled Service'}</span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 bg-brand-700 text-white font-bold text-xs rounded-lg font-devanagari shrink-0 shadow-2xs">
+                  ₹{estimatedAmount} / job
+                </span>
+              </div>
+            )}
+
+            {availableServices.length > 1 && !loadingServices && (
               <ServiceSearchableSelect
-                label="विशिष्ट कार्य / सेवा / Select Specific Work / Service"
-                required
-                disabled={loadingServices || availableServices.length === 0}
-                placeholder={
-                  loadingServices
-                    ? 'सेवाएं लोड हो रही हैं... / Loading services...'
-                    : 'सेवा चुनें (खोजने के लिए टाइप करें) / Select or search service...'
-                }
+                label="विशिष्ट सेवा चुनें (ऐच्छिक) / Select Specific Service (Optional)"
+                disabled={loadingServices}
+                placeholder="सेवा चुनें (खोजने के लिए टाइप करें) / Select or search service..."
                 services={availableServices}
                 value={selectedServiceId}
                 onChange={handleServiceSelect}
@@ -628,9 +657,7 @@ export default function JobRequestModal({
             disabled={
               loading ||
               (!description.trim() && !voiceNoteBlob) ||
-              loadingServices ||
-              !selectedServiceId ||
-              availableServices.length === 0
+              loadingServices
             }
             className="w-full min-h-[48px] py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base flex items-center justify-center font-devanagari"
           >

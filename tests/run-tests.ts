@@ -19,6 +19,7 @@ import { runVoiceNoteTests } from './voice-note-tests';
 import { runTestimonialTests } from './testimonial-tests';
 import { runWorkerBookingFlowTests } from './worker-booking-flow-tests';
 import { runOtherServiceBookingTests } from './other-service-booking-tests';
+import { runOtherServiceFilterTests } from './other-service-filter-tests';
 import { runAadhaarCertTests } from './aadhaar-cert-tests';
 import { runAadhaarDecoderTests } from './aadhaar-decoder-tests';
 import { runAadhaarScannerUiTests } from './aadhaar-scanner-ui-tests';
@@ -319,6 +320,7 @@ async function runAllTests() {
 
   await runWorkerBookingFlowTests();
   await runOtherServiceBookingTests();
+  await runOtherServiceFilterTests();
 
   const certResults = await runAadhaarCertTests();
   passed += certResults.passed;

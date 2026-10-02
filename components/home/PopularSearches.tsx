@@ -54,7 +54,7 @@ const POPULAR_SERVICES = [
   {
     name: 'OTHER',
     hindi: 'अन्य सेवा',
-    slug: 'OTHER',
+    slug: 'other-service',
     icon: Sparkles,
     color: 'text-amber-300 bg-[#041A40] border-amber-400',
     isOther: true,

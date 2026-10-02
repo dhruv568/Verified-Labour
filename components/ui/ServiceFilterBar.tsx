@@ -102,7 +102,7 @@ export default function ServiceFilterBar({
         {/* 8. SEPARATE "OTHER" BUTTON (VISUALLY DISTINCT STYLE) */}
         <button
           type="button"
-          onClick={() => onSelectCategory(isOtherSelected ? '' : 'OTHER')}
+          onClick={() => onSelectCategory(isOtherSelected ? '' : 'other-service')}
           className={`px-4 py-2 sm:py-1.5 rounded-xl text-xs font-black transition-all border whitespace-nowrap cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] ${
             isOtherSelected
               ? 'bg-[#082B66] text-amber-300 border-2 border-amber-400 ring-2 ring-amber-400/40 shadow-md scale-[1.02]'

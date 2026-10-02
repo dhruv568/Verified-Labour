@@ -48,7 +48,6 @@ export async function GET(req: NextRequest) {
         whereClause.OR = [
           { primaryCategory: { slug: 'other-service' } },
           { skills: { some: { category: { slug: 'other-service' } } } },
-          { status: 'VERIFIED' },
         ];
       } else if (catLower === 'ac-technician') {
         whereClause.OR = [
