@@ -10,6 +10,20 @@ export interface VerificationCheckResult {
 }
 
 /**
+ * Server-side temporary test-only worker verification override helper.
+ * Returns true ONLY when process.env.ENABLE_TEST_WORKER_OVERRIDE === 'true'
+ * AND the provided workerId matches process.env.TEST_WORKER_ID exactly.
+ * 
+ * Never trusts any client-side query parameters, headers, or flags.
+ */
+export function isTestWorkerOverrideEnabled(workerId: string): boolean {
+  if (process.env.ENABLE_TEST_WORKER_OVERRIDE !== 'true') return false;
+  const configuredId = process.env.TEST_WORKER_ID?.trim();
+  if (!configuredId || !workerId) return false;
+  return workerId === configuredId;
+}
+
+/**
  * Centralized business logic to evaluate worker verification status.
  * Worker status must NEVER be decided by the frontend alone.
  * 
@@ -35,8 +49,9 @@ export async function evaluateWorkerVerification(
     throw new Error(`Worker profile not found for ID: ${workerId}`);
   }
 
-  const isAadhaarVerified = worker.aadhaarVerif?.status === 'VERIFIED' || worker.identityVerified;
-  const isBankVerified = worker.bankVerif?.status === 'VERIFIED' || worker.bankVerified;
+  const isOverrideActive = isTestWorkerOverrideEnabled(workerId);
+  const isAadhaarVerified = worker.aadhaarVerif?.status === 'VERIFIED' || worker.identityVerified || isOverrideActive;
+  const isBankVerified = worker.bankVerif?.status === 'VERIFIED' || worker.bankVerified || isOverrideActive;
   const isProfileComplete = Boolean(
     worker.fullName?.trim() &&
     worker.primaryCategoryId &&
@@ -81,6 +96,11 @@ export async function evaluateWorkerVerification(
  */
 export async function syncWorkerVerificationStatus(workerId: string): Promise<string> {
   const evaluation = await evaluateWorkerVerification(workerId);
+
+  // If temporary test override is active, do NOT alter DB records/flags
+  if (isTestWorkerOverrideEnabled(workerId)) {
+    return 'VERIFIED';
+  }
 
   await prisma.workerProfile.update({
     where: { id: workerId },

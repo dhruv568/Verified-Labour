@@ -34,8 +34,17 @@ export async function GET(req: NextRequest) {
     const hasCoords = customerLat !== undefined && customerLng !== undefined && !isNaN(customerLat) && !isNaN(customerLng);
 
     // Build Prisma query filter
+    const configuredTestWorkerId =
+      process.env.ENABLE_TEST_WORKER_OVERRIDE === 'true' && process.env.TEST_WORKER_ID?.trim()
+        ? process.env.TEST_WORKER_ID.trim()
+        : null;
+
+    const statusFilter = configuredTestWorkerId
+      ? { OR: [{ status: 'VERIFIED' }, { id: configuredTestWorkerId }] }
+      : { status: 'VERIFIED' };
+
     const whereClause: any = {
-      status: 'VERIFIED', // Section 13: Only verified workers in public search
+      AND: [statusFilter],
     };
 
     if (isAvailableOnly) {
@@ -44,46 +53,45 @@ export async function GET(req: NextRequest) {
 
     if (categorySlug) {
       const catLower = categorySlug.toLowerCase();
+      let categoryFilter: any;
       if (catLower === 'other' || catLower === 'other-service' || categorySlug === 'OTHER') {
-        whereClause.OR = [
-          { primaryCategory: { slug: 'other-service' } },
-          { skills: { some: { category: { slug: 'other-service' } } } },
-        ];
+        categoryFilter = {
+          OR: [
+            { primaryCategory: { slug: 'other-service' } },
+            { skills: { some: { category: { slug: 'other-service' } } } },
+          ],
+        };
       } else if (catLower === 'ac-technician') {
-        whereClause.OR = [
-          { primaryCategory: { slug: 'ac-technician' } },
-          { primaryCategory: { slug: 'electrical' } },
-          { skills: { some: { category: { slug: 'electrical' } } } },
-          { skills: { some: { service: { slug: 'ac-servicing-repair' } } } },
-        ];
+        categoryFilter = {
+          OR: [
+            { primaryCategory: { slug: 'ac-technician' } },
+            { primaryCategory: { slug: 'electrical' } },
+            { skills: { some: { category: { slug: 'electrical' } } } },
+            { skills: { some: { service: { slug: 'ac-servicing-repair' } } } },
+          ],
+        };
       } else {
-        whereClause.OR = [
-          { primaryCategory: { slug: categorySlug } },
-          { skills: { some: { category: { slug: categorySlug } } } },
-        ];
+        categoryFilter = {
+          OR: [
+            { primaryCategory: { slug: categorySlug } },
+            { skills: { some: { category: { slug: categorySlug } } } },
+          ],
+        };
       }
+      whereClause.AND.push(categoryFilter);
     }
 
     // Only restrict DB query by location string if coordinates are NOT available.
     // When coordinates are available, Haversine geographic radius filtering handles location matching.
     if (city && !hasCoords) {
-      const locationCondition = {
+      whereClause.AND.push({
         OR: [
           { city: { contains: city } },
           { state: { contains: city } },
           { serviceAreas: { some: { areaName: { contains: city } } } },
           { serviceAreas: { some: { city: { contains: city } } } },
         ],
-      };
-      if (whereClause.OR) {
-        whereClause.AND = [
-          { OR: whereClause.OR },
-          locationCondition,
-        ];
-        delete whereClause.OR;
-      } else {
-        whereClause.OR = locationCondition.OR;
-      }
+      });
     }
 
     // Fetch matching workers with relations

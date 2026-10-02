@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { calculateHaversineDistanceKm } from '@/lib/location';
+import { isTestWorkerOverrideEnabled } from '@/lib/worker-verification';
 import { NotificationService } from '@/services/notification';
 
 const createJobSchema = z
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Selected worker not found' }, { status: 404 });
     }
 
-    if (worker.status !== 'VERIFIED') {
+    if (worker.status !== 'VERIFIED' && !isTestWorkerOverrideEnabled(worker.id)) {
       return NextResponse.json(
         { success: false, error: 'This worker is currently not verified for new bookings.' },
         { status: 400 }
