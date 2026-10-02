@@ -204,6 +204,7 @@ export default function JobRequestModal({
 
   useEffect(() => {
     if (isOpen) {
+      setError(null);
       fetchCategoriesAndServices();
     }
 
@@ -259,17 +260,52 @@ export default function JobRequestModal({
         workerServiceIds.has(s.id)
     );
 
-    // Fallback 1: Match by category slug or name (e.g. electrician -> electrical, plumber -> plumbing)
+    // Fallback 1: Match by trade slug or name (e.g. electrician -> electrical, plumber -> plumbing)
     if (filtered.length === 0 && worker) {
-      const catSlug = (worker.primaryCategory?.slug || workerCategory?.slug || '').toLowerCase();
-      const catName = (worker.primaryCategory?.name || workerCategory?.name || '').toLowerCase();
+      const rawCatTerm = (
+        worker.primaryCategory?.slug ||
+        worker.primaryCategory?.name ||
+        workerCategory?.slug ||
+        workerCategory?.name ||
+        ''
+      ).toLowerCase();
+
+      const TRADE_SLUG_MAP: Record<string, string> = {
+        electrician: 'electrical',
+        electrical: 'electrical',
+        plumber: 'plumbing',
+        plumbing: 'plumbing',
+        carpenter: 'carpenter',
+        painter: 'painting',
+        painting: 'painting',
+        cook: 'cook',
+        cleaner: 'cleaning',
+        cleaning: 'cleaning',
+        driver: 'driver',
+        mason: 'construction',
+        construction: 'construction',
+        mechanic: 'mechanic',
+        'ac-technician': 'electrical',
+        'ac technician': 'electrical',
+        watchman: 'watchman',
+        'office-boy': 'office-boy',
+        washerman: 'washerman',
+      };
+
+      let mappedSlug = '';
+      for (const [trade, catSlug] of Object.entries(TRADE_SLUG_MAP)) {
+        if (rawCatTerm.includes(trade)) {
+          mappedSlug = catSlug;
+          break;
+        }
+      }
 
       filtered = allServices.filter((s) => {
         const sCatSlug = (s.category?.slug || '').toLowerCase();
         const sCatName = (s.category?.name || '').toLowerCase();
         return (
-          (catSlug && (sCatSlug.includes(catSlug) || catSlug.includes(sCatSlug))) ||
-          (catName && (sCatName.includes(catName) || catName.includes(sCatName)))
+          (mappedSlug && sCatSlug === mappedSlug) ||
+          (rawCatTerm && (sCatSlug.includes(rawCatTerm) || rawCatTerm.includes(sCatSlug)))
         );
       });
     }
