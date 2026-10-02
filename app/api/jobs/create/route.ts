@@ -198,6 +198,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    console.log('[DEBUG_BOOKING]', {
+      workerId: data.workerId,
+      rawServiceId,
+      workerPrimaryCatId: worker.primaryCategoryId,
+      workerPrimaryCatSlug: worker.primaryCategory?.slug,
+      resolvedServiceId: selectedServiceObj?.id,
+      resolvedServiceName: selectedServiceObj?.name,
+    });
+
     if (!selectedServiceObj) {
       return NextResponse.json(
         {
