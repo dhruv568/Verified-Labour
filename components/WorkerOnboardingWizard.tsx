@@ -38,6 +38,7 @@ import Badge from './ui/Badge';
 import SearchableSelect from './ui/SearchableSelect';
 import { INDIAN_STATES_AND_CITIES } from '@/lib/indian-locations';
 import { LOCAL_COORDINATE_MAP, calculateHaversineDistanceKm } from '@/lib/location';
+import { useLanguage } from '@/context/LanguageContext';
 import { COMMON_TRADES } from '@/lib/common-trades';
 import WorkerLivePhotoCapture from './WorkerLivePhotoCapture';
 import WorkerAadhaarQrScanner from './WorkerAadhaarQrScanner';
@@ -52,6 +53,7 @@ export default function WorkerOnboardingWizard({
   onComplete,
 }: WorkerOnboardingWizardProps) {
   const router = useRouter();
+  const { isHindi } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -256,8 +258,8 @@ export default function WorkerOnboardingWizard({
     // 3. Keep Custom / Other option at the end
     list.push({
       value: 'custom_other',
-      label: 'Other / Custom Skill',
-      subtext: 'Enter your custom trade or skill',
+      label: isHindi ? 'अन्य कौशल' : 'Other Skill',
+      subtext: isHindi ? 'अपना कस्टम कौशल दर्ज करें' : 'Enter your custom trade or skill',
     });
 
     return list;
@@ -1868,7 +1870,7 @@ export default function WorkerOnboardingWizard({
             <div className="border-2 border-dashed border-slate-300 hover:border-[#1264D6] bg-slate-50/50 rounded-2xl p-6 text-center transition-colors">
               <Upload className="w-9 h-9 text-slate-400 mx-auto mb-2" />
               <p className="text-xs font-bold text-slate-800">
-                Upload Skill Certificate / ITI Proof / Trade License <span className="text-red-500">*</span>
+                {isHindi ? 'कौशल प्रमाण पत्र या ट्रेड लाइसेंस अपलोड करें' : 'Upload Skill Certificate or Trade License'} <span className="text-red-500">*</span>
               </p>
               <p className="text-[11px] text-slate-400 mt-1">PDF, JPG, PNG up to 5MB</p>
 
@@ -2013,7 +2015,7 @@ export default function WorkerOnboardingWizard({
                       <strong className="text-slate-900">{fullName || 'Not provided'}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-400 block font-medium">Date of Birth / Gender</span>
+                      <span className="text-slate-400 block font-medium">{isHindi ? 'जन्म तिथि एवं लिंग' : 'Date of Birth & Gender'}</span>
                       <strong className="text-slate-900">{dob} ({gender})</strong>
                     </div>
                   </div>
