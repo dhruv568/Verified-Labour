@@ -93,81 +93,83 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-22 gap-4 lg:gap-6 xl:gap-8">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 w-full">
+        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 gap-2 sm:gap-3 lg:gap-4 xl:gap-6 min-w-0">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
+          <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-0" aria-label="Verified Labour Home">
             <Logo variant="header" priority />
           </Link>
 
           {/* Desktop Nav Links (Renders ONLY active language) */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-semibold text-slate-700 shrink-0">
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-4 2xl:gap-6 text-xs xl:text-[13px] 2xl:text-sm font-semibold text-slate-700 min-w-0 shrink">
             <Link
               href="/"
-              className="text-slate-800 hover:text-[#1464D2] transition-colors font-bold whitespace-nowrap"
+              className="text-slate-800 hover:text-[#1464D2] transition-colors font-bold whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1464D2] rounded-md"
             >
               {t.home}
             </Link>
             <Link
               href="/workers"
-              className="hover:text-[#1464D2] transition-colors whitespace-nowrap"
+              className="hover:text-[#1464D2] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1464D2] rounded-md"
             >
               {t.findWorker}
             </Link>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
-              className="hover:text-[#0B9B5A] transition-colors text-slate-700 whitespace-nowrap"
+              className="hover:text-[#0B9B5A] transition-colors text-slate-700 whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#0B9B5A] rounded-md cursor-pointer"
             >
               {t.becomeWorker}
             </button>
             <Link
               href="/#how"
               onClick={handleHowItWorksClick}
-              className="hover:text-[#1464D2] transition-colors whitespace-nowrap"
+              className="hover:text-[#1464D2] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1464D2] rounded-md"
             >
               {t.howItWorks}
             </Link>
             <Link
               href="/about"
-              className="hover:text-[#1464D2] transition-colors whitespace-nowrap"
+              className="hover:text-[#1464D2] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1464D2] rounded-md"
             >
               {t.about}
             </Link>
             <Link
               href="/contact"
-              className="hover:text-[#1464D2] transition-colors whitespace-nowrap"
+              className="hover:text-[#1464D2] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1464D2] rounded-md"
             >
               {t.contact}
             </Link>
           </nav>
 
           {/* Right Action Area: Location + Language + Auth */}
-          <div className="hidden md:flex items-center gap-2.5 xl:gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 min-w-0">
             <LocationSelector />
             <LanguageSelector />
 
             {sessionUser ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
+                  type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-slate-300 hover:border-[#1464D2] transition-colors text-xs font-semibold bg-white min-h-[38px] h-9.5"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-slate-300 hover:border-[#1464D2] transition-colors text-xs font-semibold bg-white min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 focus:outline-none focus:ring-2 focus:ring-[#1464D2]"
+                  aria-expanded={userDropdownOpen}
                 >
-                  <div className="w-7 h-7 rounded-full bg-slate-100 text-[#0F2A5F] flex items-center justify-center font-bold text-xs">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-100 text-[#0F2A5F] flex items-center justify-center font-bold text-xs shrink-0">
                     {sessionUser.customerProfile?.fullName?.[0] ||
                       sessionUser.workerProfile?.fullName?.[0] ||
                       sessionUser.phone.slice(-2)}
                   </div>
-                  <span className="text-slate-800 font-semibold max-w-[110px] truncate text-xs">
+                  <span className="text-slate-800 font-semibold max-w-[90px] sm:max-w-[110px] truncate text-xs">
                     {sessionUser.customerProfile?.fullName ||
                       sessionUser.workerProfile?.fullName ||
                       sessionUser.phone}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-50 text-[#0B9B5A] border border-brand-200 uppercase font-mono font-bold">
+                  <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-brand-50 text-[#0B9B5A] border border-brand-200 uppercase font-mono font-bold shrink-0">
                     {sessionUser.role}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 </button>
 
                 {userDropdownOpen && (
@@ -216,12 +218,12 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 font-devanagari">
+              <div className="flex items-center gap-1.5 sm:gap-2 font-devanagari shrink-0">
                 {/* Login Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                  className="px-3.5 sm:px-4 xl:px-5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 text-xs font-bold text-white bg-[#0B9B5A] hover:bg-[#08783b] rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#0B9B5A] focus:ring-offset-1"
                 >
                   {t.login}
                 </button>
@@ -230,7 +232,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                  className="px-3.5 sm:px-4 xl:px-5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 text-xs font-bold text-white bg-[#1464D2] hover:bg-blue-700 rounded-full shadow-xs transition-all flex items-center justify-center shrink-0 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#1464D2] focus:ring-offset-1"
                 >
                   {t.signUp}
                 </button>
@@ -239,16 +241,18 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-11 h-11 flex items-center justify-center text-slate-700 hover:text-slate-950 rounded-xl bg-slate-100 hover:bg-slate-200 focus:outline-none transition-colors"
+              className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-slate-700 hover:text-slate-950 rounded-xl bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1464D2] transition-colors"
               aria-label="Toggle Navigation Menu"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-slate-800" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-800" />
               ) : (
-                <Menu className="w-6 h-6 text-slate-800" />
+                <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-slate-800" />
               )}
             </button>
           </div>

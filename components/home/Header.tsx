@@ -95,83 +95,85 @@ export default function Header({ onOpenAuth }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs w-full">
       {content.announcement_enabled === 'true' && content.announcement_text && (
         <div className="bg-gradient-to-r from-[#082B66] via-[#1264D6] to-[#082B66] text-white py-2 px-4 text-center text-xs font-bold flex items-center justify-center gap-2 border-b border-blue-900 shadow-inner">
           <span>{content.announcement_text}</span>
         </div>
       )}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-22 gap-4 lg:gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 w-full">
+        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 gap-2 sm:gap-3 lg:gap-4 xl:gap-6 min-w-0">
           {/* Left: Transparent Verified Labour Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="Verified Labour Home">
+          <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-0" aria-label="Verified Labour Home">
             <Logo variant="header" priority />
           </Link>
 
           {/* Center Navigation Links (Renders ONLY current active language from context) */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs xl:text-sm font-bold text-slate-700 shrink-0">
+          <nav className="hidden lg:flex items-center gap-2 xl:gap-4 2xl:gap-6 text-xs xl:text-[13px] 2xl:text-sm font-bold text-slate-700 min-w-0 shrink">
             <Link
               href="/"
-              className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"
             >
               {t.home}
             </Link>
             <Link
               href="/workers"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"
             >
               {t.findWorker}
             </Link>
             <button
               type="button"
               onClick={() => onOpenAuth?.('register', 'WORKER')}
-              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap"
+              className="hover:text-[#079447] transition-colors text-slate-700 whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#079447] rounded-md cursor-pointer"
             >
               {t.becomeWorker}
             </button>
             <Link
               href="/#how"
               onClick={handleHowItWorksClick}
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"
             >
               {t.howItWorks}
             </Link>
             <Link
               href="/about"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"
             >
               {t.about}
             </Link>
             <Link
               href="/contact"
-              className="hover:text-[#1264D6] transition-colors whitespace-nowrap"
+              className="hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"
             >
               {t.contact}
             </Link>
           </nav>
 
           {/* Right Tools: Location Selector + Language Selector + Green Login + Blue Sign Up */}
-          <div className="hidden md:flex items-center gap-2 xl:gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 min-w-0">
             <LocationSelector />
             <LanguageSelector />
 
             {sessionUser ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
+                  type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-slate-300 hover:border-[#1264D6] transition-colors text-xs font-semibold bg-white min-h-[38px] h-9.5"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-slate-300 hover:border-[#1264D6] transition-colors text-xs font-semibold bg-white min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 focus:outline-none focus:ring-2 focus:ring-[#1264D6]"
+                  aria-expanded={userDropdownOpen}
                 >
-                  <div className="w-7 h-7 rounded-full bg-slate-100 text-[#082B66] flex items-center justify-center font-bold text-xs">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-100 text-[#082B66] flex items-center justify-center font-bold text-xs shrink-0">
                     {sessionUser.customerProfile?.fullName?.[0] ||
                       sessionUser.workerProfile?.fullName?.[0] ||
                       sessionUser.phone.slice(-2)}
                   </div>
-                  <span className="text-slate-800 max-w-[100px] truncate font-semibold">
+                  <span className="text-slate-800 max-w-[90px] sm:max-w-[100px] truncate font-semibold">
                     {sessionUser.customerProfile?.fullName ||
                       sessionUser.workerProfile?.fullName ||
                       sessionUser.phone}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 </button>
 
                 {userDropdownOpen && (
@@ -201,12 +203,12 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Green Login Button */}
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('login')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                  className="px-3.5 sm:px-4 xl:px-5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 text-xs font-bold text-white bg-[#079447] hover:bg-[#067c3b] rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#079447] focus:ring-offset-1"
                 >
                   {t.login}
                 </button>
@@ -215,7 +217,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 <button
                   type="button"
                   onClick={() => onOpenAuth?.('register', 'CUSTOMER')}
-                  className="px-4.5 xl:px-5 py-2 min-h-[38px] h-9.5 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                  className="px-3.5 sm:px-4 xl:px-5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 text-xs font-bold text-white bg-[#1264D6] hover:bg-blue-700 rounded-full shadow-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#1264D6] focus:ring-offset-1"
                 >
                   {t.signUp}
                 </button>
@@ -224,13 +226,15 @@ export default function Header({ onOpenAuth }: HeaderProps) {
           </div>
 
           {/* Mobile Hamburger Button */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-11 h-11 flex items-center justify-center text-slate-700 hover:text-slate-950 rounded-xl bg-slate-100 hover:bg-slate-200 focus:outline-none transition-colors"
+              className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-slate-700 hover:text-slate-950 rounded-xl bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1264D6] transition-colors"
               aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </div>

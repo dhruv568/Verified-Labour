@@ -77,17 +77,18 @@ export default function LanguageSelector({
   }
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative shrink-0 ${className}`} ref={dropdownRef}>
       {/* Header Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 min-h-[38px] h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors cursor-pointer select-none shrink-0"
+        className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-[#1264D6]"
         title="Change Language / भाषा बदलें"
         aria-expanded={isOpen}
+        aria-label="Change Language / भाषा बदलें"
       >
         <Globe className="w-3.5 h-3.5 text-[#1264D6] shrink-0" />
-        <span className="font-semibold text-slate-800">
+        <span className="font-semibold text-[11px] sm:text-xs text-slate-800 whitespace-nowrap">
           {currentLang.code === 'hi' ? 'हिन्दी' : 'English'}
         </span>
         <ChevronDown
