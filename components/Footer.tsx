@@ -48,9 +48,9 @@ export default function Footer({ variant = 'compact' }: FooterProps) {
 
   if (variant === 'full') {
     return (
-      <footer className="bg-white text-slate-600 pt-12 sm:pt-16 pb-8 border-t border-slate-200 mt-auto font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-10 pb-10 sm:pb-12 border-b border-slate-200">
+      <footer className="bg-white text-slate-600 pt-12 sm:pt-16 pb-10 border-t border-slate-200 mt-auto font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-10">
             {/* Column 1: Brand & Identity */}
             <div className="space-y-4 sm:col-span-2 lg:col-span-1">
               <Link href="/" className="flex items-center gap-2 group" aria-label="Verified Labour Home">
@@ -261,47 +261,8 @@ export default function Footer({ variant = 'compact' }: FooterProps) {
             </div>
           </div>
 
-          {/* Bottom Bar */}
-          <div className="pt-6 flex flex-col lg:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-medium text-center lg:text-left">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-              <p>© 2026 Verified Labour. {t.allRightsReserved}</p>
-              <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 font-devanagari">
-                <Link href="/legal/privacy" className="hover:text-[#0B9B5A] transition-colors">
-                  {t.privacyPolicy}
-                </Link>
-                <span className="text-slate-300 select-none">•</span>
-                <Link href="/legal/terms" className="hover:text-[#0B9B5A] transition-colors">
-                  {t.termsConditions}
-                </Link>
-                <span className="text-slate-300 select-none">•</span>
-                <Link href="/contact" className="hover:text-[#0B9B5A] transition-colors">
-                  {t.contact}
-                </Link>
-              </div>
-            </div>
-            <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-xl font-devanagari">
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-tight">
-                {t.parentCompany}
-              </span>
-              <span className="text-xs sm:text-sm font-extrabold text-slate-700 tracking-tight leading-snug">
-                {COMPANY_NAME}
-              </span>
-              <span className="text-[11px] text-slate-500 font-medium">
-                {t.registeredOffice}: {COMPANY_REGISTERED_ADDRESS}
-              </span>
-            </div>
-            <p>
-              Powered by{' '}
-              <a
-                href="https://myprofunnels.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-[#0B9B5A] transition-colors font-semibold text-slate-600 underline"
-              >
-                MyProFunnels ❤️
-              </a>
-            </p>
-          </div>
+          {/* Clean Balanced Footer Core Section */}
+          <FooterCoreSection hasTopBorder={true} />
         </div>
       </footer>
     );
@@ -309,35 +270,88 @@ export default function Footer({ variant = 'compact' }: FooterProps) {
 
   // Compact Variant (Default for Customer, Worker & App pages)
   return (
-    <footer className="w-full bg-white border-t border-slate-200 py-4 sm:py-5 mt-auto text-xs text-slate-500 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 text-center md:text-left">
-        <p className="font-medium text-slate-600">
+    <footer className="w-full bg-white border-t border-slate-200 py-8 mt-auto font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FooterCoreSection hasTopBorder={false} />
+      </div>
+    </footer>
+  );
+}
+
+function FooterCoreSection({ hasTopBorder = true }: { hasTopBorder?: boolean }) {
+  const { t } = useLanguage();
+
+  return (
+    <div
+      className={`grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 lg:gap-12 text-left items-start font-sans ${
+        hasTopBorder ? 'pt-8 border-t border-slate-200/80' : ''
+      }`}
+    >
+      {/* LEFT COLUMN: Copyright */}
+      <div className="flex flex-col space-y-1.5 text-left">
+        <p className="text-xs sm:text-sm font-semibold text-slate-700 tracking-tight leading-relaxed font-sans">
           © 2026 Verified Labour. {t.allRightsReserved}
         </p>
+      </div>
 
-        <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs font-semibold text-slate-600 flex-wrap font-devanagari">
+      {/* CENTER COLUMN: Navigation Links */}
+      <div className="flex flex-col space-y-2 text-left md:items-center">
+        <div className="flex flex-col space-y-2 text-left w-full md:w-auto font-devanagari">
           <Link
             href="/legal/privacy"
-            className="hover:text-[#0B9B5A] transition-colors py-0.5"
+            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
           >
             {t.privacyPolicy}
           </Link>
-          <span className="text-slate-300 select-none">•</span>
           <Link
             href="/legal/terms"
-            className="hover:text-[#0B9B5A] transition-colors py-0.5"
+            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
           >
             {t.termsConditions}
           </Link>
-          <span className="text-slate-300 select-none">•</span>
           <Link
             href="/contact"
-            className="hover:text-[#0B9B5A] transition-colors py-0.5"
+            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
           >
             {t.contact}
           </Link>
         </div>
       </div>
-    </footer>
+
+      {/* RIGHT COLUMN: Parent Company & Registered Office + Powered by */}
+      <div className="flex flex-col space-y-3 text-left">
+        <div className="space-y-1 font-devanagari">
+          <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block leading-tight">
+            {t.parentCompany}
+          </span>
+          <span className="text-xs sm:text-sm font-bold text-slate-800 block tracking-tight break-words">
+            {COMPANY_NAME}
+          </span>
+        </div>
+
+        <div className="text-xs text-slate-500 font-normal leading-relaxed space-y-0.5">
+          <span className="font-semibold text-slate-600 block font-devanagari">
+            {t.registeredOffice}:
+          </span>
+          <p className="text-slate-500 text-xs leading-normal break-words">
+            Bard No. 8, Basundhara Colony,
+            <br />
+            Chandmari, Lalitpur (UP) 284403
+          </p>
+        </div>
+
+        <div className="pt-1 text-xs text-slate-500 font-medium">
+          Powered by{' '}
+          <a
+            href="https://myprofunnels.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors underline decoration-slate-300 underline-offset-2"
+          >
+            MyProFunnels
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
