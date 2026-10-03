@@ -664,4 +664,22 @@ model ActiveJobLocation {
   worker WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
 }
 
+model ContactMessage {
+  id           String    @id @default(uuid())
+  name         String
+  phone        String
+  email        String
+  subject      String
+  message      String
+  isRead       Boolean   @default(false)
+  respondedAt  DateTime?
+  responseNote String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+
 

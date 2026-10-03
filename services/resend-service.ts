@@ -764,3 +764,149 @@ Powered by MyProFunnels ❤️ (https://myprofunnels.com/)`;
   return { html, text };
 }
 
+export interface SendContactResponseParams {
+  name: string;
+  email: string;
+}
+
+/**
+ * Sends a confirmation/reply email to a user who submitted a feedback/contact message.
+ * Formatted cleanly according to Verified Labour brand templates.
+ */
+export async function sendContactResponseEmail(params: SendContactResponseParams): Promise<{ success: boolean; error?: string }> {
+  const { name, email } = params;
+  const normalizedEmail = email.toLowerCase().trim();
+  const userName = name.trim() || 'Valued User';
+  const appUrl = getAppBaseUrl();
+  const logoUrl = process.env.PUBLIC_LOGO_URL || 'https://raw.githubusercontent.com/dhruv568/Verified-Labour/main/public/logo.png';
+
+  const subject = 'Thank you for contacting Verified Labour';
+
+  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${subject}</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #F7F9FC; }
+    @media screen and (max-width: 600px) {
+      .email-container { width: 100% !important; padding: 12px !important; }
+      .content-card { padding: 24px 16px !important; border-radius: 12px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F7F9FC; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F9FC; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container" style="max-width: 600px; margin: 0 auto;">
+          <!-- HEADER -->
+          <tr>
+            <td align="center" style="padding-bottom: 24px; text-align: center;">
+              <a href="${appUrl}" target="_blank" style="text-decoration: none; display: inline-block;">
+                <img src="${logoUrl}" alt="Verified Labour" width="180" style="display: block; width: 180px; max-width: 180px; height: auto; border: 0;" />
+              </a>
+              <div style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px;">
+                Verified. Nearby. Reliable.
+              </div>
+            </td>
+          </tr>
+
+          <!-- MAIN CARD -->
+          <tr>
+            <td class="content-card" style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 12px rgba(15, 42, 95, 0.04);">
+              <h1 style="font-size: 22px; font-weight: 800; color: #0F2A5F; margin: 0 0 16px 0; letter-spacing: -0.5px;">
+                Thank you for contacting Verified Labour
+              </h1>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">
+                Hello <strong>${userName}</strong>,
+              </p>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">
+                Thank you for reaching out to Verified Labour.
+              </p>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">
+                We have received your message and our team will review it. We appreciate you taking the time to share your feedback or concern with us.
+              </p>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 16px 0;">
+                If further information is required, our team will contact you.
+              </p>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+                Thank you for helping us improve Verified Labour.
+              </p>
+
+              <div style="font-size: 15px; line-height: 1.6; color: #0F2A5F; font-weight: 700;">
+                Regards,<br />
+                Verified Labour Team
+              </div>
+
+              <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #F1F5F9; font-size: 13px; color: #64748B; line-height: 1.5;">
+                Need assistance? Reach out to our support team anytime at <a href="mailto:help@verifiedlabour.com" style="color: #08783b; font-weight: 600; text-decoration: none;">help@verifiedlabour.com</a> or call +91 9109019090.
+              </div>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding: 28px 16px; text-align: center; color: #64748B; font-size: 12px; line-height: 1.6;">
+              <div style="font-size: 14px; font-weight: 700; color: #0F2A5F; margin-bottom: 4px;">Verified Labour</div>
+              <div style="font-size: 12px; color: #64748B; margin-bottom: 16px;">Skilled People. Stronger Communities. A Better India.</div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 12px;">Support Email: help@verifiedlabour.com | Helpline: +91 9109019090</div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;">© 2026 Verified Labour. All rights reserved.</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Hello ${userName},
+
+Thank you for reaching out to Verified Labour.
+
+We have received your message and our team will review it. We appreciate you taking the time to share your feedback or concern with us.
+
+If further information is required, our team will contact you.
+
+Thank you for helping us improve Verified Labour.
+
+Regards,
+Verified Labour Team`;
+
+  if (resend) {
+    try {
+      const response = await resend.emails.send({
+        from: EMAIL_FROM,
+        to: normalizedEmail,
+        subject,
+        html,
+        text,
+      });
+
+      if (response.error) {
+        console.error('[Resend Response Email Error]', response.error);
+        return { success: false, error: response.error.message };
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('[Resend Response Email Exception]', err);
+      return { success: false, error: err.message || 'Failed to dispatch email via Resend' };
+    }
+  } else {
+    console.log(`[Mock Email] Contact Response Email sent to ${normalizedEmail} for ${userName}`);
+    return { success: true };
+  }
+}
+
+

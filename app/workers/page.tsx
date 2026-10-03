@@ -155,7 +155,7 @@ function FindWorkerContent() {
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight font-devanagari">
-              {isHindi ? 'अपने पास सत्यापित कामगार और कुशल पेशेवर बुक करें / Book Verified Workers' : 'Find & Book Verified Skilled Workers Near You / कामगार खोजें'}
+              {isHindi ? 'अपने पास सत्यापित कामगार और कुशल पेशेवर बुक करें' : 'Find & Book Verified Skilled Workers Near You'}
             </h1>
 
             <p className="text-xs sm:text-sm text-blue-100 font-medium leading-relaxed font-devanagari">
@@ -176,7 +176,7 @@ function FindWorkerContent() {
                 type="text"
                 placeholder={
                   isHindi
-                    ? 'इलेक्ट्रीशियन, प्लंबर, पेंटर, रसोइया, सफाईकर्मी खोजें... / Search workers...'
+                    ? 'इलेक्ट्रीशियन, प्लंबर, पेंटर, रसोइया, सफाईकर्मी खोजें...'
                     : 'Search electrician, plumber, painter, cook, cleaner...'
                 }
                 value={searchQuery}
@@ -287,7 +287,7 @@ function FindWorkerContent() {
                   onClick={() => handleSelectCategory('')}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
-                  {isHindi ? 'सभी सेवाएं देखें (Clear Filter)' : 'Clear Filter / View All'}
+                  {isHindi ? 'सभी सेवाएं देखें' : 'View All Services'}
                 </button>
               )}
               <button

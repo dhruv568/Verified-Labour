@@ -27,7 +27,7 @@ export default function AboutPage() {
   const { isHindi } = useLanguage();
   const { content } = useContent();
 
-  const heroTitle = content.about_title || (isHindi ? 'हमारे बारे में / About Us' : 'About Us / हमारे बारे में');
+  const heroTitle = content.about_title || (isHindi ? 'हमारे बारे में' : 'About Us');
   const heroSubtitle = content.about_subtitle || (isHindi ? 'भारत का भरोसेमंद ऑन-डिमांड लेबर प्लेटफ़ॉर्म' : "India's Trusted On-Demand Labour Marketplace");
   const introText = content.about_content || (isHindi
     ? 'Verified Labour लोगों को भरोसेमंद, सत्यापित और कुशल सेवा पेशेवरों से जोड़ने के लिए बनाया गया है।'
@@ -41,7 +41,7 @@ export default function AboutPage() {
     ? 'पूरे भारत के हर शहर और कस्बे में विश्वसनीय सेवाएं पहुँचाना, जहाँ कामगारों को सही सम्मान और ग्राहकों को 100% सुरक्षा मिले।'
     : 'Building India\'s most accessible local workforce network, empowering skilled craftsmen with dignified opportunities and ensuring 100% safety for households.');
 
-  const ctaText = content.about_cta_text || (isHindi ? '30s में बुक करें / Book in 30s' : 'Book in 30s / 30s में बुक करें');
+  const ctaText = content.about_cta_text || (isHindi ? '30 सेकंड में बुक करें' : 'Book in 30 Seconds');
   const ctaLink = content.about_cta_link || '/workers';
 
   return (
@@ -52,7 +52,7 @@ export default function AboutPage() {
         {/* 1. HERO SECTION */}
         <div className="bg-gradient-to-r from-[#082B66] via-[#0F3880] to-[#1264D6] rounded-3xl p-6 sm:p-12 text-white shadow-xl text-center space-y-4">
           <span className="px-3.5 py-1 bg-amber-400 text-[#082B66] font-black text-xs rounded-full uppercase font-devanagari tracking-wider inline-block">
-            {isHindi ? 'हमारे बारे में / About Us' : 'About Us / हमारे बारे में'}
+            {isHindi ? 'हमारे बारे में' : 'About Us'}
           </span>
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight font-devanagari">
             {heroTitle}
@@ -69,7 +69,7 @@ export default function AboutPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xs space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#079447] border border-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-[#079447]" />
-            <span className="font-devanagari">हमारा उद्देश्य / Our Purpose</span>
+            <span className="font-devanagari">{isHindi ? 'हमारा उद्देश्य' : 'Our Purpose'}</span>
           </div>
           <h2 className="text-xl sm:text-3xl font-black text-[#082B66] font-devanagari">
             {isHindi ? 'कुशल और भरोसेमंद कामगार आसानी से पाएं' : 'Connecting You with Trusted Skilled Professionals'}
@@ -79,14 +79,14 @@ export default function AboutPage() {
           </p>
           <div className="grid grid-cols-2 min-[440px]:grid-cols-4 gap-2.5 pt-2">
             {[
-              { label: 'इलेक्ट्रीशियन / Electrician' },
-              { label: 'प्लंबर / Plumber' },
-              { label: 'बढ़ई / Carpenter' },
-              { label: 'रसोइया / Cook' },
-              { label: 'सफाईकर्मी / Cleaner' },
-              { label: 'मैकेनिक / Mechanic' },
-              { label: 'ड्राइवर / Driver' },
-              { label: 'अन्य सेवाएं / Other Services' },
+              { label: isHindi ? 'इलेक्ट्रीशियन' : 'Electrician' },
+              { label: isHindi ? 'प्लंबर' : 'Plumber' },
+              { label: isHindi ? 'बढ़ई' : 'Carpenter' },
+              { label: isHindi ? 'रसोइया' : 'Cook' },
+              { label: isHindi ? 'सफाईकर्मी' : 'Cleaner' },
+              { label: isHindi ? 'मैकेनिक' : 'Mechanic' },
+              { label: isHindi ? 'ड्राइवर' : 'Driver' },
+              { label: isHindi ? 'अन्य सेवाएं' : 'Other Services' },
             ].map((item, idx) => (
               <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 text-center font-bold text-xs text-[#082B66] font-devanagari">
                 {item.label}
@@ -98,7 +98,7 @@ export default function AboutPage() {
         {/* 3. WHY VERIFIED LABOUR (4 FEATURE CARDS) */}
         <div className="space-y-4">
           <h2 className="text-xl sm:text-2xl font-black text-[#082B66] text-center font-devanagari">
-            {isHindi ? 'वेरिफाइड लेबर ही क्यों? / Why Verified Labour' : 'Why Choose Verified Labour'}
+            {isHindi ? 'वेरिफाइड लेबर ही क्यों?' : 'Why Choose Verified Labour'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
@@ -106,7 +106,7 @@ export default function AboutPage() {
                 <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
               </div>
               <h3 className="text-base font-black text-[#082B66] font-devanagari">
-                सत्यापित लोग / Verified People
+                {isHindi ? 'सत्यापित लोग' : 'Verified People'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed font-devanagari">
                 {isHindi
@@ -120,7 +120,7 @@ export default function AboutPage() {
                 <MapPin className="w-5 h-5 stroke-[2.5]" />
               </div>
               <h3 className="text-base font-black text-[#082B66] font-devanagari">
-                नज़दीकी सेवा / Nearby Service
+                {isHindi ? 'नज़दीकी सेवा' : 'Nearby Service'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed font-devanagari">
                 {isHindi
@@ -134,7 +134,7 @@ export default function AboutPage() {
                 <Clock className="w-5 h-5 stroke-[2.5]" />
               </div>
               <h3 className="text-base font-black text-[#082B66] font-devanagari">
-                तेज़ बुकिंग / Quick Booking
+                {isHindi ? 'तेज़ बुकिंग' : 'Quick Booking'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed font-devanagari">
                 {isHindi
@@ -148,7 +148,7 @@ export default function AboutPage() {
                 <HeartHandshake className="w-5 h-5 stroke-[2.5]" />
               </div>
               <h3 className="text-base font-black text-[#082B66] font-devanagari">
-                सुरक्षित अनुभव / Safe Experience
+                {isHindi ? 'सुरक्षित अनुभव' : 'Safe Experience'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed font-devanagari">
                 {isHindi
@@ -162,15 +162,15 @@ export default function AboutPage() {
         {/* 4. HOW IT WORKS (SIMPLE FLOW) */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xs space-y-6">
           <h2 className="text-xl sm:text-2xl font-black text-[#082B66] font-devanagari">
-            {isHindi ? 'यह कैसे काम करता है? / How It Works' : 'How It Works'}
+            {isHindi ? 'यह कैसे काम करता है?' : 'How It Works'}
           </h2>
 
           <div className="grid grid-cols-1 min-[460px]:grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { step: '1', title: 'सेवा चुनें / Select Service', icon: Search },
-              { step: '2', title: 'स्थान चुनें / Choose Location', icon: MapPin },
-              { step: '3', title: 'कामगार चुनें / Choose Worker', icon: UserCheck },
-              { step: '4', title: 'बुक करें / Book Service', icon: CalendarCheck },
+              { step: '1', title: isHindi ? 'सेवा चुनें' : 'Select Service', icon: Search },
+              { step: '2', title: isHindi ? 'स्थान चुनें' : 'Choose Location', icon: MapPin },
+              { step: '3', title: isHindi ? 'कामगार चुनें' : 'Choose Worker', icon: UserCheck },
+              { step: '4', title: isHindi ? 'बुक करें' : 'Book Service', icon: CalendarCheck },
             ].map((s) => {
               const Icon = s.icon;
               return (
@@ -188,7 +188,7 @@ export default function AboutPage() {
         {/* 5. OUR VISION */}
         <div className="bg-gradient-to-r from-emerald-900 to-[#082B66] rounded-3xl p-6 sm:p-10 text-white shadow-md space-y-3">
           <h2 className="text-xl sm:text-2xl font-black text-amber-300 font-devanagari">
-            {isHindi ? 'हमारा विज़न / Our Vision' : 'Our Vision'}
+            {isHindi ? 'हमारा विज़न' : 'Our Vision'}
           </h2>
           <p className="text-sm leading-relaxed text-slate-100 font-medium font-devanagari">
             {visionText}

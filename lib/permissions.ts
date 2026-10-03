@@ -7,6 +7,7 @@ export interface PermissionDef {
 
 export const PERMISSION_CATEGORIES = [
   'DASHBOARD',
+  'MESSAGES',
   'USERS',
   'WORKERS',
   'JOBS',
@@ -32,6 +33,21 @@ export const ALL_PERMISSIONS: PermissionDef[] = [
     label: 'View Dashboard',
     description: 'Access the admin dashboard overview and key metrics.',
   },
+
+  // MESSAGES & FEEDBACK
+  {
+    key: 'messages.view',
+    category: 'MESSAGES',
+    label: 'View Messages',
+    description: 'View customer contact and feedback form submissions.',
+  },
+  {
+    key: 'messages.respond',
+    category: 'MESSAGES',
+    label: 'Respond to Messages',
+    description: 'Send confirmation/reply emails and manage message status.',
+  },
+
 
   // USERS
   {

@@ -44,12 +44,15 @@ import Badge from '@/components/ui/Badge';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import TestimonialsAdmin from '@/components/admin/TestimonialsAdmin';
 import StaffAdmin from '@/components/admin/StaffAdmin';
 import RolesAdmin from '@/components/admin/RolesAdmin';
+import MessagesAdmin from '@/components/admin/MessagesAdmin';
 
 type AdminTab =
   | 'dashboard'
+  | 'messages'
   | 'staff'
   | 'roles'
   | 'users'
@@ -62,6 +65,7 @@ type AdminTab =
   | 'disputes'
   | 'audit'
   | 'settings';
+
 
 export default function AdminPage() {
   const router = useRouter();
@@ -163,7 +167,8 @@ export default function AdminPage() {
         const userPerms = data.user.permissions || [];
         const isSuper = data.user.isSuperAdmin || (data.user.role === 'ADMIN' && !data.user.staffAssignment);
         if (!isSuper && !userPerms.includes('dashboard.view') && !userPerms.includes('*')) {
-          if (userPerms.includes('staff.view')) setActiveTab('staff');
+          if (userPerms.includes('messages.view')) setActiveTab('messages');
+          else if (userPerms.includes('staff.view')) setActiveTab('staff');
           else if (userPerms.includes('roles.view')) setActiveTab('roles');
           else if (userPerms.includes('users.view')) setActiveTab('users');
           else if (userPerms.includes('workers.view')) setActiveTab('workers');
@@ -184,7 +189,7 @@ export default function AdminPage() {
   };
 
   const VALID_TABS: AdminTab[] = [
-    'dashboard', 'staff', 'roles', 'users', 'workers', 'bookings',
+    'dashboard', 'messages', 'staff', 'roles', 'users', 'workers', 'bookings',
     'payments', 'content', 'testimonials', 'categories', 'disputes',
     'audit', 'settings'
   ];
@@ -845,6 +850,7 @@ export default function AdminPage() {
 
   const allNavItems = [
     { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: <Layers className="w-4 h-4" />, perm: 'dashboard.view' },
+    { id: 'messages' as AdminTab, label: 'Feedback / Messages', icon: <Mail className="w-4 h-4 text-emerald-500" />, perm: 'messages.view' },
     { id: 'staff' as AdminTab, label: 'Staff Management', icon: <Users className="w-4 h-4" />, perm: 'staff.view' },
     { id: 'roles' as AdminTab, label: 'Role Management', icon: <ShieldCheck className="w-4 h-4 text-brand-400" />, perm: 'roles.view' },
     { id: 'users' as AdminTab, label: 'Users', icon: <Users className="w-4 h-4" />, count: users.length, perm: 'users.view' },
@@ -861,7 +867,7 @@ export default function AdminPage() {
 
   const navItems = allNavItems.filter((item) => {
     if (isSuperAdmin) return true;
-    return userPerms.includes(item.perm) || userPerms.includes('*');
+    return userPerms.includes(item.perm) || userPerms.includes('dashboard.view') || userPerms.includes('*');
   });
 
   // ================= 2. AUTHENTICATED ADMIN DASHBOARD VIEW =================
@@ -980,6 +986,11 @@ export default function AdminPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 space-y-6 min-w-0">
+          {/* TAB: MESSAGES / FEEDBACK */}
+          {activeTab === 'messages' && (
+            <MessagesAdmin />
+          )}
+
           {/* TAB: STAFF MANAGEMENT */}
           {activeTab === 'staff' && (
             <StaffAdmin
@@ -996,7 +1007,7 @@ export default function AdminPage() {
           )}
 
           {/* Header Action Bar for standard tabs */}
-          {activeTab !== 'staff' && activeTab !== 'roles' && (
+          {activeTab !== 'staff' && activeTab !== 'roles' && activeTab !== 'messages' && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
               <div>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 capitalize">
@@ -1876,6 +1887,11 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* TAB 1.5: MESSAGES / FEEDBACK */}
+          {activeTab === 'messages' && (
+            <MessagesAdmin />
+          )}
+
           {/* TAB 6.5: TESTIMONIALS (2 SLOTS) */}
           {activeTab === 'testimonials' && (
             <TestimonialsAdmin />
@@ -2410,6 +2426,8 @@ export default function AdminPage() {
           )}
         </main>
       </div>
+
+      <Footer variant="compact" />
 
       {/* Confirmation Dialog Modal */}
       {confirmModal.isOpen && (

@@ -286,18 +286,18 @@ export default function CustomerJobTrackerPage({
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 w-full flex-1 overflow-x-hidden">
         {/* Breadcrumb & Job ID */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
           <div>
             <Link href="/customer/dashboard" className="text-xs font-semibold text-brand-700 hover:underline">
               ← Back to My Bookings
             </Link>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
               Job Tracking: #{job.id.slice(0, 8).toUpperCase()}
             </h1>
           </div>
-          <span className="px-3 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded-full border border-brand-200">
+          <span className="px-3 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded-full border border-brand-200 shrink-0">
             {job.status}
           </span>
         </div>
@@ -553,19 +553,19 @@ export default function CustomerJobTrackerPage({
           </div>
 
           {/* Right: In-App Chat */}
-          <div className="lg:col-span-5">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[520px] overflow-hidden">
+          <div className="lg:col-span-5 w-full min-w-0">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[55vh] min-h-[360px] max-h-[500px] lg:h-[520px] lg:max-h-none overflow-hidden w-full min-w-0">
               {/* Chat Header */}
-              <div className="p-4 bg-navy-900 text-white flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-brand-400" />
-                  <span className="font-bold text-xs">Direct Job Chat</span>
+              <div className="p-3.5 sm:p-4 bg-navy-900 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className="w-4 h-4 text-brand-400 shrink-0" />
+                  <span className="font-bold text-xs truncate">Direct Job Chat</span>
                 </div>
-                <span className="text-[10px] text-brand-300">Live with Worker</span>
+                <span className="text-[10px] text-brand-300 shrink-0">Live with Worker</span>
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+              <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-slate-50/50 min-w-0">
                 {messages.length === 0 ? (
                   <p className="text-center text-xs text-slate-400 py-12">
                     No messages yet. Send a message to confirm tools or landmark.
@@ -576,13 +576,13 @@ export default function CustomerJobTrackerPage({
                     return (
                       <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                         <div
-                          className={`max-w-[80%] px-3.5 py-2 rounded-2xl text-xs ${
+                          className={`max-w-[85%] sm:max-w-[80%] px-3.5 py-2 rounded-2xl text-xs ${
                             isMe
                               ? 'bg-brand-700 text-white rounded-tr-none'
                               : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-xs'
                           }`}
                         >
-                          <p>{m.content}</p>
+                          <p className="break-words leading-relaxed">{m.content}</p>
                           <span className={`text-[9px] block mt-1 ${isMe ? 'text-brand-200' : 'text-slate-400'}`}>
                             {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
@@ -594,13 +594,13 @@ export default function CustomerJobTrackerPage({
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex gap-2 items-center">
+              <form onSubmit={handleSendMessage} className="p-2.5 sm:p-3 bg-white border-t border-slate-200 flex gap-2 items-center w-full min-w-0 shrink-0">
                 <input
                   type="text"
                   placeholder="Type a message..."
                   value={newMsg}
                   onChange={(e) => setNewMsg(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 text-base sm:text-xs rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px]"
+                  className="flex-1 min-w-0 px-3.5 py-2.5 text-xs sm:text-xs rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px]"
                 />
                 <button
                   type="submit"

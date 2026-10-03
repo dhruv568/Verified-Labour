@@ -26,30 +26,26 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
   const steps = [
     {
       num: 1,
-      title: 'Search / Select',
-      hindiTitle: 'खोजें और चुनें',
-      desc: 'Choose the service you need and enter your location.',
+      title: isHindi ? 'खोजें और चुनें' : 'Search & Select',
+      desc: isHindi ? 'अपनी आवश्यकतानुसार सेवा और अपना स्थान चुनें।' : 'Choose the service you need and enter your location.',
       icon: Search,
     },
     {
       num: 2,
-      title: 'Find & Book',
-      hindiTitle: 'कामगार चुनें',
-      desc: 'See nearby verified workers and tap to request.',
+      title: isHindi ? 'कामगार चुनें' : 'Find & Book',
+      desc: isHindi ? 'पास के सत्यापित कामगार देखें और बुक करें।' : 'See nearby verified workers and tap to request.',
       icon: ClipboardList,
     },
     {
       num: 3,
-      title: 'Worker Accepts',
-      hindiTitle: 'कामगार जुड़ेगा',
-      desc: 'Get confirmation and connect via call or chat.',
+      title: isHindi ? 'कामगार जुड़ेगा' : 'Worker Accepts',
+      desc: isHindi ? 'पुष्टि पाएं और कॉल या चैट से सीधे जुड़ें।' : 'Get confirmation and connect via call or chat.',
       icon: UserCheck,
     },
     {
       num: 4,
-      title: 'Job Done',
-      hindiTitle: 'काम पूरा और भुगतान',
-      desc: 'Rate the service and make a safe payment.',
+      title: isHindi ? 'काम पूरा और भुगतान' : 'Job Done',
+      desc: isHindi ? 'सेवा की रेटिंग दें और सुरक्षित भुगतान करें।' : 'Rate the service and make a safe payment.',
       icon: CheckCircle2,
     },
   ];
@@ -61,14 +57,14 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
         <div className="mb-10 sm:mb-14 text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-[#1264D6] rounded-full text-xs font-black border border-blue-200/80 mb-2 font-devanagari">
             <Sparkles className="w-3.5 h-3.5 text-[#1264D6]" />
-            <span>सरल और पारदर्शी प्रक्रिया</span>
+            <span>{isHindi ? 'सरल और पारदर्शी प्रक्रिया' : 'Simple & Transparent Process'}</span>
           </div>
 
           <h2 className="text-2xl sm:text-4xl font-black text-[#082B66] tracking-tight font-devanagari text-left">
             {isHindi ? 'यह कैसे काम करता है?' : 'How It Works'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            <span className="font-devanagari font-bold text-[#079447]">30s में बुक करें</span> • Book in 30s
+            <span className="font-devanagari font-bold text-[#079447]">{isHindi ? '30 सेकंड में बुक करें' : 'Book in 30 Seconds'}</span>
           </p>
         </div>
 
@@ -99,11 +95,8 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
                       {/* Titles */}
                       <div className="space-y-0.5 mb-2">
                         <h3 className="font-black text-base text-[#082B66] tracking-tight font-devanagari">
-                          {step.hindiTitle}
-                        </h3>
-                        <span className="text-xs text-[#1264D6] font-bold font-sans block">
                           {step.title}
-                        </span>
+                        </h3>
                       </div>
 
                       {/* Description */}
@@ -346,23 +339,19 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-50/70 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-emerald-50/70 rounded-full blur-2xl pointer-events-none" />
 
-            {/* Main Message (Hindi FIRST, English SECOND) */}
+            {/* Main Message */}
             <div className="space-y-1 relative z-10">
               <h3 className="text-2xl sm:text-3xl font-black text-[#082B66] font-devanagari tracking-tight">
-                30 सेकंड में बुक करें
+                {isHindi ? '30 सेकंड में बुक करें' : 'Book in 30 Seconds'}
               </h3>
-              <p className="text-xs sm:text-sm font-bold text-[#1264D6] uppercase tracking-wider font-sans">
-                Book in 30 Seconds
-              </p>
             </div>
 
-            {/* Supporting Text (Hindi FIRST, English SECOND) */}
+            {/* Supporting Text */}
             <div className="space-y-1 text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto relative z-10">
               <p className="font-devanagari font-semibold text-slate-800">
-                भरोसेमंद और सत्यापित कामगार कुछ ही चरणों में पाएं।
-              </p>
-              <p className="text-slate-500 text-[11px] sm:text-xs">
-                Find a verified and reliable professional in just a few simple steps.
+                {isHindi
+                  ? 'भरोसेमंद और सत्यापित कामगार कुछ ही चरणों में पाएं।'
+                  : 'Find a verified and reliable professional in just a few simple steps.'}
               </p>
             </div>
 
@@ -378,10 +367,7 @@ export default function HowItWorks({ onFindWorker }: HowItWorksProps = {}) {
                 }}
                 className="inline-flex items-center justify-center gap-2.5 px-7 sm:px-9 py-3.5 sm:py-4 bg-gradient-to-r from-[#079447] via-[#059669] to-[#047857] hover:from-[#067f3c] hover:to-[#03694a] text-white font-black text-sm sm:text-base rounded-full shadow-lg shadow-emerald-900/20 active:scale-95 transition-all font-devanagari group/btn border border-emerald-400/30 min-h-[48px]"
               >
-                <span>अभी कामगार बुक करें</span>
-                <span className="text-xs font-sans text-emerald-100 font-bold hidden xs:inline">
-                  / Book a Worker Now
-                </span>
+                <span>{isHindi ? 'अभी कामगार बुक करें' : 'Book a Worker Now'}</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] group-hover/btn:translate-x-1 transition-transform ml-1" />
               </Link>
             </div>

@@ -3,19 +3,30 @@
 import React from 'react';
 import Image from 'next/image';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface WorkerCTAProps {
   onRegisterWorker?: () => void;
 }
 
 export default function WorkerCTA({ onRegisterWorker }: WorkerCTAProps) {
-  const benefits = [
-    'Create Your Profile',
-    'Upload Documents',
-    'Get Verified',
-    'Receive Job Requests Near You',
-    'Grow Your Earnings',
-  ];
+  const { isHindi } = useLanguage();
+
+  const benefits = isHindi
+    ? [
+        'प्रोफ़ाइल बनाएं',
+        'दस्तावेज़ अपलोड करें',
+        'सत्यापन पाएं',
+        'पास के काम के अनुरोध प्राप्त करें',
+        'अपनी कमाई बढ़ाएं',
+      ]
+    : [
+        'Create Your Profile',
+        'Upload Documents',
+        'Get Verified',
+        'Receive Job Requests Near You',
+        'Grow Your Earnings',
+      ];
 
   return (
     <div className="bg-[#079447] rounded-3xl p-5 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[380px] sm:min-h-[420px] lg:min-h-[440px]">
@@ -51,8 +62,7 @@ export default function WorkerCTA({ onRegisterWorker }: WorkerCTAProps) {
       {/* Side Tagline matching Screenshot */}
       <div className="absolute top-5 right-5 sm:top-6 sm:right-6 z-20 hidden lg:block pointer-events-none text-right">
         <span className="text-xs sm:text-sm font-black text-emerald-100/90 italic tracking-wide drop-shadow-md font-sans">
-          Skilled Hands <br />
-          Brighter Futures
+          {isHindi ? 'कुशल हाथ • बेहतर भविष्य' : 'Skilled Hands • Brighter Futures'}
         </span>
       </div>
 
@@ -60,24 +70,26 @@ export default function WorkerCTA({ onRegisterWorker }: WorkerCTAProps) {
       <div className="relative z-20 max-w-[65%] sm:max-w-[54%] lg:max-w-[55%] space-y-3 sm:space-y-3.5">
         {/* Headings */}
         <div className="space-y-1">
-          <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
-            Are You a Worker?
+          <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight font-devanagari">
+            {isHindi ? 'क्या आप एक कामगार हैं?' : 'Are You a Skilled Worker?'}
           </h3>
           <p className="text-sm sm:text-base font-bold text-amber-300 font-devanagari tracking-wide">
-            कामगार बनें और काम पाएं
+            {isHindi ? 'कामगार बनें और काम पाएं' : 'Become a Partner & Find Jobs'}
           </p>
         </div>
 
         {/* Subtitle */}
-        <p className="text-xs sm:text-sm font-semibold text-emerald-100 leading-snug">
-          Register, Get Verified & Find Jobs!
+        <p className="text-xs sm:text-sm font-semibold text-emerald-100 leading-snug font-devanagari">
+          {isHindi
+            ? 'पंजीकरण कराएं, सत्यापन पाएं और काम खोजें!'
+            : 'Register, Get Verified & Earn Daily!'}
           <span className="block text-[11px] sm:text-xs text-emerald-200/90 font-medium font-devanagari mt-0.5">
-            रोज़ाना काम और सम्मान • सीधे बैंक में भुगतान
+            {isHindi ? 'रोज़ाना काम और सम्मान • सीधे बैंक में भुगतान' : 'Daily Jobs & Dignity • Direct Bank Payouts'}
           </span>
         </p>
 
         {/* Benefits Checklist */}
-        <ul className="space-y-2 pt-1 text-xs sm:text-[13px] font-semibold text-white">
+        <ul className="space-y-2 pt-1 text-xs sm:text-[13px] font-semibold text-white font-devanagari">
           {benefits.map((b) => (
             <li key={b} className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-amber-300 fill-amber-300 text-[#079447] shrink-0" />
@@ -92,9 +104,9 @@ export default function WorkerCTA({ onRegisterWorker }: WorkerCTAProps) {
         <button
           type="button"
           onClick={onRegisterWorker}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] bg-white hover:bg-slate-50 text-[#079447] font-black text-sm rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all shrink-0 active:scale-98"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] bg-white hover:bg-slate-50 text-[#079447] font-black text-sm rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all shrink-0 active:scale-98 font-devanagari cursor-pointer"
         >
-          <span>Register as a Worker</span>
+          <span>{isHindi ? 'कामगार के रूप में पंजीकरण करें' : 'Register as a Worker'}</span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
         </button>
       </div>

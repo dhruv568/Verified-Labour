@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Users, HardHat, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AccountTypeStepProps {
   onSelectRole: (role: 'CUSTOMER' | 'WORKER', fullName: string) => void;
@@ -16,6 +17,7 @@ export default function AccountTypeStep({
   loading,
   defaultRole = 'CUSTOMER',
 }: AccountTypeStepProps) {
+  const { isHindi } = useLanguage();
   const [selectedRole, setSelectedRole] = useState<'CUSTOMER' | 'WORKER'>(defaultRole);
   const [fullName, setFullName] = useState('');
 
@@ -25,13 +27,17 @@ export default function AccountTypeStep({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5 font-devanagari">
       <div className="text-center">
         <h3 className="text-base font-black text-slate-900">
-          How do you want to use Verified Labour?
+          {isHindi
+            ? 'आप Verified Labour का उपयोग कैसे करना चाहते हैं?'
+            : 'How do you want to use Verified Labour?'}
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          Select an account type to personalize your experience.
+          {isHindi
+            ? 'अपना अनुभव व्यक्तिगत बनाने के लिए खाता प्रकार चुनें।'
+            : 'Select an account type to personalize your experience.'}
         </p>
       </div>
 
@@ -54,9 +60,11 @@ export default function AccountTypeStep({
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-slate-900">Hire Workers</h4>
+            <h4 className="font-bold text-sm text-slate-900">
+              {isHindi ? 'कारीगर/वर्कर बुक करें' : 'Hire Workers'}
+            </h4>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Find verified professionals for your work.
+              {isHindi ? 'अपने काम के लिए सत्यापित पेशेवरों को खोजें।' : 'Find verified professionals for your work.'}
             </p>
           </div>
         </div>
@@ -79,9 +87,11 @@ export default function AccountTypeStep({
             <HardHat className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-slate-900">Become a Worker</h4>
+            <h4 className="font-bold text-sm text-slate-900">
+              {isHindi ? 'वर्कर के रूप में जुड़ें' : 'Become a Worker'}
+            </h4>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Offer your services and receive jobs.
+              {isHindi ? 'अपनी सेवाएं दें और काम प्राप्त करें।' : 'Offer your services and receive jobs.'}
             </p>
           </div>
         </div>
@@ -89,8 +99,12 @@ export default function AccountTypeStep({
 
       <div>
         <Input
-          label={selectedRole === 'WORKER' ? 'Full Name (as per official ID)' : 'Your Name (Optional)'}
-          placeholder="e.g. Ramesh Patel"
+          label={
+            selectedRole === 'WORKER'
+              ? (isHindi ? 'पूरा नाम (सरकारी आईडी के अनुसार)' : 'Full Name (as per official ID)')
+              : (isHindi ? 'आपका नाम (ऐच्छिक)' : 'Your Name (Optional)')
+          }
+          placeholder={isHindi ? 'उदा. रमेश पटेल' : 'e.g. Ramesh Patel'}
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           required={selectedRole === 'WORKER'}
@@ -105,7 +119,9 @@ export default function AccountTypeStep({
         isLoading={loading}
         icon={<ArrowRight className="w-4 h-4" />}
       >
-        {selectedRole === 'WORKER' ? 'Continue to Worker Onboarding' : 'Continue to Dashboard'}
+        {selectedRole === 'WORKER'
+          ? (isHindi ? 'वर्कर पंजीकरण के लिए आगे बढ़ें' : 'Continue to Worker Onboarding')
+          : (isHindi ? 'डैशबोर्ड पर आगे बढ़ें' : 'Continue to Dashboard')}
       </Button>
     </form>
   );

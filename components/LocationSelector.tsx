@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   MapPin,
   Navigation,
@@ -18,6 +19,7 @@ interface LocationSelectorProps {
 }
 
 export default function LocationSelector({ className = '', isMobile = false }: LocationSelectorProps) {
+  const { isHindi } = useLanguage();
   const {
     location,
     isLoading,
@@ -54,7 +56,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
     if (success) {
       setIsOpen(false);
     } else {
-      setCustomError(error || 'Could not fetch precise GPS coordinates.');
+      setCustomError(error || (isHindi ? 'जीपीएस निर्देशांक प्राप्त करने में विफल।' : 'Could not fetch precise GPS coordinates.'));
     }
   };
 
@@ -113,7 +115,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
 
   if (isMobile) {
     return (
-      <div className={`w-full ${className}`}>
+      <div className={`w-full font-devanagari ${className}`}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -132,7 +134,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
             <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">
-                  Current Location
+                  {isHindi ? 'वर्तमान स्थान' : 'Current Location'}
                 </span>
                 <p className="text-xs font-bold text-slate-800 mt-0.5 line-clamp-1">
                   📍 {displayText}
@@ -144,11 +146,11 @@ export default function LocationSelector({ className = '', isMobile = false }: L
                 </span>
               ) : location.source === 'ip' ? (
                 <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                  Approx (IP)
+                  {isHindi ? 'अनुमानित (IP)' : 'Approx (IP)'}
                 </span>
               ) : location.source === 'manual' ? (
                 <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">
-                  Manual
+                  {isHindi ? 'मैन्युअल' : 'Manual'}
                 </span>
               ) : null}
             </div>
@@ -163,12 +165,12 @@ export default function LocationSelector({ className = '', isMobile = false }: L
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-brand-700" />
-                  <span>Acquiring GPS Signal...</span>
+                  <span>{isHindi ? 'जीपीएस सिग्नल प्राप्त हो रहा है...' : 'Acquiring GPS Signal...'}</span>
                 </>
               ) : (
                 <>
                   <Navigation className="w-4 h-4 text-brand-700" />
-                  <span>Use Current Location (GPS)</span>
+                  <span>{isHindi ? 'वर्तमान स्थान (GPS) का उपयोग करें' : 'Use Current Location (GPS)'}</span>
                 </>
               )}
             </button>
@@ -182,13 +184,13 @@ export default function LocationSelector({ className = '', isMobile = false }: L
             {/* Manual Change Input */}
             <form onSubmit={handleManualSearchSubmit} className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700">
-                Search or Change Location
+                {isHindi ? 'स्थान खोजें या बदलें' : 'Search or Change Location'}
               </label>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder="Type area or city (e.g. Ravet, Wakad, Tathawade)..."
+                  placeholder={isHindi ? 'क्षेत्र या शहर लिखें (जैसे रावेत, वाकड)...' : 'Type area or city (e.g. Ravet, Wakad)...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-10 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none"
@@ -205,7 +207,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
   }
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative font-devanagari ${className}`} ref={dropdownRef}>
       {/* Navbar Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -227,19 +229,19 @@ export default function LocationSelector({ className = '', isMobile = false }: L
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-brand-600" />
-              <span className="font-bold text-slate-800">Location Settings</span>
+              <span className="font-bold text-slate-800">{isHindi ? 'स्थान सेटिंग्स' : 'Location Settings'}</span>
             </div>
             {location.source === 'gps' ? (
               <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <Check className="w-2.5 h-2.5" /> GPS Active {location.accuracy ? `(±${location.accuracy}m)` : ''}
+                <Check className="w-2.5 h-2.5" /> {isHindi ? 'जीपीएस सक्रिय' : 'GPS Active'} {location.accuracy ? `(±${location.accuracy}m)` : ''}
               </span>
             ) : location.source === 'manual' ? (
               <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                <Check className="w-2.5 h-2.5" /> Manual Selection
+                <Check className="w-2.5 h-2.5" /> {isHindi ? 'मैन्युअल चयन' : 'Manual Selection'}
               </span>
             ) : location.source === 'ip' ? (
               <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                <Compass className="w-2.5 h-2.5" /> Approx (IP)
+                <Compass className="w-2.5 h-2.5" /> {isHindi ? 'अनुमानित (IP)' : 'Approx (IP)'}
               </span>
             ) : null}
           </div>
@@ -247,7 +249,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
           {/* Current Selection */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-              Selected Service Area
+              {isHindi ? 'चयनित सेवा क्षेत्र' : 'Selected Service Area'}
             </span>
             <p className="text-xs font-bold text-slate-800 line-clamp-1 mt-0.5">
               📍 {displayText}
@@ -263,12 +265,12 @@ export default function LocationSelector({ className = '', isMobile = false }: L
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-700" />
-                <span>Acquiring GPS Signal...</span>
+                <span>{isHindi ? 'जीपीएस सिग्नल प्राप्त हो रहा है...' : 'Acquiring GPS Signal...'}</span>
               </>
             ) : (
               <>
                 <Navigation className="w-3.5 h-3.5 text-brand-700" />
-                <span>Use Current Location (GPS)</span>
+                <span>{isHindi ? 'वर्तमान स्थान (GPS) का उपयोग करें' : 'Use Current Location (GPS)'}</span>
               </>
             )}
           </button>
@@ -282,13 +284,13 @@ export default function LocationSelector({ className = '', isMobile = false }: L
           {/* Manual Search */}
           <form onSubmit={handleManualSearchSubmit} className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-600">
-              Search locality or city:
+              {isHindi ? 'इलाका या शहर खोजें:' : 'Search locality or city:'}
             </label>
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="e.g. Ravet, Wakad, Tathawade..."
+                placeholder={isHindi ? 'जैसे रावेत, वाकड...' : 'e.g. Ravet, Wakad...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none"

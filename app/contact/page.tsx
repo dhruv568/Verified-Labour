@@ -70,7 +70,7 @@ export default function ContactPage() {
         {/* Banner */}
         <div className="bg-gradient-to-r from-[#082B66] via-[#0F3880] to-[#1264D6] rounded-3xl p-6 sm:p-10 text-white shadow-xl">
           <span className="px-3.5 py-1 bg-amber-400 text-[#082B66] font-black text-xs rounded-full uppercase font-devanagari tracking-wider inline-block">
-            {isHindi ? 'संपर्क करें / Contact Us' : 'Contact Us / संपर्क करें'}
+            {isHindi ? 'संपर्क करें' : 'Contact Us'}
           </span>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight mt-2 font-devanagari">
             {isHindi ? 'हम आपकी मदद के लिए यहां हैं' : "We're Here to Help You"}
@@ -87,7 +87,7 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-4">
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
               <h2 className="text-lg font-black text-[#082B66] font-devanagari">
-                {isHindi ? 'संपर्क जानकारी / Contact Details' : 'Direct Support Details'}
+                {isHindi ? 'संपर्क जानकारी' : 'Direct Support Details'}
               </h2>
 
               <div className="space-y-4 text-xs sm:text-sm">
@@ -95,7 +95,7 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-[#1264D6] shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-slate-500 block text-[11px] uppercase">
-                      Support Email / सहायता ईमेल
+                      {isHindi ? 'सहायता ईमेल' : 'Support Email'}
                     </span>
                     <a href={`mailto:${contactEmail}`} className="font-bold text-[#1264D6] hover:underline text-sm">
                       {contactEmail}
@@ -107,7 +107,7 @@ export default function ContactPage() {
                   <Phone className="w-5 h-5 text-[#079447] shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-slate-500 block text-[11px] uppercase">
-                      Helpline Number / हेल्पलाइन
+                      {isHindi ? 'हेल्पलाइन नंबर' : 'Helpline Number'}
                     </span>
                     <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} className="font-bold text-slate-900 block hover:text-[#079447] text-sm">
                       {contactPhone}
@@ -119,7 +119,7 @@ export default function ContactPage() {
                   <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-slate-500 block text-[11px] uppercase">
-                      Operating Hours / कार्य समय
+                      {isHindi ? 'कार्य समय' : 'Operating Hours'}
                     </span>
                     <span className="font-semibold text-slate-800">
                       {content.contact_hours || 'Monday - Sunday: 8:00 AM - 9:00 PM IST'}
@@ -131,7 +131,7 @@ export default function ContactPage() {
                   <MapPin className="w-5 h-5 text-[#1264D6] shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-slate-500 block text-[11px] uppercase">
-                      Registered Office / पंजीकृत कार्यालय
+                      {isHindi ? 'पंजीकृत कार्यालय' : 'Registered Office'}
                     </span>
                     <span className="font-semibold text-slate-800 leading-relaxed block">
                       <strong className="block text-slate-900">{COMPANY_NAME}</strong>
@@ -147,7 +147,7 @@ export default function ContactPage() {
           <div className="lg:col-span-7">
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
               <h2 className="text-lg font-black text-[#082B66] font-devanagari">
-                {isHindi ? 'संदेश भेजें / Send Message' : 'Send a Support Message'}
+                {isHindi ? 'संदेश भेजें' : 'Send a Support Message'}
               </h2>
 
               {successMsg && (
@@ -175,7 +175,7 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1 font-devanagari">
-                      नाम / Name <span className="text-red-500">*</span>
+                      {isHindi ? 'नाम' : 'Full Name'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -188,7 +188,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <label className="block font-bold text-slate-700 mb-1 font-devanagari">
-                      मोबाइल नंबर / Phone Number <span className="text-red-500">*</span>
+                      {isHindi ? 'मोबाइल नंबर' : 'Phone Number'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -203,7 +203,7 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1 font-devanagari">
-                    ईमेल पता / Email Address <span className="text-red-500">*</span>
+                    {isHindi ? 'ईमेल पता' : 'Email Address'} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -217,20 +217,20 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1 font-devanagari">
-                    विषय / Subject
+                    {isHindi ? 'विषय' : 'Subject'}
                   </label>
                   <input
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g. Worker Booking Query / Booking Support"
+                    placeholder={isHindi ? "उदा. वर्कर बुकिंग सहायता" : "e.g. Worker Booking Query"}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-[#1264D6] min-h-[44px]"
                   />
                 </div>
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1 font-devanagari">
-                    संदेश / Message <span className="text-red-500">*</span>
+                    {isHindi ? 'संदेश' : 'Message'} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
@@ -254,10 +254,10 @@ export default function ContactPage() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      संदेश भेजा जा रहा है... / Sending...
+                      {isHindi ? 'संदेश भेजा जा रहा है...' : 'Sending Message...'}
                     </span>
                   ) : (
-                    <span>संदेश भेजें / Send Message</span>
+                    <span>{isHindi ? 'संदेश भेजें' : 'Send Message'}</span>
                   )}
                 </button>
               </form>

@@ -171,9 +171,9 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 text-sm animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 text-sm animate-in fade-in zoom-in-95 duration-100 font-devanagari">
                     <div className="px-4 py-2.5 border-b border-slate-100">
-                      <p className="text-[11px] text-slate-400 font-medium">Signed in as</p>
+                      <p className="text-[11px] text-slate-400 font-medium">{t.signedInAs}</p>
                       <p className="font-bold text-slate-800 truncate text-xs">{sessionUser.phone}</p>
                     </div>
 
@@ -185,12 +185,12 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                       <Shield className="w-4 h-4 text-[#0B9B5A]" />
                       <span>
                         {sessionUser.role === 'ADMIN'
-                          ? 'Admin Operations'
+                          ? t.adminOps
                           : sessionUser.role === 'WORKER'
-                          ? 'Worker Dashboard'
+                          ? t.workerDashboard
                           : sessionUser.role === 'BUSINESS'
-                          ? 'Business Portal'
-                          : 'Customer Dashboard'}
+                          ? t.businessPortal
+                          : t.customerDashboard}
                       </span>
                     </Link>
 
@@ -201,7 +201,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                         className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors"
                       >
                         <span className="text-[#0B9B5A] font-bold">₹</span>
-                        <span>My Earnings & Wallet</span>
+                        <span>{t.myEarnings}</span>
                       </Link>
                     )}
 
@@ -210,7 +210,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                       className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-red-50 text-red-600 font-semibold text-xs border-t border-slate-100 mt-1 text-left transition-colors"
                     >
                       <LogOut className="w-4 h-4 text-red-500" />
-                      <span>Log Out</span>
+                      <span>{t.logOut}</span>
                     </button>
                   </div>
                 )}
@@ -265,7 +265,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
               <LanguageSelector isMobile={true} />
             </div>
 
-            <nav className="space-y-1">
+            <nav className="space-y-1 font-devanagari">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
@@ -316,7 +316,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
               </Link>
             </nav>
 
-            <div className="pt-3 border-t border-slate-100 px-1">
+            <div className="pt-3 border-t border-slate-100 px-1 font-devanagari">
               {sessionUser ? (
                 <div className="space-y-2">
                   <Link
@@ -324,7 +324,13 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center min-h-[48px] w-full px-4 py-3 bg-[#0F2A5F] text-white font-bold rounded-xl shadow-xs text-sm"
                   >
-                    Dashboard ({sessionUser.role})
+                    {sessionUser.role === 'ADMIN'
+                      ? t.adminOps
+                      : sessionUser.role === 'WORKER'
+                      ? t.workerDashboard
+                      : sessionUser.role === 'BUSINESS'
+                      ? t.businessPortal
+                      : t.customerDashboard}
                   </Link>
 
                   {sessionUser.role === 'WORKER' && (
@@ -333,7 +339,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center min-h-[44px] w-full px-4 py-2.5 bg-emerald-50 text-[#0B9B5A] font-bold rounded-xl text-sm border border-emerald-200"
                     >
-                      <span>₹ My Earnings & Wallet</span>
+                      <span>₹ {t.myEarnings}</span>
                     </Link>
                   )}
 
@@ -344,7 +350,7 @@ export default function Navbar({ onOpenAuth }: NavbarProps) {
                     }}
                     className="flex items-center justify-center min-h-[44px] w-full px-4 py-2 text-red-600 font-semibold text-sm hover:bg-red-50 rounded-xl"
                   >
-                    Log Out
+                    {t.logOut}
                   </button>
                 </div>
               ) : (

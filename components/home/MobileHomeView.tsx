@@ -165,18 +165,15 @@ export default function MobileHomeView({
         <div className="flex items-center justify-between mb-2.5 px-0.5">
           <div>
             <h2 className="text-base font-black text-[#082B66] tracking-tight flex items-center gap-1.5 font-devanagari">
-              <span>लोकप्रिय श्रेणियां</span>
-              <span className="text-xs font-bold text-slate-500 font-sans">
-                / Popular Categories
-              </span>
+              <span>{isHindi ? 'लोकप्रिय श्रेणियां' : 'Popular Categories'}</span>
             </h2>
           </div>
           <button
             type="button"
             onClick={() => setShowAllCategories(!showAllCategories)}
-            className="text-xs font-bold text-[#1264D6] hover:underline flex items-center gap-0.5"
+            className="text-xs font-bold text-[#1264D6] hover:underline flex items-center gap-0.5 font-devanagari"
           >
-            <span>{showAllCategories ? 'कम देखें' : 'सभी देखें'}</span>
+            <span>{showAllCategories ? (isHindi ? 'कम देखें' : 'Show Less') : (isHindi ? 'सभी देखें' : 'View All')}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllCategories ? 'rotate-180' : ''}`} />
           </button>
         </div>
@@ -186,6 +183,7 @@ export default function MobileHomeView({
           {FEATURED_CATEGORIES.map((item, idx) => {
             const IconComp = item.icon;
             const isSelected = selectedCategory === item.slug;
+            const displayTitle = isHindi ? item.hindiTitle : item.title;
 
             return (
               <div
@@ -209,7 +207,7 @@ export default function MobileHomeView({
                 <div className="relative w-full aspect-[8/9] bg-gradient-to-b from-[#F8F9FA] via-[#F1F3F6] to-[#E9ECF0] overflow-hidden flex items-end justify-center">
                   <Image
                     src={item.image}
-                    alt={`${item.title} (${item.hindiTitle})`}
+                    alt={displayTitle}
                     fill
                     unoptimized
                     priority={idx < 4}
@@ -217,7 +215,6 @@ export default function MobileHomeView({
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     style={{ objectPosition: item.objectPosition || 'center top' }}
                     onError={(e) => {
-                      // Fail-safe fallback to standard img element if Next.js image loading is interrupted
                       const target = e.currentTarget as HTMLImageElement;
                       if (target) {
                         target.onerror = null;
@@ -234,10 +231,10 @@ export default function MobileHomeView({
                   </div>
                 </div>
 
-                {/* Bottom Label Box with Hindi Title & Right Chevron */}
-                <div className="p-2.5 bg-white flex items-center justify-between border-t border-slate-100">
-                  <span className="font-extrabold text-xs text-[#082B66] font-devanagari tracking-tight line-clamp-1">
-                    {item.hindiTitle}
+                {/* Bottom Label Box with Clean Title & Right Chevron */}
+                <div className="p-2.5 bg-white flex items-center justify-between border-t border-slate-100 font-devanagari">
+                  <span className="font-extrabold text-xs text-[#082B66] tracking-tight line-clamp-1">
+                    {displayTitle}
                   </span>
                   <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
                 </div>
@@ -250,7 +247,7 @@ export default function MobileHomeView({
         {showAllCategories && (
           <div className="mt-3 pt-3 border-t border-slate-200/80 animate-in fade-in slide-in-from-top-2 duration-200">
             <h3 className="text-xs font-bold text-slate-600 mb-2 font-devanagari">
-              अन्य सभी सत्यापित कामगार सेवाएं:
+              {isHindi ? 'अन्य सभी सत्यापित कामगार सेवाएं:' : 'All Other Verified Worker Services:'}
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {MORE_CATEGORIES.map((item) => (
@@ -264,7 +261,7 @@ export default function MobileHomeView({
                   <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-slate-100">
                     <Image
                       src={item.image}
-                      alt={item.title}
+                      alt={isHindi ? item.hindiTitle : item.title}
                       fill
                       unoptimized
                       className="object-cover"
@@ -278,11 +275,10 @@ export default function MobileHomeView({
                       }}
                     />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold text-[#082B66] truncate font-devanagari">
-                      {item.hindiTitle}
+                  <div className="min-w-0 flex-1 font-devanagari">
+                    <p className="text-[11px] font-bold text-[#082B66] truncate">
+                      {isHindi ? item.hindiTitle : item.title}
                     </p>
-                    <p className="text-[9px] text-slate-500 truncate">{item.title}</p>
                   </div>
                 </div>
               ))}
@@ -293,17 +289,19 @@ export default function MobileHomeView({
 
       {/* ================= 3. TRUST & VERIFICATION DARK BLUE BAR (MATCHING REFERENCE) ================= */}
       <section className="px-3.5">
-        <div className="bg-[#041A40] text-white rounded-2xl p-3.5 shadow-lg border border-blue-900/40">
+        <div className="bg-[#041A40] text-white rounded-2xl p-3.5 shadow-lg border border-blue-900/40 font-devanagari">
           <div className="grid grid-cols-3 gap-2 text-center divide-x divide-blue-800/60">
             {/* 1. Identity Verified */}
             <div className="flex flex-col items-center justify-center px-1">
               <div className="w-9 h-9 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center mb-1.5 border border-amber-400/30">
                 <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-white font-devanagari leading-snug">
-                पहचान सत्यापित
+              <span className="text-[11px] font-black text-white leading-snug">
+                {isHindi ? 'पहचान सत्यापित' : 'Identity Verified'}
               </span>
-              <span className="text-[9px] text-blue-200 font-medium">Aadhaar Verified</span>
+              <span className="text-[9px] text-blue-200 font-medium">
+                {isHindi ? 'आधार सत्यापित' : 'Aadhaar Verified'}
+              </span>
             </div>
 
             {/* 2. Skilled & Experienced */}
@@ -311,10 +309,12 @@ export default function MobileHomeView({
               <div className="w-9 h-9 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center mb-1.5 border border-amber-400/30">
                 <Award className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-white font-devanagari leading-snug">
-                कुशल और अनुभवी
+              <span className="text-[11px] font-black text-white leading-snug">
+                {isHindi ? 'कुशल और अनुभवी' : 'Skilled & Experienced'}
               </span>
-              <span className="text-[9px] text-blue-200 font-medium">Skill Tested</span>
+              <span className="text-[9px] text-blue-200 font-medium">
+                {isHindi ? 'कौशल प्रमाणित' : 'Skill Tested'}
+              </span>
             </div>
 
             {/* 3. Fair Price & Transparency */}
@@ -322,17 +322,19 @@ export default function MobileHomeView({
               <div className="w-9 h-9 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center mb-1.5 border border-amber-400/30">
                 <IndianRupee className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="text-[11px] font-black text-white font-devanagari leading-snug">
-                सही दाम & पारदर्शिता
+              <span className="text-[11px] font-black text-white leading-snug">
+                {isHindi ? 'सही दाम व पारदर्शिता' : 'Fair Rates & Transparency'}
               </span>
-              <span className="text-[9px] text-blue-200 font-medium">Direct Rates</span>
+              <span className="text-[9px] text-blue-200 font-medium">
+                {isHindi ? 'सीधी दरें' : 'Direct Rates'}
+              </span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ================= 4. STRONG BOOKING / FIND-WORKER CTA BUTTON (MATCHING REFERENCE) ================= */}
-      <section className="px-3.5">
+      <section className="px-3.5 font-devanagari">
         <button
           type="button"
           onClick={() => onSearchWorker?.()}
@@ -343,8 +345,8 @@ export default function MobileHomeView({
             <MessageCircle className="w-5 h-5 fill-white text-transparent stroke-none" />
           </div>
 
-          <span className="font-devanagari tracking-wide text-lg drop-shadow-xs">
-            अभी कामगार बुक करें
+          <span className="tracking-wide text-lg drop-shadow-xs">
+            {isHindi ? 'अभी कामगार बुक करें' : 'Book a Worker Now'}
           </span>
 
           <ChevronRight className="w-5 h-5 stroke-[3] group-hover:translate-x-1 transition-transform ml-auto" />
@@ -353,60 +355,63 @@ export default function MobileHomeView({
 
       {/* ================= 5. SEGMENT FILTER BAR (HOMES / OFFICE / BUSINESS) ================= */}
       <section className="px-3.5">
-        <div className="bg-white rounded-2xl p-1.5 border border-slate-200/90 shadow-2xs grid grid-cols-3 gap-1">
+        <div className="bg-white rounded-2xl p-1.5 border border-slate-200/90 shadow-2xs grid grid-cols-3 gap-1 font-devanagari">
           <button
             type="button"
             onClick={() => setActiveSegment('home')}
-            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-devanagari ${
+            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
               activeSegment === 'home'
                 ? 'bg-blue-50 text-[#1264D6] border border-blue-200 shadow-2xs font-extrabold'
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             <Home className="w-4 h-4 text-[#1264D6]" />
-            <span>घर के लिए</span>
+            <span>{isHindi ? 'घर के लिए' : 'For Home'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSegment('office')}
-            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-devanagari ${
+            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
               activeSegment === 'office'
                 ? 'bg-blue-50 text-[#1264D6] border border-blue-200 shadow-2xs font-extrabold'
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             <Building2 className="w-4 h-4 text-[#1264D6]" />
-            <span>कार्यालय के लिए</span>
+            <span>{isHindi ? 'कार्यालय के लिए' : 'For Office'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSegment('business')}
-            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-devanagari ${
+            className={`py-2 px-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
               activeSegment === 'business'
                 ? 'bg-blue-50 text-[#1264D6] border border-blue-200 shadow-2xs font-extrabold'
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             <Factory className="w-4 h-4 text-[#1264D6]" />
-            <span>व्यवसाय के लिए</span>
+            <span>{isHindi ? 'व्यवसाय के लिए' : 'For Business'}</span>
           </button>
         </div>
       </section>
 
       {/* ================= 6. YELLOW CALLOUT BANNER ("Who is NOT on Verified Labour?") ================= */}
       <section className="px-3.5">
-        <div className="w-full bg-[#FFE600] rounded-2xl p-3.5 border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3">
+        <div className="w-full bg-[#FFE600] rounded-2xl p-3.5 border-2 border-amber-400 shadow-sm flex items-center justify-between gap-3 font-devanagari">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-2xl shrink-0">❓</span>
             <div className="min-w-0">
               <p className="text-[10px] font-black text-[#082B66] uppercase tracking-wider">
-                Let us Know...
+                {isHindi ? 'जानकारी प्राप्त करें...' : 'Let us Know...'}
               </p>
               <p className="text-xs font-black text-[#082B66] leading-tight">
-                Who is <span className="text-[#DC2626] underline decoration-[#DC2626] decoration-2">NOT</span> on{' '}
-                <span>Verified Labour</span>?
+                {isHindi ? (
+                  <><span>Verified Labour पर कौन </span><span className="text-[#DC2626] underline decoration-[#DC2626] decoration-2">नहीं</span><span> है?</span></>
+                ) : (
+                  <><span>Who is </span><span className="text-[#DC2626] underline decoration-[#DC2626] decoration-2">NOT</span><span> on Verified Labour?</span></>
+                )}
               </p>
             </div>
           </div>
@@ -414,31 +419,31 @@ export default function MobileHomeView({
             href="/who-is-not-verified"
             className="px-3 py-1.5 bg-white text-[#1264D6] font-black text-xs rounded-xl border border-slate-300 shadow-2xs shrink-0 active:scale-95 cursor-pointer flex items-center justify-center"
           >
-            View All
+            {isHindi ? 'सभी देखें' : 'View All'}
           </Link>
         </div>
       </section>
 
       {/* ================= 7. WORKER REGISTRATION CTA FOR MOBILE ================= */}
       <section className="px-3.5 pt-1">
-        <div className="bg-gradient-to-br from-[#082B66] to-[#1264D6] text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-3">
+        <div className="bg-gradient-to-br from-[#082B66] to-[#1264D6] text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-3 font-devanagari">
           <div className="space-y-1">
-            <span className="px-2 py-0.5 bg-amber-400 text-[#082B66] font-extrabold text-[10px] rounded-md uppercase font-devanagari">
-              कामगार पंजीकरण
+            <span className="px-2 py-0.5 bg-amber-400 text-[#082B66] font-extrabold text-[10px] rounded-md uppercase">
+              {isHindi ? 'कामगार पंजीकरण' : 'Worker Registration'}
             </span>
-            <h3 className="text-sm font-black leading-tight font-devanagari">
-              क्या आप कामगार हैं? Verified Labour पर जुड़ें
+            <h3 className="text-sm font-black leading-tight">
+              {isHindi ? 'क्या आप कामगार हैं? Verified Labour से जुड़ें' : 'Are you a worker? Join Verified Labour'}
             </h3>
             <p className="text-[11px] text-blue-100 font-medium">
-              अपनी कुशलता से रोज़ाना काम और सीधी कमाई पाएं।
+              {isHindi ? 'अपनी कुशलता से रोज़ाना काम और सीधी कमाई पाएं।' : 'Earn daily and build your trusted profile.'}
             </p>
           </div>
           <button
             type="button"
             onClick={() => onOpenAuth?.('register', 'WORKER')}
-            className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-300 text-[#082B66] font-black text-xs rounded-xl shrink-0 shadow-2xs active:scale-95 whitespace-nowrap font-devanagari"
+            className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-300 text-[#082B66] font-black text-xs rounded-xl shrink-0 shadow-2xs active:scale-95 whitespace-nowrap"
           >
-            रजिस्टर करें
+            {isHindi ? 'रजिस्टर करें' : 'Register Now'}
           </button>
         </div>
       </section>

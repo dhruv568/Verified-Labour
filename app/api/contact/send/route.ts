@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Resend } from 'resend';
 import { getSiteContent } from '@/lib/site-config';
+import prisma from '@/lib/db';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'बहुत अधिक संदेश भेजे गए हैं। कृपया 10 मिनट बाद पुनः प्रयास करें। / Too many messages sent. Please try again in 10 minutes.',
+          error: 'Too many messages sent. Please try again in 10 minutes.',
         },
         { status: 429 }
       );
@@ -53,9 +54,22 @@ export async function POST(req: NextRequest) {
     timestamps.push(now);
     rateLimitMap.set(ip, timestamps);
 
+    // Save submission to database for Admin Panel access
+    const savedMessage = await prisma.contactMessage.create({
+      data: {
+        name,
+        email,
+        phone,
+        subject: subject || 'Support & General Inquiry',
+        message,
+        isRead: false,
+      },
+    });
+
     // Get current configured support email from DB/Config
     const siteContent = await getSiteContent();
     const supportEmail = siteContent.contact_email || 'help@verifiedlabour.com';
+
 
     // 3. Email Dispatch via Resend (or console log if mock)
     const html = `<!DOCTYPE html>
@@ -119,14 +133,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'आपका संदेश सफलतापूर्वक भेज दिया गया है। / Your message has been sent successfully.',
+      message: 'Your message has been sent successfully.',
     });
   } catch (err: any) {
     console.error('Contact Form Error:', err);
     return NextResponse.json(
       {
         success: false,
-        error: 'संदेश भेजने में विफल। कृपया पुनः प्रयास करें। / Failed to send message. Please try again: ' + err.message,
+        error: 'Failed to send message. Please try again: ' + err.message,
       },
       { status: 500 }
     );

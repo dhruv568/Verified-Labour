@@ -14,6 +14,7 @@ import { runAuthFlowTests } from './auth-flow-tests';
 import { runCashfreeVerificationTests } from './cashfree-verification-tests';
 import { runResendEmailTests } from './resend-email-tests';
 import { runAdminPanelTests } from './admin-panel-tests';
+import { runAdminMessagesTests } from './admin-messages-tests';
 import { runLivePhotoTests } from './live-photo-tests';
 import { runVoiceNoteTests } from './voice-note-tests';
 import { runTestimonialTests } from './testimonial-tests';
@@ -307,6 +308,10 @@ async function runAllTests() {
   const adminResults = await runAdminPanelTests();
   passed += adminResults.passed;
   failed += adminResults.failed;
+
+  const messageResults = await runAdminMessagesTests();
+  passed += messageResults.passed;
+  failed += messageResults.failed;
 
   const photoResults = await runLivePhotoTests();
   passed += photoResults.passed;

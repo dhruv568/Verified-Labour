@@ -7,6 +7,7 @@ import { LocationData } from '@/context/LocationContext';
 import VoiceNoteRecorder from './VoiceNoteRecorder';
 import { fetchWithTimeout } from '@/lib/fetch-utils';
 import ServiceSearchableSelect, { ServiceItem } from '@/components/ui/ServiceSearchableSelect';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface JobRequestModalProps {
   isOpen: boolean;
@@ -106,6 +107,7 @@ export default function JobRequestModal({
   onSuccess,
   onRequireAuth,
 }: JobRequestModalProps) {
+  const { isHindi, t } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [workerCategory, setWorkerCategory] = useState<any | null>(null);
   const [allServices, setAllServices] = useState<ServiceItem[]>([]);
@@ -196,7 +198,7 @@ export default function JobRequestModal({
       setWorkerCategory(matchedCat);
     } catch (err: any) {
       console.error('Error loading services:', err);
-      setCategoriesError('सेवाएं लोड नहीं हो सकीं / Unable to load services');
+      setCategoriesError(t.unableToLoadServices);
     } finally {
       setLoadingServices(false);
     }
@@ -409,7 +411,7 @@ export default function JobRequestModal({
           latitude: selectedLocation.latitude,
           longitude: selectedLocation.longitude,
           preferredDate: urgency === 'IMMEDIATE' ? new Date().toISOString().split('T')[0] : preferredDate,
-          preferredTime: urgency === 'IMMEDIATE' ? 'Immediate / Urgent' : preferredTime,
+          preferredTime: urgency === 'IMMEDIATE' ? (isHindi ? 'तुरंत / अति आवश्यक' : 'Immediate / Urgent') : preferredTime,
           urgency,
           budget: estimatedAmount,
         }),
@@ -444,30 +446,30 @@ export default function JobRequestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] sm:max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-sans">
+      <div className="bg-white rounded-2xl max-w-lg w-[calc(100vw-24px)] sm:w-full shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90dvh] sm:max-h-[92vh] flex flex-col my-auto">
         {/* Modal Header */}
-        <div className="bg-navy-800 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
-          <div>
-            <span className="text-[11px] sm:text-xs font-bold text-brand-400 tracking-wider uppercase">
-              तुरंत बुकिंग / On-Demand Booking
+        <div className="bg-navy-800 p-3.5 sm:p-5 text-white flex items-center justify-between shrink-0 min-w-0 font-devanagari">
+          <div className="min-w-0 flex-1 pr-2">
+            <span className="text-[10px] sm:text-xs font-bold text-brand-400 tracking-wider uppercase block">
+              {t.onDemandBooking}
             </span>
-            <h2 className="text-base sm:text-lg font-black text-white truncate max-w-[240px] sm:max-w-none font-devanagari">
-              {worker.fullName} को बुक करें / Request Worker
+            <h2 className="text-sm sm:text-lg font-black text-white leading-snug break-words">
+              {isHindi ? `${worker.fullName} को बुक करें` : `${t.requestWorkerTitle}: ${worker.fullName}`}
             </h2>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-navy-700 active:bg-navy-600 transition-colors"
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-navy-700 active:bg-navy-600 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Worker Snapshot */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs shrink-0 gap-3">
-          <div className="flex items-center gap-3">
+        <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex flex-col xs:flex-row items-start xs:items-center justify-between text-xs shrink-0 gap-2.5 sm:gap-3 min-w-0 font-devanagari">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             {worker.avatarUrl ? (
               <img
                 src={worker.avatarUrl}
@@ -475,64 +477,63 @@ export default function JobRequestModal({
                 className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 font-bold text-xs flex items-center justify-center border border-brand-200 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 font-bold text-xs flex items-center justify-center border border-brand-200 shrink-0 font-sans">
                 {worker.fullName ? worker.fullName.slice(0, 2).toUpperCase() : 'WL'}
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
-                <span>{worker.fullName}</span>
-                <span className="text-slate-400 font-normal">•</span>
-                <span className="text-slate-600 font-medium font-devanagari">
-                  {worker.primaryCategory?.name || 'Skilled Professional'}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 flex-wrap">
+                <span className="truncate">{worker.fullName}</span>
+                <span className="text-slate-400 font-normal shrink-0">•</span>
+                <span className="text-slate-600 font-medium truncate">
+                  {worker.primaryCategory?.name || (isHindi ? 'कुशल पेशेवर' : 'Skilled Professional')}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">
-                {worker.experienceYears || 1}+ yrs exp • {worker.formattedDistance || 'Nearby'}
+              <p className="text-[11px] text-slate-500 font-medium truncate">
+                {worker.experienceYears || 1}+ {t.yearsExp} • {worker.formattedDistance || t.nearby}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-1 rounded-lg border border-brand-200 shrink-0">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            <span className="hidden sm:inline font-devanagari">सत्यापित पेशेवर / Verified</span>
-            <span className="sm:hidden font-devanagari">सत्यापित</span>
+          <div className="flex items-center gap-1 font-bold text-brand-800 bg-brand-50 px-2 py-1 rounded-lg border border-brand-200 shrink-0 text-[11px] self-start xs:self-center">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+            <span>{t.verifiedBadge}</span>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto overflow-x-hidden flex-1 min-w-0">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 font-devanagari">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <span className="font-devanagari">{error}</span>
+              <span>{error}</span>
             </div>
           )}
 
           {/* Booking Service Display */}
-          <div className="space-y-3">
+          <div className="space-y-3 font-devanagari">
             {categoriesError ? (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-2">
-                <span className="font-devanagari">{categoriesError}</span>
+                <span>{categoriesError}</span>
                 <button
                   type="button"
                   onClick={fetchCategoriesAndServices}
-                  className="px-2.5 py-1 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1 text-xs shrink-0 font-devanagari"
+                  className="px-2.5 py-1 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1 text-xs shrink-0"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>पुनः प्रयास करें / Retry</span>
+                  <span>{t.retryBtn}</span>
                 </button>
               </div>
             ) : (
-              <div className="bg-brand-50/70 p-3.5 rounded-xl border border-brand-200/90 flex items-center justify-between shadow-2xs">
-                <div>
-                  <span className="text-[11px] font-extrabold text-brand-800 uppercase tracking-wider block font-devanagari">
-                    बुक की जा रही सेवा / Booking Service
+              <div className="bg-brand-50/70 p-3.5 rounded-xl border border-brand-200/90 flex items-center justify-between shadow-2xs gap-2 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[11px] font-extrabold text-brand-800 uppercase tracking-wider block">
+                    {t.bookingServiceLabel}
                   </span>
-                  <div className="text-sm font-black text-navy-900 font-devanagari mt-0.5 flex items-center gap-1.5">
-                    <span>{worker.primaryCategory?.name || selectedService?.name || 'Skilled Service'}</span>
+                  <div className="text-xs sm:text-sm font-black text-navy-900 mt-0.5 flex items-center gap-1.5 truncate">
+                    <span className="truncate">{worker.primaryCategory?.name || selectedService?.name || (isHindi ? 'कुशल सेवा' : 'Skilled Service')}</span>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 bg-brand-700 text-white font-bold text-xs rounded-lg font-devanagari shrink-0 shadow-2xs">
+                <span className="px-2.5 py-1 bg-brand-700 text-white font-bold text-xs rounded-lg shrink-0 shadow-2xs">
                   ₹{estimatedAmount} / job
                 </span>
               </div>
@@ -540,9 +541,9 @@ export default function JobRequestModal({
 
             {availableServices.length > 1 && !loadingServices && (
               <ServiceSearchableSelect
-                label="विशिष्ट सेवा चुनें (ऐच्छिक) / Select Specific Service (Optional)"
+                label={t.selectSpecificService}
                 disabled={loadingServices}
-                placeholder="सेवा चुनें (खोजने के लिए टाइप करें) / Select or search service..."
+                placeholder={t.selectOrSearchService}
                 services={availableServices}
                 value={selectedServiceId}
                 onChange={handleServiceSelect}
@@ -551,9 +552,9 @@ export default function JobRequestModal({
           </div>
 
           {/* Address */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
-              सेवा का पता / Service Address & Landmark *
+          <div className="font-devanagari">
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              {t.serviceAddressLabel}
             </label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
@@ -562,51 +563,49 @@ export default function JobRequestModal({
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="House / Flat no., Society / Building, Landmark"
-                className="w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none min-h-[44px]"
+                placeholder={t.addressPlaceholder}
+                className="w-full pl-9 pr-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 outline-none min-h-[44px]"
               />
             </div>
           </div>
 
           {/* Urgency */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 font-devanagari">
-              आवश्यकता / Urgency *
+          <div className="font-devanagari">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              {t.urgencyLabel}
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setUrgency('IMMEDIATE')}
-                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center font-devanagari ${
+                className={`min-h-[48px] py-2 px-2.5 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                   urgency === 'IMMEDIATE'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500 shadow-2xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <span>तुरंत / अति आवश्यक</span>
-                <span className="text-[10px] font-normal opacity-80 mt-0.5">Immediate / Urgent</span>
+                <span>{t.immediateUrgent}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setUrgency('SCHEDULED')}
-                className={`min-h-[48px] py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center font-devanagari ${
+                className={`min-h-[48px] py-2 px-2.5 text-xs font-bold rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                   urgency === 'SCHEDULED'
                     ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500 shadow-2xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <span>बाद में शेड्यूल करें</span>
-                <span className="text-[10px] font-normal opacity-80 mt-0.5">Schedule Later</span>
+                <span>{t.scheduleLater}</span>
               </button>
             </div>
           </div>
 
           {/* Schedule Date & Time */}
           {urgency === 'SCHEDULED' && (
-            <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in duration-150">
+            <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in duration-150 font-devanagari">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
-                  पसंदीदा तारीख / Preferred Date *
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {t.preferredDateLabel}
                 </label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
@@ -615,21 +614,21 @@ export default function JobRequestModal({
                     required
                     value={preferredDate}
                     onChange={(e) => setPreferredDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px]"
+                    className="w-full pl-9 pr-3 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 font-devanagari">
-                  समय सीमा / Time Slot *
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {t.preferredTimeLabel}
                 </label>
                 <div className="relative">
                   <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 sm:top-3" />
                   <select
                     value={preferredTime}
                     onChange={(e) => setPreferredTime(e.target.value)}
-                    className="w-full pl-9 pr-3 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px]"
+                    className="w-full pl-9 pr-3 py-3 sm:py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white min-h-[44px]"
                   >
                     <option value="09:00 AM">09:00 AM - 11:00 AM</option>
                     <option value="11:00 AM">11:00 AM - 01:00 PM</option>
@@ -643,21 +642,21 @@ export default function JobRequestModal({
           )}
 
           {/* Description & Voice Note */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-slate-700 font-devanagari">
-                कार्य विवरण / Work Requirement Details
+          <div className="font-devanagari">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-0.5">
+              <label className="block text-xs font-bold text-slate-700">
+                {t.workDetailsLabel}
               </label>
-              <span className="text-[11px] text-slate-500 font-medium font-devanagari">
-                टेक्स्ट, वॉइस नोट या दोनों / Text, Voice Note, or Both
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                {t.textVoiceBoth}
               </span>
             </div>
             <textarea
               rows={2}
-              placeholder="अपनी आवश्यकता का विवरण लिखें (जैसे: रसोई के सिंक का नल लीक हो रहा है) / Describe your requirement in detail"
+              placeholder={t.workDetailsPlaceholder}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none font-devanagari"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none font-devanagari"
             />
             <VoiceNoteRecorder
               onVoiceNoteChange={(blob, durSec, previewUrl) => {
@@ -673,16 +672,16 @@ export default function JobRequestModal({
           </div>
 
           {/* Pricing Summary */}
-          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold text-slate-700 block font-devanagari">
-                अनुमानित सेवा शुल्क / Estimated Service Fee
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3 min-w-0 font-devanagari">
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-bold text-slate-700 block">
+                {t.estimatedFeeLabel}
               </span>
-              <span className="text-[11px] text-slate-500 font-devanagari">
-                काम पूरा होने के बाद सुरक्षित भुगतान करें / Pay securely after work is done
+              <span className="text-[11px] text-slate-500 leading-snug block">
+                {t.payAfterWork}
               </span>
             </div>
-            <span className="text-lg font-black text-navy-900">
+            <span className="text-base sm:text-lg font-black text-navy-900 shrink-0 font-sans">
               ₹{estimatedAmount}
             </span>
           </div>
@@ -695,9 +694,9 @@ export default function JobRequestModal({
               (!description.trim() && !voiceNoteBlob) ||
               loadingServices
             }
-            className="w-full min-h-[48px] py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base flex items-center justify-center font-devanagari"
+            className="w-full min-h-[48px] py-3 px-4 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs sm:text-sm leading-snug flex items-center justify-center font-devanagari text-center"
           >
-            {loading ? 'अनुरोध भेजा जा रहा है... / Sending Request...' : 'पुष्टि करें और वर्कर बुक करें / Confirm & Request Worker'}
+            {loading ? t.sendingRequest : t.confirmRequestBtn}
           </button>
         </form>
       </div>

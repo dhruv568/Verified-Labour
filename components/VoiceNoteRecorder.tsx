@@ -12,6 +12,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import VoiceAudioPlayer from './VoiceAudioPlayer';
+import { useLanguage } from '@/context/LanguageContext';
 
 export type RecordingStatus =
   | 'idle'
@@ -34,6 +35,7 @@ export default function VoiceNoteRecorder({
   onVoiceNoteChange,
   disabled = false,
 }: VoiceNoteRecorderProps) {
+  const { isHindi } = useLanguage();
   const [status, setStatus] = useState<RecordingStatus>('idle');
   const [duration, setDuration] = useState<number>(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -176,7 +178,9 @@ export default function VoiceNoteRecorder({
       typeof window.MediaRecorder === 'undefined'
     ) {
       setError(
-        'आपका ब्राउज़र वॉइस रिकॉर्डिंग का समर्थन नहीं करता है / Voice recording is not supported on this browser or connection.'
+        isHindi
+          ? 'आपका ब्राउज़र वॉइस रिकॉर्डिंग का समर्थन नहीं करता है।'
+          : 'Voice recording is not supported on this browser or connection.'
       );
       return;
     }
@@ -243,8 +247,9 @@ export default function VoiceNoteRecorder({
         fullCleanup();
         updateStatus('idle');
         setError(
-          'रिकॉर्डिंग में त्रुटि हुई / Recording error occurred: ' +
-            (errObj?.message || 'Unknown recorder error')
+          isHindi
+            ? 'रिकॉर्डिंग में त्रुटि हुई: ' + (errObj?.message || 'अज्ञात त्रुटि')
+            : 'Recording error occurred: ' + (errObj?.message || 'Unknown recorder error')
         );
       };
 
@@ -266,7 +271,9 @@ export default function VoiceNoteRecorder({
 
         if (blob.size === 0) {
           setError(
-            'रिकॉर्ड की गई ऑडियो खाली थी, कृपया पुनः प्रयास करें / Recorded audio was empty. Please try again.'
+            isHindi
+              ? 'रिकॉर्ड की गई ऑडियो खाली थी, कृपया पुनः प्रयास करें।'
+              : 'Recorded audio was empty. Please try again.'
           );
           updateStatus('idle');
           onVoiceNoteChange(null, 0, null);
@@ -275,7 +282,9 @@ export default function VoiceNoteRecorder({
 
         if (blob.size > 10 * 1024 * 1024) {
           setError(
-            'वॉइस नोट का साइज़ 10MB से अधिक है / Recorded audio exceeds 10MB limit. Please record a shorter note.'
+            isHindi
+              ? 'वॉइस नोट का साइज़ 10MB से अधिक है। कृपया छोटा वॉइस नोट रिकॉर्ड करें।'
+              : 'Recorded audio exceeds 10MB limit. Please record a shorter note.'
           );
           updateStatus('idle');
           onVoiceNoteChange(null, 0, null);
@@ -309,24 +318,33 @@ export default function VoiceNoteRecorder({
         err.name === 'PermissionDeniedError'
       ) {
         setError(
-          'माइक्रोफ़ोन की अनुमति आवश्यक है / Microphone permission is required. Please allow microphone access in browser settings.'
+          isHindi
+            ? 'माइक्रोफ़ोन की अनुमति आवश्यक है। कृपया ब्राउज़र सेटिंग में माइक्रोफ़ोन एक्सेस की अनुमति दें।'
+            : 'Microphone permission is required. Please allow microphone access in browser settings.'
         );
       } else if (
         err.name === 'NotFoundError' ||
         err.name === 'DevicesNotFoundError'
       ) {
-        setError('माइक्रोफ़ोन उपलब्ध नहीं है / No microphone found on your device.');
+        setError(
+          isHindi
+            ? 'आपके डिवाइस पर कोई माइक्रोफ़ोन नहीं मिला।'
+            : 'No microphone found on your device.'
+        );
       } else if (
         err.name === 'NotReadableError' ||
         err.name === 'TrackStartError'
       ) {
         setError(
-          'माइक्रोफ़ोन व्यस्त है या उपयोग में नहीं लाया जा सकता / Microphone is currently busy or unavailable.'
+          isHindi
+            ? 'माइक्रोफ़ोन व्यस्त है या उपयोग में नहीं लाया जा सकता।'
+            : 'Microphone is currently busy or unavailable.'
         );
       } else {
         setError(
-          'रिकॉर्डिंग शुरू करने में असमर्थ / Unable to start recording: ' +
-            (err.message || 'Unknown error')
+          isHindi
+            ? 'रिकॉर्डिंग शुरू करने में असमर्थ: ' + (err.message || 'अज्ञात त्रुटि')
+            : 'Unable to start recording: ' + (err.message || 'Unknown error')
         );
       }
     }
@@ -459,24 +477,24 @@ export default function VoiceNoteRecorder({
             type="button"
             onClick={() => setError(null)}
             className="text-red-400 hover:text-red-600 text-xs font-bold shrink-0 ml-1 p-0.5 rounded-md hover:bg-red-100 transition-colors"
-            aria-label="Dismiss error"
+            aria-label={isHindi ? "त्रुटि हटाएं" : "Dismiss error"}
           >
-            Dismiss
+            {isHindi ? "हटाएं" : "Dismiss"}
           </button>
         </div>
       )}
 
       {/* STATE 1: IDLE / STARTING */}
       {(status === 'idle' || status === 'starting') && (
-        <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl transition-all">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl transition-all gap-2.5">
+          <div className="flex items-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
             <button
               type="button"
               disabled={isActionDisabled}
               onClick={startRecording}
               className="w-11 h-11 rounded-full bg-brand-700 hover:bg-brand-800 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 text-white flex items-center justify-center shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              title="Record Voice Note / बोलकर रिकॉर्ड करें"
-              aria-label="Start Voice Recording / वॉइस रिकॉर्डिंग शुरू करें"
+              title={isHindi ? "बोलकर रिकॉर्ड करें" : "Record Voice Note"}
+              aria-label={isHindi ? "वॉइस रिकॉर्डिंग शुरू करें" : "Start Voice Recording"}
             >
               {status === 'starting' ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -484,21 +502,21 @@ export default function VoiceNoteRecorder({
                 <Mic className="w-5 h-5" />
               )}
             </button>
-            <div>
-              <p className="text-xs font-bold text-slate-800 font-devanagari">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-800 font-devanagari leading-snug">
                 {status === 'starting'
-                  ? 'माइक्रोफ़ोन प्रारंभ हो रहा है... / Connecting microphone...'
-                  : 'वॉइस नोट रिकॉर्ड करें / Record Voice Note'}
+                  ? (isHindi ? 'माइक्रोफ़ोन प्रारंभ हो रहा है...' : 'Connecting microphone...')
+                  : (isHindi ? 'वॉ细 नोट रिकॉर्ड करें' : 'Record Voice Note')}
               </p>
-              <p className="text-[11px] text-slate-500 font-devanagari">
+              <p className="text-[11px] text-slate-500 font-devanagari leading-relaxed break-words">
                 {status === 'starting'
-                  ? 'कृपया माइक्रोफ़ोन की अनुमति दें / Please allow microphone access'
-                  : 'माइक पर टैप करके अपनी आवश्यकता बताएं / Tap mic to speak your requirement'}
+                  ? (isHindi ? 'कृपया माइक्रोफ़ोन की अनुमति दें' : 'Please allow microphone access')
+                  : (isHindi ? 'माइक पर टैप करके अपनी आवश्यकता बताएं' : 'Tap mic to speak your requirement')}
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase bg-slate-200/70 px-2.5 py-1 rounded-md shrink-0 font-devanagari">
-            वॉइस ऐच्छिक / Voice Optional
+          <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase bg-slate-200/70 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md shrink-0 font-devanagari self-end sm:self-center">
+            {isHindi ? 'वॉइस ऐच्छिक' : 'Voice Optional'}
           </span>
         </div>
       )}
@@ -514,10 +532,10 @@ export default function VoiceNoteRecorder({
               : 'bg-red-50/90 border-red-200'
           }`}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             {/* Status indicator badge */}
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-3 w-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="relative flex h-3 w-3 shrink-0">
                 {status === 'recording' && (
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 )}
@@ -531,18 +549,18 @@ export default function VoiceNoteRecorder({
                   }`}
                 ></span>
               </span>
-              <span className="text-xs font-bold text-slate-900 font-devanagari">
+              <span className="text-xs font-bold text-slate-900 font-devanagari truncate">
                 {status === 'recording'
-                  ? '🔴 रिकॉर्डिंग जारी है... / Recording Voice Note...'
+                  ? (isHindi ? '🔴 रिकॉर्डिंग जारी है...' : '🔴 Recording Voice Note...')
                   : status === 'paused'
-                  ? '⏸ रिकॉर्डिंग रुकी हुई है / Recording Paused'
-                  : '⏳ रिकॉर्डिंग पूरी की जा रही है... / Finalizing recording...'}
+                  ? (isHindi ? '⏸ रिकॉर्डिंग रुकी हुई है' : '⏸ Recording Paused')
+                  : (isHindi ? '⏳ रिकॉर्डिंग पूरी की जा रही है...' : '⏳ Finalizing recording...')}
               </span>
             </div>
 
             {/* Timer display */}
             <div
-              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border shrink-0 ${
                 status === 'paused'
                   ? 'text-amber-800 bg-amber-100 border-amber-300'
                   : 'text-red-800 bg-red-100 border-red-300'
@@ -572,9 +590,9 @@ export default function VoiceNoteRecorder({
               disabled={isActionDisabled}
               onClick={handleCancel}
               className="text-xs font-bold text-slate-600 hover:text-red-700 flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-red-100/60 focus-visible:ring-2 focus-visible:ring-red-500 transition-colors disabled:opacity-50 font-devanagari"
-              aria-label="Cancel recording / रिकॉर्डिंग रद्द करें"
+              aria-label={isHindi ? "रिकॉर्डिंग रद्द करें" : "Cancel recording"}
             >
-              <RotateCcw className="w-3.5 h-3.5" /> रद्द करें / Cancel
+              <RotateCcw className="w-3.5 h-3.5" /> {isHindi ? 'रद्द करें' : 'Cancel'}
             </button>
 
             <div className="flex items-center gap-2">
@@ -584,9 +602,9 @@ export default function VoiceNoteRecorder({
                   disabled={isActionDisabled}
                   onClick={pauseRecording}
                   className="px-3.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold rounded-lg border border-amber-300 focus-visible:ring-2 focus-visible:ring-amber-500 transition-colors flex items-center gap-1 disabled:opacity-50 font-devanagari"
-                  aria-label="Pause recording / रोकें"
+                  aria-label={isHindi ? "रोकें" : "Pause"}
                 >
-                  <Pause className="w-3.5 h-3.5" /> रोकें / Pause
+                  <Pause className="w-3.5 h-3.5" /> {isHindi ? 'रोकें' : 'Pause'}
                 </button>
               ) : status === 'paused' ? (
                 <button
@@ -594,9 +612,9 @@ export default function VoiceNoteRecorder({
                   disabled={isActionDisabled}
                   onClick={resumeRecording}
                   className="px-3.5 py-1.5 bg-brand-100 hover:bg-brand-200 text-brand-900 text-xs font-bold rounded-lg border border-brand-300 focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors flex items-center gap-1 disabled:opacity-50 font-devanagari"
-                  aria-label="Resume recording / फिर शुरू करें"
+                  aria-label={isHindi ? "फिर शुरू करें" : "Resume"}
                 >
-                  <Play className="w-3.5 h-3.5" /> फिर शुरू करें / Resume
+                  <Play className="w-3.5 h-3.5" /> {isHindi ? 'फिर शुरू करें' : 'Resume'}
                 </button>
               ) : null}
 
@@ -605,14 +623,14 @@ export default function VoiceNoteRecorder({
                 disabled={isActionDisabled}
                 onClick={handleDone}
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 font-devanagari"
-                aria-label="Finish recording / पूरा हुआ"
+                aria-label={isHindi ? "पूरा हुआ" : "Done"}
               >
                 {status === 'stopping' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Square className="w-3.5 h-3.5 fill-current" />
                 )}
-                पूरा हुआ / Done
+                {isHindi ? 'पूरा हुआ' : 'Done'}
               </button>
             </div>
           </div>
@@ -627,12 +645,12 @@ export default function VoiceNoteRecorder({
             duration={duration}
             onDelete={handleCancel}
             onReRecord={handleReRecord}
-            label="Attached Voice Note / संलग्न वॉइस नोट"
+            label={isHindi ? "संलग्न वॉइस नोट" : "Attached Voice Note"}
           />
           <div className="flex items-center justify-between px-1 text-[11px]">
             <span className="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-devanagari">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              वॉइस नोट सफलतापूर्वक जोड़ा गया / Voice note attached
+              {isHindi ? 'वॉइस नोट सफलतापूर्वक जोड़ा गया' : 'Voice note attached'}
             </span>
           </div>
         </div>

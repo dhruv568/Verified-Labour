@@ -3,6 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AuthHeaderProps {
   title?: string;
@@ -21,14 +22,16 @@ export default function AuthHeader({
   onTabChange,
   showTabs = true,
 }: AuthHeaderProps) {
+  const { isHindi } = useLanguage();
+
   return (
-    <div className="bg-navy-900 px-4 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-4 text-white relative">
+    <div className="bg-navy-900 px-4 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-4 text-white relative font-devanagari">
       {/* Close button - independently positioned top-right */}
       <button
         onClick={onClose}
         type="button"
         className="absolute top-3 right-3 sm:top-3.5 sm:right-3.5 z-10 w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 flex items-center justify-center rounded-full text-slate-300 hover:text-white hover:bg-navy-800 active:bg-navy-700 transition-colors"
-        aria-label="Close"
+        aria-label={isHindi ? "बंद करें" : "Close"}
       >
         <X className="w-5 h-5" />
       </button>
@@ -54,7 +57,7 @@ export default function AuthHeader({
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            <span>लॉगिन / Login</span>
+            <span>{isHindi ? 'लॉगिन' : 'Login'}</span>
           </button>
           <button
             type="button"
@@ -65,7 +68,7 @@ export default function AuthHeader({
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            <span>पंजीकरण / Register</span>
+            <span>{isHindi ? 'पंजीकरण' : 'Register'}</span>
           </button>
         </div>
       )}

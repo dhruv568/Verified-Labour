@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { CheckCircle2, Star, MapPin, ShieldCheck, Award } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { getServiceDisplayName } from '@/lib/service-translations';
 
 export interface WorkerData {
   id: string;
@@ -40,6 +42,8 @@ export default function WorkerCard({
   onRequestBooking,
   onViewProfile,
 }: WorkerCardProps) {
+  const { isHindi } = useLanguage();
+
   const avatarFallback = worker.fullName
     ? worker.fullName
         .split(' ')
@@ -48,6 +52,8 @@ export default function WorkerCard({
         .slice(0, 2)
         .toUpperCase()
     : 'WL';
+
+  const categoryName = getServiceDisplayName(worker.primaryCategory?.name || 'Skilled Professional', isHindi);
 
   return (
     <article className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full w-full overflow-hidden group">
@@ -71,7 +77,7 @@ export default function WorkerCard({
             {worker.badges.isFullyVerified && (
               <div
                 className="absolute -bottom-1 -right-1 bg-brand-600 text-white rounded-full p-0.5 shadow-xs"
-                title="Verified Professional"
+                title={isHindi ? "सत्यापित पेशेवर" : "Verified Professional"}
               >
                 <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-brand-600 text-white stroke-[2.5]" />
               </div>
@@ -87,15 +93,17 @@ export default function WorkerCard({
               {worker.badges.isFullyVerified && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-50 text-brand-800 border border-brand-200 shrink-0">
                   <ShieldCheck className="w-3 h-3 text-brand-600 shrink-0" />
-                  सत्यापित / VERIFIED
+                  {isHindi ? 'सत्यापित' : 'VERIFIED'}
                 </span>
               )}
             </div>
 
             {/* Profession + Experience */}
             <p className="text-xs font-bold text-slate-600 mt-0.5 truncate">
-              {worker.primaryCategory?.name || 'Skilled Professional'} •{' '}
-              <span className="font-semibold text-slate-500">{worker.experienceYears}+ yrs exp</span>
+              {categoryName} •{' '}
+              <span className="font-semibold text-slate-500">
+                {worker.experienceYears}+ {isHindi ? 'वर्ष अनुभव' : 'yrs exp'}
+              </span>
             </p>
 
             {/* Rating and Distance */}
@@ -108,7 +116,7 @@ export default function WorkerCard({
 
               <div className="flex items-center gap-1 text-slate-500 font-medium min-w-0 truncate">
                 <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                <span className="truncate">{worker.formattedDistance || worker.city || 'Nearby'}</span>
+                <span className="truncate">{worker.formattedDistance || worker.city || (isHindi ? 'नज़दीक' : 'Nearby')}</span>
               </div>
             </div>
           </div>
@@ -122,7 +130,9 @@ export default function WorkerCard({
             }`}
           />
           <span className="text-[11px] font-semibold text-slate-600 font-devanagari">
-            {worker.isAvailable ? 'उपलब्ध / Available Now' : 'बुकिंग पर उपलब्ध / Available on Booking'}
+            {worker.isAvailable
+              ? (isHindi ? 'उपलब्ध है' : 'Available Now')
+              : (isHindi ? 'बुकिंग पर उपलब्ध' : 'Available on Booking')}
           </span>
         </div>
 
@@ -130,17 +140,17 @@ export default function WorkerCard({
         <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-slate-100">
           {worker.badges.isIdentityVerified && (
             <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
-              <CheckCircle2 className="w-3 h-3 text-brand-600 shrink-0" /> पहचान / Identity
+              <CheckCircle2 className="w-3 h-3 text-brand-600 shrink-0" /> {isHindi ? 'पहचान सत्यापित' : 'Identity Verified'}
             </span>
           )}
           {worker.badges.isBankVerified && (
             <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
-              <CheckCircle2 className="w-3 h-3 text-brand-600 shrink-0" /> बैंक सत्यापित / Bank Verified
+              <CheckCircle2 className="w-3 h-3 text-brand-600 shrink-0" /> {isHindi ? 'बैंक सत्यापित' : 'Bank Verified'}
             </span>
           )}
           {worker.badges.isSkillVerified && (
             <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 font-devanagari">
-              <Award className="w-3 h-3 text-brand-600 shrink-0" /> कौशल / Skills Verified
+              <Award className="w-3 h-3 text-brand-600 shrink-0" /> {isHindi ? 'कौशल सत्यापित' : 'Skills Verified'}
             </span>
           )}
         </div>
@@ -155,9 +165,9 @@ export default function WorkerCard({
         {/* Service Areas */}
         {worker.serviceAreas && worker.serviceAreas.length > 0 && (
           <div className="mt-2 text-[11px] text-slate-500 line-clamp-1 mb-3">
-            <span className="font-semibold text-slate-700">Areas: </span>
+            <span className="font-semibold text-slate-700">{isHindi ? 'क्षेत्र: ' : 'Areas: '}</span>
             {worker.serviceAreas.slice(0, 4).join(', ')}
-            {worker.serviceAreas.length > 4 && ` +${worker.serviceAreas.length - 4} more`}
+            {worker.serviceAreas.length > 4 && ` +${worker.serviceAreas.length - 4} ${isHindi ? 'अन्य' : 'more'}`}
           </div>
         )}
       </div>
@@ -168,29 +178,25 @@ export default function WorkerCard({
           {/* Price Section */}
           <div className="shrink-0 min-w-fit">
             <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block font-devanagari leading-none mb-1">
-              शुरुआती / Starting
+              {isHindi ? 'शुरुआती दर' : 'Starting Rate'}
             </span>
             <div className="flex items-baseline gap-1">
               <span className="text-base sm:text-lg font-black text-navy-900 leading-none">
                 ₹{worker.hourlyRate || 300}
               </span>
-              <span className="text-xs font-normal text-slate-500 leading-none">/ job</span>
+              <span className="text-xs font-normal text-slate-500 leading-none">{isHindi ? '/ कार्य' : '/ job'}</span>
             </div>
           </div>
 
           {/* Action Buttons Section */}
-          <div className="flex items-center gap-2 flex-1 min-w-[210px] max-w-full justify-end">
+          <div className="flex items-center gap-2 flex-1 min-w-[140px] max-w-full justify-end">
             {onViewProfile && (
               <button
                 type="button"
                 onClick={() => onViewProfile(worker)}
                 className="flex-1 min-w-0 min-h-[44px] px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:text-navy-900 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 rounded-xl transition-colors border border-slate-200 font-devanagari flex items-center justify-center text-center leading-tight"
               >
-                <span className="block text-center">
-                  <span className="inline-block">प्रोफाइल</span>
-                  <span className="inline-block mx-0.5 text-slate-400">/</span>
-                  <span className="inline-block font-sans text-[11px] font-semibold text-slate-600">Profile</span>
-                </span>
+                <span>{isHindi ? 'प्रोफाइल देखें' : 'View Profile'}</span>
               </button>
             )}
             <button
@@ -198,11 +204,7 @@ export default function WorkerCard({
               onClick={() => onRequestBooking(worker)}
               className="flex-1 min-w-0 min-h-[44px] px-3 py-1.5 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center text-center font-devanagari leading-tight max-w-full"
             >
-              <span className="block text-center">
-                <span className="inline-block">30s में बुक करें</span>
-                <span className="inline-block mx-0.5 opacity-80">/</span>
-                <span className="inline-block font-sans text-[11px] font-semibold opacity-95">Book Now</span>
-              </span>
+              <span>{isHindi ? 'अभी बुक करें' : 'Book Now'}</span>
             </button>
           </div>
         </div>
