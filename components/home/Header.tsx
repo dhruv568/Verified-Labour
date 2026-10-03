@@ -101,7 +101,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
           <span>{content.announcement_text}</span>
         </div>
       )}
-      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 w-full">
+      <div className="max-w-[1440px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 w-full">
         <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 gap-2 sm:gap-3 lg:gap-4 xl:gap-6 min-w-0">
           {/* Left: Transparent Verified Labour Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-0" aria-label="Verified Labour Home">
@@ -109,7 +109,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
           </Link>
 
           {/* Center Navigation Links (Renders ONLY current active language from context) */}
-          <nav className="hidden lg:flex items-center gap-2 xl:gap-4 2xl:gap-6 text-xs xl:text-[13px] 2xl:text-sm font-bold text-slate-700 min-w-0 shrink">
+          <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3.5 2xl:gap-5 text-xs xl:text-[13px] 2xl:text-sm font-bold text-slate-700 shrink-0 min-w-0">
             <Link
               href="/"
               className="text-[#082B66] font-extrabold hover:text-[#1264D6] transition-colors whitespace-nowrap px-1 py-1 focus:outline-none focus:ring-2 focus:ring-[#1264D6] rounded-md"

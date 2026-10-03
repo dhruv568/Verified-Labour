@@ -226,14 +226,21 @@ export default function AuthModal({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        if (data.requiresVerification && data.email) {
-          setPendingEmail(data.email);
-          setTab('email-otp');
-          setResendTimer(60);
-          setError(data.error || (isHindi ? 'खाता सत्यापित नहीं है। कृपया ईमेल OTP दर्ज करें।' : 'Account is unverified. Please enter email OTP.'));
-          return;
-        }
         throw new Error(data.error || (isHindi ? 'लॉगिन करने में विफल' : 'Failed to login'));
+      }
+
+      if (data.requiresVerification && data.email) {
+        setPendingEmail(data.email);
+        setTab('email-otp');
+        setResendTimer(60);
+        setSuccessMsg(
+          data.message ||
+            (isHindi
+              ? 'सत्यापन कोड आपके ईमेल पर भेज दिया गया है।'
+              : 'Verification code sent to your email.')
+        );
+        setError(null);
+        return;
       }
 
       completeLogin(data.user);
@@ -474,6 +481,12 @@ export default function AuthModal({
   const completeLogin = (user: any) => {
     onSuccess?.(user);
     onClose();
+
+    if (!user) {
+      router.push('/');
+      router.refresh();
+      return;
+    }
 
     if (user.role === 'ADMIN') {
       router.push('/admin');

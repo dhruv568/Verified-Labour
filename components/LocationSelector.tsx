@@ -212,7 +212,7 @@ export default function LocationSelector({ className = '', isMobile = false }: L
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors min-w-0 max-w-[130px] sm:max-w-[155px] lg:max-w-[175px] xl:max-w-[210px] shrink focus:outline-none focus:ring-2 focus:ring-[#1464D2]"
+        className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[38px] h-9 sm:h-9.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-800 shadow-xs transition-colors min-w-0 max-w-[120px] sm:max-w-[140px] lg:max-w-[150px] xl:max-w-[180px] 2xl:max-w-[210px] shrink focus:outline-none focus:ring-2 focus:ring-[#1464D2]"
         title={displayText}
         aria-expanded={isOpen}
         aria-label={isHindi ? `स्थान: ${displayText}` : `Location: ${displayText}`}
