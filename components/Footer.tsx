@@ -283,74 +283,44 @@ function FooterCoreSection({ hasTopBorder = true }: { hasTopBorder?: boolean }) 
 
   return (
     <div
-      className={`grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 lg:gap-12 text-left items-start font-sans ${
+      className={`grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 lg:gap-12 text-left md:items-center font-sans ${
         hasTopBorder ? 'pt-8 border-t border-slate-200/80' : ''
       }`}
     >
       {/* LEFT COLUMN: Copyright */}
-      <div className="flex flex-col space-y-1.5 text-left">
+      <div className="flex flex-col space-y-1 text-left">
         <p className="text-xs sm:text-sm font-semibold text-slate-700 tracking-tight leading-relaxed font-sans">
           © 2026 Verified Labour. {t.allRightsReserved}
         </p>
       </div>
 
-      {/* CENTER COLUMN: Navigation Links */}
-      <div className="flex flex-col space-y-2 text-left md:items-center">
-        <div className="flex flex-col space-y-2 text-left w-full md:w-auto font-devanagari">
-          <Link
-            href="/legal/privacy"
-            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
-          >
-            {t.privacyPolicy}
-          </Link>
-          <Link
-            href="/legal/terms"
-            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
-          >
-            {t.termsConditions}
-          </Link>
-          <Link
-            href="/contact"
-            className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors py-0.5 inline-block"
-          >
-            {t.contact}
-          </Link>
-        </div>
+      {/* CENTER COLUMN: Parent Company & Registered Office */}
+      <div className="flex flex-col space-y-1 text-left md:text-center">
+        <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block leading-tight font-devanagari">
+          {t.parentCompany}
+        </span>
+        <span className="text-xs sm:text-sm font-bold text-slate-800 block tracking-tight break-words font-devanagari">
+          {COMPANY_NAME}
+        </span>
+        <p className="text-[11px] sm:text-xs text-slate-500 font-normal leading-normal break-words font-sans">
+          <span className="font-semibold text-slate-600 font-devanagari">{t.registeredOffice}:</span>{' '}
+          {COMPANY_REGISTERED_ADDRESS}
+        </p>
       </div>
 
-      {/* RIGHT COLUMN: Parent Company & Registered Office + Powered by */}
-      <div className="flex flex-col space-y-3 text-left">
-        <div className="space-y-1 font-devanagari">
-          <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block leading-tight">
-            {t.parentCompany}
-          </span>
-          <span className="text-xs sm:text-sm font-bold text-slate-800 block tracking-tight break-words">
-            {COMPANY_NAME}
-          </span>
-        </div>
-
-        <div className="text-xs text-slate-500 font-normal leading-relaxed space-y-0.5">
-          <span className="font-semibold text-slate-600 block font-devanagari">
-            {t.registeredOffice}:
-          </span>
-          <p className="text-slate-500 text-xs leading-normal break-words">
-            Bard No. 8, Basundhara Colony,
-            <br />
-            Chandmari, Lalitpur (UP) 284403
-          </p>
-        </div>
-
-        <div className="pt-1 text-xs text-slate-500 font-medium">
-          Powered by{' '}
+      {/* RIGHT COLUMN: Powered by MyProFunnels */}
+      <div className="flex flex-col space-y-1 text-left md:text-right md:items-end">
+        <p className="text-xs text-slate-600 font-medium inline-flex items-center gap-1.5">
+          <span>Powered by</span>
           <a
             href="https://myprofunnels.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-slate-700 hover:text-[#0B9B5A] transition-colors underline decoration-slate-300 underline-offset-2"
+            className="font-bold text-slate-800 hover:text-[#0B9B5A] transition-colors inline-flex items-center gap-1 underline decoration-slate-300 underline-offset-2"
           >
-            MyProFunnels
+            MyProFunnels <span className="text-red-500 text-sm">❤️</span>
           </a>
-        </div>
+        </p>
       </div>
     </div>
   );
