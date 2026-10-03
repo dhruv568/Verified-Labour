@@ -9,6 +9,7 @@ import WorkerCard, { WorkerData } from '@/components/WorkerCard';
 import JobRequestModal from '@/components/JobRequestModal';
 import WorkerProfileModal from '@/components/WorkerProfileModal';
 import { useLocation } from '@/context/LocationContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   LayoutDashboard,
   Search,
@@ -55,6 +56,7 @@ type NavTab =
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const { location } = useLocation();
+  const { isHindi } = useLanguage();
 
   const [activeNav, setActiveNav] = useState<NavTab>('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -210,16 +212,16 @@ export default function CustomerDashboardPage() {
   const completedJobs = jobs.filter((j) => ['COMPLETED', 'PAID', 'REVIEWED'].includes(j.status));
 
   const navItems = [
-    { id: 'dashboard' as NavTab, label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'find_workers' as NavTab, label: 'Find Workers', icon: <Search className="w-4 h-4" /> },
-    { id: 'my_bookings' as NavTab, label: 'My Bookings', icon: <Calendar className="w-4 h-4" />, count: jobs.length },
-    { id: 'active_booking' as NavTab, label: 'Active Booking', icon: <Clock className="w-4 h-4" />, count: activeJobs.length },
-    { id: 'booking_history' as NavTab, label: 'Booking History', icon: <Briefcase className="w-4 h-4" />, count: completedJobs.length },
-    { id: 'payments' as NavTab, label: 'Payments', icon: <CreditCard className="w-4 h-4" /> },
-    { id: 'reviews' as NavTab, label: 'Reviews', icon: <Star className="w-4 h-4" /> },
-    { id: 'notifications' as NavTab, label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-    { id: 'profile' as NavTab, label: 'Profile', icon: <User className="w-4 h-4" /> },
-    { id: 'settings' as NavTab, label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'dashboard' as NavTab, label: isHindi ? 'डैशबोर्ड' : 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'find_workers' as NavTab, label: isHindi ? 'कामगार खोजें' : 'Find Workers', icon: <Search className="w-4 h-4" /> },
+    { id: 'my_bookings' as NavTab, label: isHindi ? 'मेरी बुकिंग' : 'My Bookings', icon: <Calendar className="w-4 h-4" />, count: jobs.length },
+    { id: 'active_booking' as NavTab, label: isHindi ? 'सक्रिय बुकिंग' : 'Active Booking', icon: <Clock className="w-4 h-4" />, count: activeJobs.length },
+    { id: 'booking_history' as NavTab, label: isHindi ? 'बुकिंग इतिहास' : 'Booking History', icon: <Briefcase className="w-4 h-4" />, count: completedJobs.length },
+    { id: 'payments' as NavTab, label: isHindi ? 'भुगतान' : 'Payments', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'reviews' as NavTab, label: isHindi ? 'समीक्षाएं' : 'Reviews', icon: <Star className="w-4 h-4" /> },
+    { id: 'notifications' as NavTab, label: isHindi ? 'सूचनाएं' : 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    { id: 'profile' as NavTab, label: isHindi ? 'प्रोफाइल' : 'Profile', icon: <User className="w-4 h-4" /> },
+    { id: 'settings' as NavTab, label: isHindi ? 'सेटिंग्स' : 'Settings', icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
@@ -368,7 +370,7 @@ export default function CustomerDashboardPage() {
               className="px-5 py-3 bg-[#1264D6] hover:bg-blue-700 active:scale-98 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 font-devanagari min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
-              <span>30s में बुक करें / Book Worker</span>
+              <span>{isHindi ? '30s में वर्कर बुक करें' : 'Book Worker in 30s'}</span>
             </Link>
           </div>
 
@@ -378,13 +380,13 @@ export default function CustomerDashboardPage() {
               {/* Search & Popular Services */}
               <Card variant="default" padding="md" className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 font-devanagari">आपको किस सेवा की आवश्यकता है? / Select Service</h3>
+                  <h3 className="text-sm font-bold text-slate-900 font-devanagari">{isHindi ? 'आपको किस सेवा की आवश्यकता है?' : 'What service do you need?'}</h3>
                   <div className="flex gap-2 mt-2">
                     <div className="relative flex-1">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                       <input
                         type="text"
-                        placeholder="इलेक्ट्रीशियन, प्लंबर, पेंटर, सफाईकर्मी खोजें... / Search service..."
+                        placeholder={isHindi ? 'इलेक्ट्रीशियन, प्लंबर, पेंटर, सफाईकर्मी खोजें...' : 'Search electrician, plumber, painter, cleaner...'}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => {
@@ -394,7 +396,7 @@ export default function CustomerDashboardPage() {
                       />
                     </div>
                     <Button variant="primary" size="md" onClick={fetchNearbyWorkers} className="min-h-[44px] font-devanagari">
-                      खोजें / Search
+                      {isHindi ? 'खोजें' : 'Search'}
                     </Button>
                   </div>
                 </div>
@@ -624,7 +626,9 @@ export default function CustomerDashboardPage() {
                   Direct Cash Payment
                 </span>
                 <p className="text-[11px] text-emerald-700 font-devanagari">
-                  काम पूरा होने के बाद नकद भुगतान करें। / Pay cash directly to your worker after the work is finished. The worker confirms payment to unlock reviews.
+                  {isHindi
+                    ? 'काम पूरा होने के बाद सीधा नकद भुगतान करें। वर्कर भुगतान की पुष्टि करता है।'
+                    : 'Pay cash directly to your worker after the work is finished. The worker confirms payment to unlock reviews.'}
                 </p>
               </div>
 
