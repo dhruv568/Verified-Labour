@@ -20,12 +20,14 @@ import {
 import VoiceAudioPlayer from '@/components/VoiceAudioPlayer';
 import LiveJobMap from '@/components/LiveJobMap';
 import { calculateHaversineDistanceKm } from '@/lib/location';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function CustomerJobTrackerPage({
   params,
 }: {
   params: { id: string };
 }) {
+  const { isHindi } = useLanguage();
   const { id: jobId } = params;
   const [job, setJob] = useState<any>(null);
   const [allowedActions, setAllowedActions] = useState<string[]>([]);
@@ -311,15 +313,19 @@ export default function CustomerJobTrackerPage({
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-sm font-devanagari">
-                  वर्कर आपके अनुरोध की समीक्षा कर रहा है... / Worker is reviewing your booking request
+                  {isHindi
+                    ? 'वर्कर आपके अनुरोध की समीक्षा कर रहा है...'
+                    : 'Worker is reviewing your booking request'}
                 </h3>
                 <p className="text-xs text-slate-600 font-devanagari mt-0.5">
-                  जैसे ही {job.worker.fullName} स्वीकार करेंगे, आपको तुरंत सूचना मिलेगी। / You will be notified as soon as worker accepts.
+                  {isHindi
+                    ? `जैसे ही ${job.worker.fullName} स्वीकार करेंगे, आपको तुरंत सूचना मिलेगी।`
+                    : 'You will be notified as soon as worker accepts.'}
                 </p>
               </div>
             </div>
             <span className="px-2.5 py-1 bg-amber-200 text-amber-900 font-extrabold text-xs rounded-lg font-devanagari shrink-0 hidden sm:inline-block">
-              प्रतीक्षा में / Pending Review
+              {isHindi ? 'प्रतीक्षा में' : 'Pending Review'}
             </span>
           </div>
         )}
@@ -332,15 +338,19 @@ export default function CustomerJobTrackerPage({
               </div>
               <div>
                 <h3 className="font-bold text-emerald-950 text-sm font-devanagari">
-                  ✓ {job.worker.fullName} ने आपका अनुरोध स्वीकार कर लिया! / Worker Accepted Your Request!
+                  {isHindi
+                    ? `✓ ${job.worker.fullName} ने आपका अनुरोध स्वीकार कर लिया!`
+                    : '✓ Worker Accepted Your Request!'}
                 </h3>
                 <p className="text-xs text-emerald-800 font-devanagari mt-0.5">
-                  वर्कर जल्द ही आपके स्थान के लिए रवाना होंगे। / Worker will arrive as scheduled.
+                  {isHindi
+                    ? 'वर्कर जल्द ही आपके स्थान पर पहुंचेगा।'
+                    : 'Worker will arrive as scheduled.'}
                 </p>
               </div>
             </div>
             <span className="px-3 py-1 bg-emerald-600 text-white font-black text-xs rounded-lg font-devanagari shrink-0">
-              स्वीकृत / ACCEPTED
+              {isHindi ? 'स्वीकृत' : 'ACCEPTED'}
             </span>
           </div>
         )}
@@ -353,10 +363,13 @@ export default function CustomerJobTrackerPage({
               </div>
               <div>
                 <h3 className="font-bold text-red-950 text-sm font-devanagari">
-                  वर्कर ने यह अनुरोध अस्वीकार कर दिया / Worker declined this booking request
+                  {isHindi
+                    ? 'वर्कर ने यह अनुरोध अस्वीकार कर दिया'
+                    : 'Worker declined this booking request'}
                 </h3>
                 <p className="text-xs text-red-700 font-devanagari mt-0.5">
-                  {job.rejectionReason || 'Worker is currently unavailable for this slot.'} आप दूसरे सत्यापित वर्कर को बुक कर सकते हैं।
+                  {job.rejectionReason || (isHindi ? 'वर्कर इस समय उपलब्ध नहीं है।' : 'Worker is currently unavailable for this slot.')}{' '}
+                  {isHindi ? 'आप दूसरे सत्यापित वर्कर को बुक कर सकते हैं।' : 'You can select another verified worker.'}
                 </p>
               </div>
             </div>
@@ -364,7 +377,7 @@ export default function CustomerJobTrackerPage({
               href="/workers"
               className="px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 font-devanagari"
             >
-              दूसरा वर्कर खोजें / Select Another Worker
+              {isHindi ? 'दूसरा वर्कर खोजें' : 'Select Another Worker'}
             </Link>
           </div>
         )}
@@ -488,7 +501,7 @@ export default function CustomerJobTrackerPage({
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-900 text-xs font-bold font-devanagari">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
-                    <span>वर्कर आपके स्थान पर पहुंच गए हैं / Worker has arrived at your location</span>
+                    <span>{isHindi ? 'वर्कर आपके स्थान पर पहुंच गए हैं' : 'Worker has arrived at your location'}</span>
                     <p className="text-[11px] font-normal text-emerald-700 mt-0.5">Live GPS tracking completed.</p>
                   </div>
                 </div>
@@ -496,16 +509,22 @@ export default function CustomerJobTrackerPage({
 
               {/* Cash Payment Instructions if WORK_COMPLETED or PAYMENT_PENDING */}
               {['WORK_COMPLETED', 'PAYMENT_PENDING'].includes(job.status) && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 font-devanagari">
                   <div className="flex items-center gap-2 font-bold text-xs text-emerald-950">
                     <CreditCard className="w-4 h-4 text-emerald-700" />
-                    <span>Cash Payment Required / नकद भुगतान</span>
+                    <span>{isHindi ? 'नकद भुगतान आवश्यक' : 'Cash Payment Required'}</span>
                   </div>
                   <p className="text-xs text-emerald-900 leading-relaxed font-devanagari">
-                    कृपया <strong>₹{job.finalAmount}</strong> सीधे वर्कर (<strong>{job.worker.fullName}</strong>) को नकद भुगतान करें। / Please pay <strong>₹{job.finalAmount}</strong> directly to the worker in cash.
+                    {isHindi ? (
+                      <>कृपया <strong>₹{job.finalAmount}</strong> सीधे वर्कर (<strong>{job.worker.fullName}</strong>) को नकद भुगतान करें।</>
+                    ) : (
+                      <>Please pay <strong>₹{job.finalAmount}</strong> directly to the worker in cash.</>
+                    )}
                   </p>
                   <p className="text-[11px] text-emerald-700 font-medium">
-                    वर्कर द्वारा नकद पुष्टि के बाद आप अपनी रेटिंग और समीक्षा दर्ज कर सकेंगे। / After the worker confirms cash receipt, you can submit your rating & review.
+                    {isHindi
+                      ? 'वर्कर द्वारा नकद पुष्टि के बाद आप अपनी रेटिंग और समीक्षा दर्ज कर सकेंगे।'
+                      : 'After the worker confirms cash receipt, you can submit your rating & review.'}
                   </p>
                 </div>
               )}
