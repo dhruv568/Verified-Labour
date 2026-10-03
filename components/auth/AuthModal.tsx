@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Eye,
   EyeOff,
@@ -1082,7 +1083,7 @@ export default function AuthModal({
                     setOtpCode('');
                     setError(null);
                   }}
-                  onResendOtp={handleSendOtp}
+                  onResendOtp={() => handleSendOtp({ preventDefault: () => {} } as any)}
                   resendTimer={resendTimer}
                   loading={loading}
                   error={error}
