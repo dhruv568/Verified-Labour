@@ -289,35 +289,48 @@ export default function CustomerJobTrackerPage({
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 w-full flex-1 overflow-x-hidden">
-        {/* Breadcrumb & Job ID */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
-          <div>
-            <Link href="/customer/dashboard" className="text-xs font-semibold text-brand-700 hover:underline">
-              ← Back to My Bookings
-            </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-              Job Tracking: #{job.id.slice(0, 8).toUpperCase()}
-            </h1>
-          </div>
-          <span className="px-3 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded-full border border-brand-200 shrink-0">
-            {job.status}
-          </span>
+        {/* Navigation Back Link */}
+        <div className="mb-4 sm:mb-6">
+          <Link
+            href="/customer/dashboard"
+            className="inline-flex items-center text-xs font-semibold text-brand-700 hover:text-brand-800 hover:underline transition-colors"
+          >
+            ← Back to My Bookings
+          </Link>
         </div>
 
-        {/* Live Booking Status Banner for Customer */}
+        {/* Centered Job Tracking Header Section */}
+        <div className="max-w-2xl mx-auto w-full text-center mb-6 sm:mb-8 px-2">
+          {/* Centered Heading with Two-Line Structure */}
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight text-center leading-tight">
+            <span>Job Tracking:</span>
+            <span className="block text-brand-700 mt-0.5 sm:mt-1 font-black">
+              #{job.id.slice(0, 8).toUpperCase()}
+            </span>
+          </h1>
+
+          {/* Centered Status Badge directly below heading */}
+          <div className="flex justify-center mt-3 sm:mt-4">
+            <span className="px-3.5 py-1.5 bg-brand-100 text-brand-800 text-xs font-extrabold rounded-full border border-brand-200 shrink-0 shadow-2xs">
+              {job.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Centered Live Booking Status Banner for Customer */}
         {job.status === 'REQUESTED' && (
-          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+          <div className="max-w-2xl mx-auto w-full mb-6 sm:mb-8 p-4 sm:p-5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5 text-amber-600 animate-spin" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm font-devanagari">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-slate-900 text-xs sm:text-sm font-devanagari leading-snug">
                   {isHindi
                     ? 'वर्कर आपके अनुरोध की समीक्षा कर रहा है...'
                     : 'Worker is reviewing your booking request'}
                 </h3>
-                <p className="text-xs text-slate-600 font-devanagari mt-0.5">
+                <p className="text-[11px] sm:text-xs text-slate-600 font-devanagari mt-0.5 leading-normal">
                   {isHindi
                     ? `जैसे ही ${job.worker.fullName} स्वीकार करेंगे, आपको तुरंत सूचना मिलेगी।`
                     : 'You will be notified as soon as worker accepts.'}
@@ -331,18 +344,18 @@ export default function CustomerJobTrackerPage({
         )}
 
         {job.status === 'ACCEPTED' && (
-          <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+          <div className="max-w-2xl mx-auto w-full mb-6 sm:mb-8 p-4 sm:p-5 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-6 h-6 text-emerald-600" />
               </div>
-              <div>
-                <h3 className="font-bold text-emerald-950 text-sm font-devanagari">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-emerald-950 text-xs sm:text-sm font-devanagari leading-snug">
                   {isHindi
                     ? `✓ ${job.worker.fullName} ने आपका अनुरोध स्वीकार कर लिया!`
                     : '✓ Worker Accepted Your Request!'}
                 </h3>
-                <p className="text-xs text-emerald-800 font-devanagari mt-0.5">
+                <p className="text-[11px] sm:text-xs text-emerald-800 font-devanagari mt-0.5 leading-normal">
                   {isHindi
                     ? 'वर्कर जल्द ही आपके स्थान पर पहुंचेगा।'
                     : 'Worker will arrive as scheduled.'}
@@ -356,18 +369,18 @@ export default function CustomerJobTrackerPage({
         )}
 
         {job.status === 'REJECTED' && (
-          <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-800 flex items-center justify-center shrink-0">
+          <div className="max-w-2xl mx-auto w-full mb-6 sm:mb-8 p-4 sm:p-5 bg-red-50 border-2 border-red-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-red-100 text-red-800 flex items-center justify-center shrink-0">
                 <X className="w-6 h-6 text-red-600" />
               </div>
-              <div>
-                <h3 className="font-bold text-red-950 text-sm font-devanagari">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-red-950 text-xs sm:text-sm font-devanagari leading-snug">
                   {isHindi
                     ? 'वर्कर ने यह अनुरोध अस्वीकार कर दिया'
                     : 'Worker declined this booking request'}
                 </h3>
-                <p className="text-xs text-red-700 font-devanagari mt-0.5">
+                <p className="text-[11px] sm:text-xs text-red-700 font-devanagari mt-0.5 leading-normal">
                   {job.rejectionReason || (isHindi ? 'वर्कर इस समय उपलब्ध नहीं है।' : 'Worker is currently unavailable for this slot.')}{' '}
                   {isHindi ? 'आप दूसरे सत्यापित वर्कर को बुक कर सकते हैं।' : 'You can select another verified worker.'}
                 </p>
